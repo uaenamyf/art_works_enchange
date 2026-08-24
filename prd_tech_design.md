@@ -1,3 +1,6 @@
+> **文档状态：产品需求与早期技术构想。**  
+> 当前工程技术基线已调整为 Java 21 + Spring Boot DDD 模块化单体、Next.js + TypeScript 前端与 Docker Compose 部署。开发与接口联调请以 [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md) 和 [OpenAPI 契约](docs/openapi.yaml) 为准；下文 Node.js/NestJS 与微服务内容不再作为当前实施要求。
+
 可以。我会按照**真实创业团队交付标准**来设计，而不是简单写一个功能列表。
 
 这个项目我建议定位为：

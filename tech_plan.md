@@ -1,4 +1,7 @@
 
+> **文档状态：远期架构参考，非当前实施方案。**  
+> 当前 MVP 已确定使用 Java 21 + Spring Boot DDD 模块化单体，并通过 Docker Compose 部署。开发请以 [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md) 和 [OpenAPI 契约](docs/openapi.yaml) 为准；下文的微服务、EKS、Kafka 与 Kubernetes 仅保留为未来规模化讨论材料。
+
 下面按照一个**真实可商业化 ToC 平台（CreatorHub）**的标准，设计完整技术架构。
 
 目标：
