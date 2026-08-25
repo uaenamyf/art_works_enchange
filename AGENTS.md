@@ -21,7 +21,8 @@
 
 ### 本地技能使用规则
 
-- `.agent/.skill` 是通用参考，不是仓库规范；优先级低于用户要求、`AGENTS.md`、`docs/openapi.yaml`、`DEVELOPMENT_GUIDE.md` 和 ADR。
+- `.agent/.skill` 与 `.CLAUDE/skills/` 都是通用参考，不是仓库规范；优先级低于用户要求、`AGENTS.md`、`docs/openapi.yaml`、`DEVELOPMENT_GUIDE.md` 和 ADR。
+- `.CLAUDE/skills/` 是独立 git 仓镜像自 `github.com/openai/skills`（上游已 deprecated），**只读引用**，不修改、不提交 CreatorHub 业务代码。详细使用规则见 `.CLAUDE/CREATORHUB.md`。
 - DDD 任务可参考 `ddd-domain-designer`、`ddd-architecture-hexagonal`、`ddd-event-storming`、`ddd-api-designer`、`ddd-cqrs-architecture`、`ddd-testing-strategist`，但只采用与本仓库技术边界一致的部分。
 - API 成功响应直接使用资源 DTO，错误使用 RFC 9457 Problem Details；禁止套用技能中的 `Result<T>`、数字错误码和每前端一个 BFF。
 - CQRS 限定为共享数据库的 L1 代码级读写分离。禁止自行引入读写数据库分离、Event Sourcing、Command Bus 框架或物化视图基础设施。

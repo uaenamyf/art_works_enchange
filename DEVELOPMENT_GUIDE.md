@@ -1,9 +1,9 @@
 # CreatorHub 开发指南
 
-> 版本：1.0  
-> 状态：MVP 实施基线  
-> 产品：独立创作者作品交易社区  
-> 相关资料：[产品与技术设计](prd_tech_design.md)、[视觉设计系统](figma_design.md)、[OpenAPI 契约](docs/openapi.yaml)
+> 版本：1.0
+> 状态：MVP 实施基线
+> 产品：独立创作者作品交易社区
+> 相关资料：[产品与技术设计](prd_tech_design.md)、[视觉设计系统](figma_design.md)、[OpenAPI 契约](docs/openapi.yaml)、[API 手册](docs/api/README.md)
 
 ## 1. 文档目标
 
