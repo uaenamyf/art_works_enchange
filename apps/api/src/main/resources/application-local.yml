@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:creatorhub}
+    username: ${DB_USER:creatorhub}
+    password: ${DB_PASSWORD:creatorhub}
+    hikari:
+      maximum-pool-size: 10
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+logging:
+  level:
+    root: INFO
+    com.creatorhub: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: INFO
