@@ -1,0 +1,37 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+.pnpm-store/
+.pnpm-debug.log*
+
+# Next.js
+apps/web/.next/
+apps/web/out/
+
+# Java / Gradle
+apps/api/.gradle/
+apps/api/build/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Logs
+*.log
+logs/
+
+# Local env
+.env
+.env.local
+.env.*.local
+infra/.env
+
+# Coverage
+coverage/
+**/coverage/

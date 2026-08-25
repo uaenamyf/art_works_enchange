@@ -1,0 +1,13 @@
+packages:
+  - "apps/*"
+allowBuilds:
+  esbuild: set this to true or false
+  sharp: set this to true or false
+  unrs-resolver: set this to true or false
+
+# 允许 pnpm 11 默认拒绝的原生构建脚本执行（esbuild / sharp / unrs-resolver）
+# 由 Next 15 + Tailwind 工具链在 postinstall 调用，不可省略
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
+  - unrs-resolver
