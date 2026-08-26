@@ -6,6 +6,7 @@ import com.creatorhub.catalog.domain.repository.ArtworkRepository;
 import com.creatorhub.sharedkernel.UserId;
 import com.creatorhub.sharedkernel.domain.AppClock;
 import com.creatorhub.sharedkernel.domain.Money;
+import com.creatorhub.sharedkernel.error.BusinessError;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
@@ -57,6 +58,14 @@ public class ArtworkRepositoryAdapter implements ArtworkRepository {
       mapper.insert(row);
     } else if (mapper.updateById(row) != 1) {
       throw new IllegalStateException("Artwork optimistic lock conflict");
+    }
+    mediaMapper.deleteByArtworkId(row.getId());
+    for (int index = 0; index < artwork.mediaIds().size(); index++) {
+      if (mediaMapper.bindReadyMedia(
+              row.getId(), artwork.mediaIds().get(index), artwork.ownerId().value(), index)
+          != 1) {
+        throw new BusinessError("MEDIA_NOT_READY_OR_NOT_OWNED", "Artwork media is not ready");
+      }
     }
     return toDomain(mapper.findByIdValue(row.getId()), mediaMapper.findIdsByArtworkId(row.getId()));
   }

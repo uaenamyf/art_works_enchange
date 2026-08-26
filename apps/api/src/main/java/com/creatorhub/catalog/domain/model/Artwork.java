@@ -119,15 +119,23 @@ public final class Artwork extends AggregateRoot<ArtworkId> {
       throw new IllegalArgumentException("Stock is invalid");
     }
     this.stock = stock;
-    this.mediaIds = List.copyOf(Objects.requireNonNull(mediaIds, "mediaIds"));
-    if (this.mediaIds.size() > 12 || this.mediaIds.stream().anyMatch(Objects::isNull)) {
-      throw new IllegalArgumentException("Media set is invalid");
-    }
+    replaceMedia(mediaIds);
     this.updatedAt = Objects.requireNonNull(now, "now");
     if (status == ArtworkStatus.REJECTED) {
       status = ArtworkStatus.DRAFT;
     }
     version++;
+  }
+
+  /** 替换作品媒体集合；媒体 ID 必须唯一且数量不超过 12 张。 */
+  public void replaceMedia(List<UUID> mediaIds) {
+    List<UUID> normalized = List.copyOf(Objects.requireNonNull(mediaIds, "mediaIds"));
+    if (normalized.size() > 12
+        || normalized.stream().anyMatch(Objects::isNull)
+        || normalized.stream().distinct().count() != normalized.size()) {
+      throw new IllegalArgumentException("Media set is invalid");
+    }
+    this.mediaIds = normalized;
   }
 
   /** Creator 提交审核；没有媒体的作品不能进入审核队列。 */
