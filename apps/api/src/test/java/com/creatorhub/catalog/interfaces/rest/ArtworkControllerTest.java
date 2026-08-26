@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.creatorhub.catalog.application.port.in.ArtworkReviewUseCases;
 import com.creatorhub.catalog.application.port.in.ArtworkUseCases;
 import com.creatorhub.catalog.application.port.in.ArtworkUseCases.ArtworkView;
 import com.creatorhub.catalog.domain.model.ArtworkStatus;
@@ -48,6 +49,7 @@ class ArtworkControllerTest {
 
   @Autowired MockMvc mvc;
   @MockitoBean ArtworkUseCases artworks;
+  @MockitoBean ArtworkReviewUseCases reviews;
 
   @Test
   void ordinaryUserCannotCreateArtwork() throws Exception {
@@ -107,6 +109,48 @@ class ArtworkControllerTest {
         .andExpect(jsonPath("$.status").value("PUBLISHED"));
 
     verify(artworks).publish(userId, artworkId);
+  }
+
+  @Test
+  void creatorCannotApproveArtworkReview() throws Exception {
+    mvc.perform(
+            post("/api/v1/artworks/{artworkId}/review/approve", UUID.randomUUID())
+                .with(authentication(user(UUID.randomUUID(), "CREATOR")))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"reason\":\"looks good\"}"))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void adminCanApproveArtworkWithAuditReason() throws Exception {
+    UUID reviewerId = UUID.randomUUID();
+    UUID artworkId = UUID.randomUUID();
+    when(reviews.approve(reviewerId, artworkId, "meets policy"))
+        .thenReturn(view(artworkId, ArtworkStatus.APPROVED));
+
+    mvc.perform(
+            post("/api/v1/artworks/{artworkId}/review/approve", artworkId)
+                .with(authentication(user(reviewerId, "ADMIN")))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"reason\":\"meets policy\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("APPROVED"));
+
+    verify(reviews).approve(reviewerId, artworkId, "meets policy");
+  }
+
+  @Test
+  void adminReviewRequiresReason() throws Exception {
+    mvc.perform(
+            post("/api/v1/artworks/{artworkId}/review/reject", UUID.randomUUID())
+                .with(authentication(user(UUID.randomUUID(), "ADMIN")))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"reason\":\"\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
   }
 
   private static UsernamePasswordAuthenticationToken user(UUID userId, String role) {

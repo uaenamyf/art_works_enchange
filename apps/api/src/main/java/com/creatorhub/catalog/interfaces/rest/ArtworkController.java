@@ -1,5 +1,6 @@
 package com.creatorhub.catalog.interfaces.rest;
 
+import com.creatorhub.catalog.application.port.in.ArtworkReviewUseCases;
 import com.creatorhub.catalog.application.port.in.ArtworkUseCases;
 import com.creatorhub.catalog.application.port.in.ArtworkUseCases.ArtworkView;
 import com.creatorhub.catalog.application.port.in.ArtworkUseCases.WriteCommand;
@@ -29,9 +30,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class ArtworkController {
 
   private final ArtworkUseCases artworks;
+  private final ArtworkReviewUseCases reviews;
 
-  public ArtworkController(ArtworkUseCases artworks) {
+  public ArtworkController(ArtworkUseCases artworks, ArtworkReviewUseCases reviews) {
     this.artworks = artworks;
+    this.reviews = reviews;
   }
 
   /** 创建草稿；作品默认 DRAFT，不因创建成功直接公开。 */
@@ -77,6 +80,26 @@ public class ArtworkController {
     return ResponseEntity.ok(artworks.archive(userId, artworkId));
   }
 
+  /** 管理员批准作品；审核决定不能由 Creator 自己调用。 */
+  @PostMapping("/{artworkId}/review/approve")
+  @PreAuthorize("hasRole('ADMIN')")
+  ResponseEntity<ArtworkView> approve(
+      @AuthenticationPrincipal UUID reviewerId,
+      @PathVariable UUID artworkId,
+      @Valid @RequestBody ReviewRequest request) {
+    return ResponseEntity.ok(reviews.approve(reviewerId, artworkId, request.reason()));
+  }
+
+  /** 管理员拒绝作品；理由会写入审核审计记录。 */
+  @PostMapping("/{artworkId}/review/reject")
+  @PreAuthorize("hasRole('ADMIN')")
+  ResponseEntity<ArtworkView> reject(
+      @AuthenticationPrincipal UUID reviewerId,
+      @PathVariable UUID artworkId,
+      @Valid @RequestBody ReviewRequest request) {
+    return ResponseEntity.ok(reviews.reject(reviewerId, artworkId, request.reason()));
+  }
+
   /** 与 OpenAPI ArtworkWriteRequest 对齐的写入模型。 */
   record ArtworkWriteRequest(
       @NotBlank @Size(min = 2, max = 160) String title,
@@ -97,4 +120,7 @@ public class ArtworkController {
   record PriceRequest(
       @NotNull @DecimalMin(value = "0.01") BigDecimal amount,
       @NotBlank @Size(min = 3, max = 3) String currency) {}
+
+  /** 审核理由是审计记录必填字段，避免出现无法解释的状态变更。 */
+  record ReviewRequest(@NotBlank @Size(max = 2000) String reason) {}
 }
