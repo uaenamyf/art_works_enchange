@@ -13,9 +13,11 @@ export interface ErrorPageProps {
 
 export default function ErrorPage({ error, reset }: ErrorPageProps) {
   useEffect(() => {
-    // 在生产环境接入 Sentry 时把 error.digest 一并上报。
-    // 当前 Week 1-2 阶段只在控制台记录。
-    if (process.env.NODE_ENV !== "production") {
+    // SEC-WEB-005: do not gate on process.env.NODE_ENV — Next.js sets that
+    // automatically and we want a defence-in-depth check based on the
+    // application-level env instead. In production we will also forward
+    // `error.digest` to Sentry (when wired up).
+    if (process.env.NEXT_PUBLIC_APP_ENV === "development") {
       console.error("App error:", error);
     }
   }, [error]);

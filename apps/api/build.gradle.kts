@@ -2,6 +2,9 @@ plugins {
     java
     id("org.springframework.boot") version "3.5.5"
     id("io.spring.dependency-management") version "1.1.6"
+    // ENG-001: enforce formatting. AGENTS.md §8 expects `./gradlew spotlessCheck`
+    // in the standard verification set.
+    id("com.diffplug.spotless") version "6.25.0"
 }
 
 group = "com.creatorhub"
@@ -57,4 +60,16 @@ tasks.withType<Test> {
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
     options.compilerArgs.add("-parameters")
+}
+
+spotless {
+    java {
+        googleJavaFormat()
+        trimTrailingWhitespace()
+        endWithNewline()
+        // Skip generated sources; we only have hand-written code in Week 1-2
+        // but this guard prevents surprises once Flyway / MapStruct / JPA
+        // metamodel generation lands.
+        targetExclude("build/generated/**")
+    }
 }
