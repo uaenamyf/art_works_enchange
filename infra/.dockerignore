@@ -1,0 +1,46 @@
+# Build context exclusions for api.Dockerfile and web.Dockerfile.
+# Both Dockerfiles `COPY . ..` from the repo root, so anything not strictly
+# needed at build or runtime should be excluded to keep the build context small.
+
+# VCS
+.git
+.gitignore
+
+# Skills / agent meta (not part of the application)
+.CLAUDE
+.agent
+.github
+
+# Docs / planning (not needed at build or runtime)
+docs
+*.md
+README.md
+AGENTS.md
+DEVELOPMENT_GUIDE.md
+prd_tech_design.md
+figma_design.md
+tech_plan.md
+
+# Root-level dev artifacts
+.env
+.env.*
+.vscode
+.idea
+
+# JS / TS
+node_modules
+.pnpm-store
+.pnpm-debug.log*
+apps/web/.next
+apps/web/out
+apps/web/tsconfig.tsbuildinfo
+
+# Java / Gradle
+apps/api/.gradle
+apps/api/build
+**/build
+!gradle/wrapper/gradle-wrapper.jar
+
+# OS
+.DS_Store
+Thumbs.db

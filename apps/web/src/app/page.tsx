@@ -14,7 +14,7 @@ export default function DiscoverPage() {
   const popular = [...mockArtworks].reverse();
 
   return (
-    <div className="mx-auto w-full max-w-gallery px-6 py-10">
+    <div className="mx-auto w-full max-w-gallery px-6 py-16">
       <section className="mb-10 max-w-2xl">
         <h1 className="text-3xl text-ink-900 md:text-4xl">发现独立创作者</h1>
         <p className="mt-3 text-base text-ink-700">

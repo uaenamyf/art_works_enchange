@@ -84,18 +84,29 @@ CreatorHub 的工作流需要新增技能时：
 
 技能通过 Claude / Codex agent 的 `SKILL.md` 触发，无需手动调用。当任务匹配某个 skill 的 `description` 字段，agent 会自动加载对应 `SKILL.md` 及其子 `references/`。
 
-对 CreatorHub 真正可能用到的（按当前 Week 1-8 计划）：
+### 按相关性索引
 
-| 任务 | 可能用到的 skill（路径，相对 `.CLAUDE/skills/skills/`） | 备注 |
-| --- | --- | --- |
-| 把 Figma 设计稿落到代码 | `.curated/figma-implement-design/`、`.curated/figma-use/` | Week 5+ Studio 与 Discover 页面落地时 |
-| 写 E2E 测试 | `.curated/playwright/`、`.curated/playwright-interactive/` | Week 8+ 关键工作流（注册→下单→支付） |
-| Sentry 接入 | `.curated/sentry/` | Week 1-2 已留口子（`error.tsx`），接 Sentry 时启用 |
-| 安全评审 | `.curated/security-best-practices/`、`.curated/security-threat-model/` | Week 3 Identity + Week 7 Payment 上线前 |
-| 部署 | `.curated/vercel-deploy/`、`.curated/render-deploy/` | Web 端；API 端走 Docker Compose（见 `infra/compose.yaml`） |
-| 调试 / 文档查阅 | `.system/openai-docs/` | 按需 |
+| 任务 | Skill 路径（相对 `.CLAUDE/skills/skills/`） | 触发场景 | 何时不用 |
+| --- | --- | --- | --- |
+| 前端 / 后端安全审查 | `.curated/security-best-practices/` | 显式要求安全评审 / 修复 CVE | 一般代码 review |
+| 整体威胁建模 | `.curated/security-threat-model/` | Week 3 Identity / Week 7 Payment 上线前 | 一般架构总结 |
+| Figma 设计稿 → 组件代码 | `.curated/figma-implement-design/`、`.curated/figma-use/` | 写新 UI 组件、Studio / Discover 页面 | 仅修文案/改 prop |
+| E2E 关键工作流 | `.curated/playwright/`、`.curated/playwright-interactive/` | Week 8+ 注册→下单→支付测试 | 单元 / 组件测试 |
+| 接入 Sentry / 看错 | `.curated/sentry/` | Week 1-2 已留口子（`error.tsx`）| 不接 Sentry 时 |
+| 部署 Web | `.curated/vercel-deploy/` / `.curated/netlify-deploy/` / `.curated/render-deploy/` | 显式说"部署" | 本地用 `docker compose` |
+| 部署 Worker / 边缘 | `.curated/cloudflare-deploy/` | 边缘渲染需求 | 当前架构无此需求 |
+| 修 CI | `.curated/gh-fix-ci/` | CI 红灯需要修 | 当前未启 CI |
+| 处理 PR 评论 | `.curated/gh-address-comments/` | PR review 流 | 无 PR 时 |
+| 通用 OpenAI 文档 | `.system/openai-docs/` | 询问 Codex / 模型选择 | 与 OpenAI 无关 |
+| 创建新 skill | `.system/skill-creator/`、`.system/plugin-creator/`、`.system/skill-installer/` | 元工具 | 业务开发 |
 
-**未列出**的不代表禁用，但**默认不主动加载**——按需在 prompt 中点名（如「用 `cli-creator` 的方法帮我想 X」）。
+**不主动加载**：所有 skill 默认不主动跳进未相关任务。任务匹配 `description` 字段时由 agent 自己加载，或在 prompt 中点名。
+
+### 已确认与 CreatorHub 不相关的 skill（避免误用）
+
+`aspnet-core`（.NET 而非 Java Spring）、`winui-app`（Windows 桌面）、`chatgpt-apps`（ChatGPT App SDK）、`cli-creator`（CLI 工具）、`hatch-pet`（养宠 demo）、`jupyter-notebook`、`linear`（工单系统）、`migrate-to-codex`、`notion-*`（Notion 工作流）、`pdf`（PDF 处理）、`screenshot`（OS 截屏）、`security-ownership-map`（git 拓扑分析）、`speech` / `transcribe`（语音）、`figma-create-new-file` / `figma-generate-library` / `figma-create-design-system-rules` / `figma-code-connect-components` / `figma-generate-design`（设计库维护，与实现无关）、`imagegen`（.system 图像生成）。
+
+更详细的 42 个 skill 总览见 `.CLAUDE/SKILLS-INDEX.md`。
 
 ## 与 CreatorHub 边界规则
 

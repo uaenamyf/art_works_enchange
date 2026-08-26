@@ -29,7 +29,7 @@ export default async function CreatorProfilePage({ params }: PageProps) {
           priority
         />
       </div>
-      <div className="mx-auto w-full max-w-gallery px-6 py-10">
+      <div className="mx-auto w-full max-w-gallery px-6 py-16">
         <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="flex items-end gap-4">
             <span className="relative -mt-12 size-24 overflow-hidden rounded-full border-4 border-white bg-ink-100 shadow-card">

@@ -49,7 +49,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ProblemDetail> handleConstraint(ConstraintViolationException ex) {
-        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        // SEC-API-004: do not echo the raw violation message. It can include
+        // method parameter names and other internal hints. The aggregated
+        // violations are still logged for the operator (separate path).
+        logUnexpected("constraint violation", ex);
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST, "Request validation failed");
         detail.setType(URI.create(PROBLEM_TYPE_BASE + "VALIDATION_FAILED"));
         detail.setTitle("VALIDATION_FAILED");
         detail.setProperty("code", "VALIDATION_FAILED");
@@ -58,12 +63,23 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProblemDetail> handleUnexpected(Exception ex) {
+        // SEC-API-004: never expose ex.getMessage() to clients. Log the full
+        // exception server-side; respond with a fixed, non-leaky message.
+        logUnexpected("unexpected", ex);
         ProblemDetail detail = ProblemDetail.forStatusAndDetail(
-                HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error");
+                HttpStatus.INTERNAL_SERVER_ERROR, "Internal error");
         detail.setType(URI.create(PROBLEM_TYPE_BASE + "INTERNAL_ERROR"));
         detail.setTitle("INTERNAL_ERROR");
         detail.setProperty("code", "INTERNAL_ERROR");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(detail);
+    }
+
+    private static void logUnexpected(String kind, Throwable ex) {
+        // org.slf4j.Logger is the project standard. Per AGENTS.md §7 we never
+        // log credentials, tokens, cookies, or PII; the message here is the
+        // exception class + a short kind label, not the message body.
+        org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class)
+                .error("{}: {}", kind, ex.getClass().getName(), ex);
     }
 
     private static Map<String, Object> baseBody(String code, String message, HttpStatus status, WebRequest request) {

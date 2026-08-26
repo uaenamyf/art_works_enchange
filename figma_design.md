@@ -509,6 +509,22 @@ Avatar:
 
 ---
 
+## 5.1 ⚠️ CreatorHub 实际 token 偏离
+
+> 本节与 `AGENTS.md §5 UI 规则` 冲突，按仓库规范以 AGENTS.md 为准。
+> 设计稿的 16/24/32px 圆角方案在 CreatorHub 中**不适用**。
+
+实际值：
+
+- 卡片圆角：上限 **8px**（AGENTS.md §5 规定，不嵌套卡片）
+- 按钮圆角：同 8px
+- Pill（圆形徽标）：按 999px 用 `rounded-full`（不冲突）
+
+> 调整视觉时请保留卡片"有角"的高级感，避免使用大圆角导致像营销卡片。
+> 改设计后请同步更新 `apps/web/tailwind.config.ts` 的 `borderRadius.token` 与 `apps/web/src/styles/globals.css` 的 `--radius-token`。
+
+---
+
 # 6. Shadow System
 
 避免强阴影。

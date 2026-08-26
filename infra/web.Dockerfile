@@ -14,6 +14,11 @@ COPY --from=deps /workspace/apps/web/node_modules ./apps/web/node_modules
 COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
 COPY apps/web apps/web
 ENV NEXT_TELEMETRY_DISABLED=1
+# NEXT_PUBLIC_* env vars are inlined into the browser bundle at build time,
+# so the API base URL must be set BEFORE `next build`, not at runtime.
+# Override in docker compose / CI to point at the correct API host.
+ARG NEXT_PUBLIC_API_BASE_URL=http://api:8080
+ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
 RUN corepack enable && pnpm --filter @creatorhub/web build
 
 # ---- runtime stage ----
