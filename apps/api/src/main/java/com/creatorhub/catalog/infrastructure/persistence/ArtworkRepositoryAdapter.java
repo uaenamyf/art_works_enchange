@@ -14,21 +14,23 @@ import org.springframework.stereotype.Repository;
 public class ArtworkRepositoryAdapter implements ArtworkRepository {
 
   private final ArtworkMapper mapper;
+  private final ArtworkMediaMapper mediaMapper;
 
-  public ArtworkRepositoryAdapter(ArtworkMapper mapper) {
+  public ArtworkRepositoryAdapter(ArtworkMapper mapper, ArtworkMediaMapper mediaMapper) {
     this.mapper = mapper;
+    this.mediaMapper = mediaMapper;
   }
 
   @Override
   public Optional<Artwork> findById(ArtworkId id) {
     return Optional.ofNullable(mapper.findByIdValue(id.value()))
-        .map(ArtworkRepositoryAdapter::toDomain);
+        .map(row -> toDomain(row, mediaMapper.findIdsByArtworkId(row.getId())));
   }
 
   @Override
   public Optional<Artwork> findByOwnerId(UserId ownerId, ArtworkId id) {
     return Optional.ofNullable(mapper.findByOwnerId(ownerId.value(), id.value()))
-        .map(ArtworkRepositoryAdapter::toDomain);
+        .map(row -> toDomain(row, mediaMapper.findIdsByArtworkId(row.getId())));
   }
 
   @Override
@@ -56,10 +58,11 @@ public class ArtworkRepositoryAdapter implements ArtworkRepository {
     } else if (mapper.updateById(row) != 1) {
       throw new IllegalStateException("Artwork optimistic lock conflict");
     }
-    return toDomain(mapper.findByIdValue(row.getId()));
+    return toDomain(mapper.findByIdValue(row.getId()), mediaMapper.findIdsByArtworkId(row.getId()));
   }
 
-  private static Artwork toDomain(ArtworkPersistenceRow row) {
+  private static Artwork toDomain(
+      ArtworkPersistenceRow row, java.util.List<java.util.UUID> mediaIds) {
     return Artwork.reconstitute(
         ArtworkId.of(row.getId()),
         UserId.of(row.getOwnerId()),
@@ -69,7 +72,7 @@ public class ArtworkRepositoryAdapter implements ArtworkRepository {
         row.getCategory(),
         Money.of(row.getPriceAmount().toPlainString(), row.getPriceCurrency()),
         row.getStock(),
-        java.util.List.of(),
+        mediaIds,
         row.getStatus(),
         row.getVersion(),
         row.getCreatedAt(),
