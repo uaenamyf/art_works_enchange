@@ -12,7 +12,7 @@ public interface ArtworkUseCases {
 
   ArtworkView getPublished(UUID artworkId);
 
-    ArtworkView getOwned(UUID userId, UUID artworkId);
+  ArtworkView getOwned(UUID userId, UUID artworkId);
 
   ArtworkView update(UUID userId, UUID artworkId, WriteCommand command);
 
