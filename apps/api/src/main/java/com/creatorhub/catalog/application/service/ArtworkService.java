@@ -55,6 +55,12 @@ public class ArtworkService implements ArtworkUseCases {
   }
 
   @Override
+  @Transactional(readOnly = true)
+  public ArtworkView getOwned(UUID userId, UUID artworkId) {
+    return view(owned(userId, artworkId));
+  }
+
+  @Override
   public ArtworkView update(UUID userId, UUID artworkId, WriteCommand command) {
     Artwork artwork = owned(userId, artworkId);
     if (artwork.version() != command.version()) {

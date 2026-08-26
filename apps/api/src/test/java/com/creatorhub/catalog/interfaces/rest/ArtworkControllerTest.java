@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -33,7 +34,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 /** 验证作品写接口的 Creator 权限、嵌套金额校验和发布用例转发。 */
 @WebMvcTest(
-    controllers = ArtworkController.class,
+  controllers = {ArtworkController.class, StudioArtworkController.class},
     properties = {
       "creatorhub.security.jwt.secret=change-me-please-change-me-please-32bytes",
       "creatorhub.security.jwt.issuer=creatorhub",
@@ -123,6 +124,21 @@ class ArtworkControllerTest {
         .andExpect(jsonPath("$.status").value("PUBLISHED"));
 
     verify(artworks).getPublished(artworkId);
+  }
+
+  @Test
+  void creatorCanReadOwnedArtworkForStudioEditing() throws Exception {
+    UUID userId = UUID.randomUUID();
+    UUID artworkId = UUID.randomUUID();
+    when(artworks.getOwned(userId, artworkId)).thenReturn(view(artworkId, ArtworkStatus.DRAFT));
+
+    mvc.perform(
+            get("/api/v1/studio/artworks/{artworkId}", artworkId)
+                .with(authentication(user(userId, "CREATOR"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("DRAFT"));
+
+    verify(artworks).getOwned(userId, artworkId);
   }
 
   @Test

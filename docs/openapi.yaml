@@ -863,6 +863,28 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+  /studio/artworks/{artworkId}:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+      - $ref: '#/components/parameters/ArtworkId'
+    get:
+      tags: [Studio]
+      operationId: getStudioArtwork
+      summary: 获取自己作品的编辑视图（Week 4）
+      description: 仅返回当前 Creator 自己的作品，包含草稿和审核状态，不能用于公开浏览。
+      responses:
+        '200':
+          description: Studio 作品详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /studio/orders:
     parameters:
       - $ref: '#/components/parameters/RequestId'
