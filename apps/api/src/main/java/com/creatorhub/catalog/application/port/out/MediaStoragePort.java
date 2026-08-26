@@ -12,5 +12,7 @@ public interface MediaStoragePort {
 
   boolean exists(String objectKey);
 
+  String presignGet(String objectKey, String contentType, Instant expiresAt);
+
   record PresignedUpload(String uploadUrl, String method, String contentType, Instant expiresAt) {}
 }

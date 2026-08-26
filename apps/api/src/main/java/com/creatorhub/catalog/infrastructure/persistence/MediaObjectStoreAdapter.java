@@ -3,6 +3,7 @@ package com.creatorhub.catalog.infrastructure.persistence;
 import com.creatorhub.catalog.application.port.out.MediaObjectStore;
 import com.creatorhub.sharedkernel.error.BusinessError;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
 
@@ -51,5 +52,11 @@ public class MediaObjectStoreAdapter implements MediaObjectStore {
   @Override
   public boolean markReady(UUID mediaId, UUID ownerId, Instant uploadedAt) {
     return mapper.markReady(mediaId, ownerId, uploadedAt) == 1;
+  }
+
+  @Override
+  public Optional<PublicMedia> findPublished(UUID mediaId) {
+    return Optional.ofNullable(mapper.findPublished(mediaId))
+        .map(row -> new PublicMedia(row.id(), row.objectKey(), row.contentType()));
   }
 }

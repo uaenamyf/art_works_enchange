@@ -8,10 +8,13 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
@@ -76,5 +79,22 @@ public class S3MediaStorageAdapter implements MediaStoragePort {
     } catch (RuntimeException ex) {
       return false;
     }
+  }
+
+  @Override
+  public String presignGet(String objectKey, String contentType, Instant expiresAt) {
+    GetObjectRequest getObject =
+        GetObjectRequest.builder()
+            .bucket(bucket)
+            .key(objectKey)
+            .responseContentType(contentType)
+            .build();
+    GetObjectPresignRequest presignRequest =
+        GetObjectPresignRequest.builder()
+            .signatureDuration(Duration.between(Instant.now(), expiresAt))
+            .getObjectRequest(getObject)
+            .build();
+    PresignedGetObjectRequest signed = presigner.presignGetObject(presignRequest);
+    return signed.url().toString();
   }
 }

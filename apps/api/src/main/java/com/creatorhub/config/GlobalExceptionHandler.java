@@ -33,6 +33,7 @@ public class GlobalExceptionHandler {
           case "RATE_LIMITED" -> HttpStatus.TOO_MANY_REQUESTS;
           case "CREATOR_NOT_FOUND" -> HttpStatus.NOT_FOUND;
           case "ARTWORK_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+          case "MEDIA_NOT_FOUND" -> HttpStatus.NOT_FOUND;
           case "ARTWORK_VERSION_CONFLICT" -> HttpStatus.CONFLICT;
           default -> HttpStatus.BAD_REQUEST;
         };

@@ -10,6 +10,7 @@ import com.creatorhub.sharedkernel.error.BusinessError;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -105,6 +106,11 @@ class MediaUploadServiceTest {
       markReadyCalled = true;
       return true;
     }
+
+    @Override
+    public Optional<PublicMedia> findPublished(UUID mediaId) {
+      return Optional.empty();
+    }
   }
 
   private static final class RecordingStorage implements MediaStoragePort {
@@ -122,6 +128,11 @@ class MediaUploadServiceTest {
     @Override
     public boolean exists(String objectKey) {
       return exists;
+    }
+
+    @Override
+    public String presignGet(String objectKey, String contentType, Instant expiresAt) {
+      throw new UnsupportedOperationException("Public media reads are not used in upload tests");
     }
   }
 }

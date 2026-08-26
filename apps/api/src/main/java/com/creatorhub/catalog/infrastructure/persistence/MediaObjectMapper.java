@@ -12,6 +12,19 @@ import org.apache.ibatis.annotations.Update;
 @Mapper
 interface MediaObjectMapper extends BaseMapper<MediaObjectPersistenceRow> {
 
+  /** 只有绑定到已发布作品的 READY 媒体才允许生成公开读取地址。 */
+  @Select(
+      """
+      SELECT mo.id, mo.object_key, mo.content_type
+      FROM media_objects mo
+      JOIN artwork_media am ON am.id = mo.id
+      JOIN artworks a ON a.id = am.artwork_id
+      WHERE mo.id = #{mediaId}
+        AND mo.upload_status = 'READY'
+        AND a.status = 'PUBLISHED'
+      """)
+  MediaPublicPersistenceRow findPublished(@Param("mediaId") UUID mediaId);
+
   /** 只返回当前用户仍可确认的待上传对象 key。 */
   @Select(
       """

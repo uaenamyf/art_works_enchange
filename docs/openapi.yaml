@@ -621,6 +621,36 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /media/{mediaId}:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      tags: [Media]
+      operationId: getPublishedMedia
+      summary: 获取已发布作品的媒体地址（Week 4）
+      security: []
+      parameters:
+        - name: mediaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 短期媒体读取地址
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, url, contentType, expiresAt]
+                properties:
+                  id: { type: string, format: uuid }
+                  url: { type: string, format: uri }
+                  contentType: { type: string }
+                  expiresAt: { type: string, format: date-time }
+        '404':
+          $ref: '#/components/responses/NotFound'
   /favorites/{artworkId}:
     parameters:
       - $ref: '#/components/parameters/RequestId'
