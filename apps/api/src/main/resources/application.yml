@@ -82,3 +82,10 @@ creatorhub:
       ip:
         limit: 30
         window-seconds: 60
+  storage:
+    endpoint: ${S3_ENDPOINT:http://localhost:9000}
+    region: ${S3_REGION:us-east-1}
+    bucket: ${S3_BUCKET:creatorhub-media}
+    access-key: ${S3_ACCESS_KEY:creatorhub}
+    secret-key: ${S3_SECRET_KEY:creatorhub-secret}
+    upload-url-ttl-seconds: 900

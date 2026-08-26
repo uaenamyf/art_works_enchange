@@ -79,6 +79,17 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(detail);
   }
 
+  /** 领域值对象拒绝客户端输入时返回统一校验错误，而不是暴露为服务器故障。 */
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<ProblemDetail> handleIllegalArgument(IllegalArgumentException ex) {
+    ProblemDetail detail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Request validation failed");
+    detail.setType(URI.create(PROBLEM_TYPE_BASE + "VALIDATION_FAILED"));
+    detail.setTitle("VALIDATION_FAILED");
+    detail.setProperty("code", "VALIDATION_FAILED");
+    return ResponseEntity.badRequest().body(detail);
+  }
+
   @ExceptionHandler(ConstraintViolationException.class)
   public ResponseEntity<ProblemDetail> handleConstraint(ConstraintViolationException ex) {
     // 不回显原始约束消息，避免暴露方法参数名和内部实现提示。

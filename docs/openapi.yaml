@@ -597,6 +597,30 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+  /media/{mediaId}/confirm:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      tags: [Media]
+      operationId: confirmMediaUpload
+      summary: 确认媒体上传完成（Week 4）
+      description: 服务端确认对象存储中存在对象后，媒体才可绑定到作品。
+      parameters:
+        - name: mediaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: 媒体已标记为 READY
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /favorites/{artworkId}:
     parameters:
       - $ref: '#/components/parameters/RequestId'
