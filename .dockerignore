@@ -1,6 +1,4 @@
-# Build context exclusions for api.Dockerfile and web.Dockerfile.
-# Both Dockerfiles `COPY . ..` from the repo root, so anything not strictly
-# needed at build or runtime should be excluded to keep the build context small.
+# Docker build context is the repository root for both images.
 
 # VCS
 .git

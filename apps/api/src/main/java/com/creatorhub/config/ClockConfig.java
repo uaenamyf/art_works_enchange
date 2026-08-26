@@ -36,7 +36,10 @@ public class ClockConfig {
         // JWT_SECRET we want to fail loudly rather than silently accept weak
         // signing material. Dev / test profiles keep the placeholder for
         // local convenience.
-        boolean isProduction = isProfileActive("production") || isProfileActive("docker");
+        // "docker" describes the runtime topology, not the security
+        // environment. Docker-only development may use the placeholder;
+        // production deployments must also activate the "production" profile.
+        boolean isProduction = isProfileActive("production");
         if (!isProduction) {
             return;
         }

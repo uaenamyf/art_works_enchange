@@ -16,11 +16,9 @@ node_modules/
 apps/web/.next/
 apps/web/out/
 
-# Java / Gradle
-apps/api/.gradle/
-apps/api/build/
-**/build/
-!gradle/wrapper/gradle-wrapper.jar
+# Java / Maven
+apps/api/target/
+apps/api/.mvn/wrapper/maven-wrapper.jar
 
 # Logs
 *.log

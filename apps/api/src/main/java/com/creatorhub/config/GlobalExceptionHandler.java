@@ -81,6 +81,4 @@ public class GlobalExceptionHandler {
         org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class)
                 .error("{}: {}", kind, ex.getClass().getName(), ex);
     }
-
-    private static Map<String, Object> baseBody(String code, String message, HttpStatus status, WebRequest request) {
-        Map<String, Object> body = new LinkedHashMap<>();
+}

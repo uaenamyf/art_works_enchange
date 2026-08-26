@@ -1,25 +1,28 @@
-# syntax=docker/dockerfile:1.7
-# ---- deps stage ----
-FROM node:22-alpine AS deps
-WORKDIR /workspace
-COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
-COPY apps/web/package.json apps/web/package.json
-RUN corepack enable && pnpm install --frozen-lockfile || pnpm install
-
 # ---- build stage ----
 FROM node:22-alpine AS build
 WORKDIR /workspace
-COPY --from=deps /workspace/node_modules ./node_modules
-COPY --from=deps /workspace/apps/web/node_modules ./apps/web/node_modules
-COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+ARG NPM_REGISTRY=https://registry.npmmirror.com
+ENV npm_config_registry=${NPM_REGISTRY}
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY apps/web/package.json apps/web/package.json
+RUN --mount=type=cache,id=creatorhub-pnpm-store,target=/pnpm/store \
+  corepack enable \
+  && pnpm install --frozen-lockfile \
+    --registry=${NPM_REGISTRY} \
+    --config.node-linker=hoisted
+
 COPY apps/web apps/web
 ENV NEXT_TELEMETRY_DISABLED=1
 # NEXT_PUBLIC_* env vars are inlined into the browser bundle at build time,
-# so the API base URL must be set BEFORE `next build`, not at runtime.
-# Override in docker compose / CI to point at the correct API host.
-ARG NEXT_PUBLIC_API_BASE_URL=http://api:8080
+# so this must be a browser-reachable URL, not the Docker-only `api` hostname.
+ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
-RUN corepack enable && pnpm --filter @creatorhub/web build
+ENV API_INTERNAL_BASE_URL=http://api:8080
+RUN --mount=type=cache,id=creatorhub-pnpm-store,target=/pnpm/store \
+  corepack enable \
+  && pnpm --filter @creatorhub/web build
 
 # ---- runtime stage ----
 FROM node:22-alpine
@@ -27,13 +30,13 @@ RUN addgroup -S creatorhub && adduser -S -G creatorhub -u 1001 creatorhub
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-COPY --from=build /workspace/apps/web/.next ./apps/web/.next
-COPY --from=build /workspace/apps/web/public ./apps/web/public
-COPY --from=build /workspace/apps/web/package.json ./apps/web/package.json
-COPY --from=build /workspace/node_modules ./node_modules
+ENV API_INTERNAL_BASE_URL=http://api:8080
+COPY --from=build --chown=creatorhub:creatorhub /workspace/apps/web/.next/standalone ./
+COPY --from=build --chown=creatorhub:creatorhub /workspace/apps/web/.next/static ./apps/web/.next/static
 USER creatorhub
 EXPOSE 3000
 HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=10 \
   CMD wget -qO- http://localhost:3000/ >/dev/null 2>&1 || exit 1
-WORKDIR /app/apps/web
-CMD ["node", "node_modules/next/dist/bin/next", "start", "-p", "3000"]
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
+CMD ["node", "apps/web/server.js"]
