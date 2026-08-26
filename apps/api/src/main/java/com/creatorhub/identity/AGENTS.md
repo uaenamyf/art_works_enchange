@@ -25,14 +25,15 @@
 
 - `domain` 纯 Java：密码仅存 Argon2id，禁用用户不能登录。
 - 限流只针对登录/注册/刷新/注销，Order/Payment 限流在各自上下文。
-- `interfaces/dto` 与 `domain/model` 显式转换；不返回 JPA Entity。
+- `interfaces/dto`、`infrastructure/persistence` 的 Row/DO 与 `domain/model` 显式转换；不返回 PersistenceRow/DO。
+- Refresh Token 轮换查询必须在 Mapper XML 中使用 PostgreSQL `FOR UPDATE`，禁止用 Wrapper 拼接锁语义。
 - 禁止在 Cookie 中放置 Access Token；Refresh Cookie 属性遵守 §8 描述。
 
 ## 常用命令
 
 ```bash
 cd apps/api
-./gradlew test --tests 'com.creatorhub.identity.*'
+mvn -Dtest='com.creatorhub.identity.**.*Test' test
 ```
 
 ## 交叉引用

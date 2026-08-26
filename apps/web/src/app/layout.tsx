@@ -25,6 +25,7 @@ export const metadata: Metadata = {
   description: APP_DESCRIPTION
 };
 
+/** 设置中文文档语言、全局字体变量，并挂载站点公共壳层。 */
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="zh-CN" className={`${inter.variable} ${serif.variable}`}>

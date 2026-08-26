@@ -13,6 +13,10 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+/**
+ * 作品详情服务端页面：解析动态 ID、缺失资源返回 404，并组合创作者与相关作品只读视图。
+ * 当前数据来自 Mock；Week 4 接入生成的 OpenAPI 客户端后整体替换。
+ */
 export default async function ArtworkDetailPage({ params }: PageProps) {
   const { id } = await params;
   const artwork = findArtwork(id);
@@ -49,6 +53,7 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
               {artwork.isForSale ? formatPrice(artwork.priceCents, artwork.currency) : "非卖品"}
             </p>
             <div className="mt-4 flex flex-col gap-2">
+              {/* Week 2 占位操作：尚未创建订单、收藏或分享副作用。 */}
               <Button size="lg">立即购买</Button>
               <div className="grid grid-cols-2 gap-2">
                 <Button variant="secondary" leftIcon={<Heart className="size-4" />}>

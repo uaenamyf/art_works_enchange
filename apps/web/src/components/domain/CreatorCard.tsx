@@ -9,6 +9,9 @@ export interface CreatorCardProps {
   className?: string;
 }
 
+/**
+ * 创作者摘要卡片，整卡导航到公开主页；封面承担可访问名称，头像在已有文本上下文中作为装饰图。
+ */
 export function CreatorCard({ creator, className }: CreatorCardProps) {
   return (
     <Link

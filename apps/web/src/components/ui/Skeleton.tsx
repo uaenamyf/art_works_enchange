@@ -6,6 +6,7 @@ export interface SkeletonProps {
   aspect?: "4/5" | "16/9" | "1/1";
 }
 
+/** 纯视觉加载占位；不承载业务状态，并通过 aria-hidden 对辅助技术隐藏。 */
 export function Skeleton({ className, aspect }: SkeletonProps) {
   return (
     <div

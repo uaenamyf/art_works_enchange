@@ -104,6 +104,7 @@ Webhook 端点（`/payments/webhooks/stripe`）**不走** Bearer 也不走 Cooki
 - 同一 IP 登录：5 次 / 分钟
 - 同一邮箱登录：10 次 / 小时
 - 同一 IP 注册：3 次 / 小时
+- 同一 IP 刷新：30 次 / 分钟
 
 超限返回 `429 Too Many Requests`，Problem Details `code = "RATE_LIMITED"`。
 
@@ -190,7 +191,8 @@ sequenceDiagram
 
 ## 5. 端点速查（按限界上下文）
 
-> Week 1-2 仅完成工程基座，**所有业务端点尚未实现**。本节是 MVP 全量设计，标注每个端点预计落地的里程碑。
+> Week 3 已实现 Identity 注册/登录/刷新/注销/当前用户与 Creator 申请/更新/公开详情。
+> 其余端点仍是 MVP 全量设计，按表内里程碑逐步落地。
 >
 > 路径前缀 `/api/v1` 全部省略；服务器列表见 §3.1。
 

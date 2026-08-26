@@ -9,9 +9,6 @@ spring:
       port: 6379
   flyway:
     enabled: false
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
 
 logging:
   level:

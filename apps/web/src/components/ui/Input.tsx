@@ -8,6 +8,10 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
 }
 
+/**
+ * 表单输入基础组件，统一关联 label、错误文本和无障碍属性，并透传 ref 给表单库。
+ * 当 label 缺失或可能重复时，调用方应显式传 id，避免生成重复的关联标识。
+ */
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   { label, hint, error, className, id, ...rest },
   ref

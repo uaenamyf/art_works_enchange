@@ -12,6 +12,10 @@ export interface ArtworkCardProps {
   priority?: boolean;
 }
 
+/**
+ * 作品摘要卡片，展示销售状态、价格和发布时间，并分别导航到作品与创作者页面。
+ * 心形只表达已收藏状态，不在卡片内部发起收藏 mutation。
+ */
 export function ArtworkCard({ artwork, className, priority }: ArtworkCardProps) {
   return (
     <article

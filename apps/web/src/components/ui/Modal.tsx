@@ -14,6 +14,10 @@ export interface ModalProps {
   footer?: ReactNode;
 }
 
+/**
+ * 受控模态框组件；打开状态由调用方持有，焦点锁定、Escape 关闭和语义关联委托给 Radix。
+ * 业务代码应通过 onOpenChange 更新状态，不直接操纵 DOM。
+ */
 export function Modal({ open, onOpenChange, title, description, children, footer }: ModalProps) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>

@@ -15,6 +15,7 @@ RUN --mount=type=cache,id=creatorhub-pnpm-store,target=/pnpm/store \
 
 COPY apps/web apps/web
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_OUTPUT=standalone
 # NEXT_PUBLIC_* env vars are inlined into the browser bundle at build time,
 # so this must be a browser-reachable URL, not the Docker-only `api` hostname.
 ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8080

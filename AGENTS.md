@@ -10,6 +10,13 @@
 4. 先定位直接控制行为的代码、邻近测试和现有模式，再提出最小修改。
 5. 工作区可能包含用户未提交的改动。不要覆盖、回退或格式化无关文件。
 
+### 代码注释规则
+
+- 新增或修改代码时，必须用中文注释说明类/接口职责、公开用例、领域不变量、关键分支、安全取舍和不直观的框架配置。
+- 修改既有文件时，同步补齐该文件中缺失的中文职责注释；Java 使用 Javadoc，TypeScript/TSX 使用 JSDoc 或紧邻关键逻辑的行注释。
+- Getter、简单赋值、显而易见的组件结构和能由清晰命名完整表达的代码不做逐行复述，避免注释与实现漂移。
+- 注释说明“为什么”和业务语义，不记录变更历史；变更原因由 Git commit 承担。
+
 ## 2. 固定技术边界
 
 - 后端：Java 21、Spring Boot 3、Maven、PostgreSQL、Redis、Flyway。
@@ -26,20 +33,22 @@
 - DDD 任务可参考 `ddd-domain-designer`、`ddd-architecture-hexagonal`、`ddd-event-storming`、`ddd-api-designer`、`ddd-cqrs-architecture`、`ddd-testing-strategist`，但只采用与本仓库技术边界一致的部分。
 - API 成功响应直接使用资源 DTO，错误使用 RFC 9457 Problem Details；禁止套用技能中的 `Result<T>`、数字错误码和每前端一个 BFF。
 - CQRS 限定为共享数据库的 L1 代码级读写分离。禁止自行引入读写数据库分离、Event Sourcing、Command Bus 框架或物化视图基础设施。
-- 禁止采用绑定 DDD4J、COLA、MyBatis、Sa-Token、微服务、Kafka 或 Kubernetes 的技能模板。
+- 禁止采用绑定 DDD4J、COLA、Sa-Token、微服务、Kafka 或 Kubernetes 的技能模板。MyBatis-Plus 只作为 infrastructure 层数据访问工具，不改变 DDD 分层和聚合边界。
 - 技能中的目录、依赖矩阵或代码模板与仓库规则冲突时，以 `DEVELOPMENT_GUIDE.md` 的端口归属和依赖方向为准，不得直接复制。
 
 ## 3. 后端规则
 
 - 先确定限界上下文、统一语言、聚合与不变量，再编写 Controller 或数据库表；禁止把 DDD 简化为目录命名。
 - 包按限界上下文组织，每个上下文使用 `domain/application/interfaces/infrastructure` 分层。Controller / ApplicationService / Repository Adapter 角色都存在，但 DDD 强制它们归属正确层并遵守依赖方向。
-- Domain 必须是纯 Java，不依赖 Spring、JPA、Redis、Stripe、S3 或 Web DTO。
+- Domain 必须是纯 Java，不依赖 Spring、MyBatis-Plus、Redis、Stripe、S3 或 Web DTO。
 - Controller 只做协议转换、校验和授权入口，调用 `application/port/in` 执行业务用例；不得直接调用 Repository、不得包含业务规则。
 - ApplicationService 只编排用例、事务和权限，不承载应属于聚合的业务规则；业务规则只写在 `domain/model` 聚合方法或 `domain/service` 中。
-- JPA Entity、API DTO 与领域模型三者分离并显式转换；Repository Adapter（DAO 实现）只能返回聚合根或值对象，禁止把 JPA Entity 透传到 application 或 interfaces。
+- PersistenceRow/DO、API DTO 与领域模型三者分离并显式转换；Repository Adapter 只能返回聚合根或值对象，禁止把 PersistenceRow/DO 透传到 application 或 interfaces。
+- MyBatis-Plus 的 `BaseMapper` 只能位于 `infrastructure/persistence` 并由 Repository Adapter 调用；Controller、ApplicationService 和 domain 禁止直接依赖 Mapper。
+- 简单单表 CRUD 可使用 `BaseMapper`/Wrapper；库存预占、Refresh Token 锁定、报表等关键 SQL 必须使用可审查的 Mapper XML 或显式 SQL，并有 PostgreSQL 集成测试。
 - Repository 是 domain 中按聚合根定义的端口，由 infrastructure 实现；不要为每张表机械创建 Repository。
 - 跨上下文只调用公开 application port 或消费领域事件，不直接使用其他上下文的 Repository、Entity 或数据表。
-- 跨上下文引用只使用强类型 ID 或不可变快照，禁止跨上下文 JPA 关联。
+- 跨上下文引用只使用强类型 ID 或不可变快照，禁止跨上下文访问 Mapper、PersistenceRow/DO 或数据表。
 - 聚合根负责不变量并暴露业务行为，不使用公共 setter 构造贫血模型。
 - 一个事务原则上只修改一个聚合；跨上下文副作用使用领域事件和 Outbox，消费者必须幂等。
 - Command 与 Query DTO 分离；查询模型只读，不复用聚合或写 DTO，不修改业务状态。
@@ -111,11 +120,10 @@ mvn test
 mvn spotless:check
 ```
 
-或从仓库根运行（多模块视感，便于 CI）：
+或显式指定 pom 跳过 `cd`（CI / 容器里常用）：
 
 ```bash
-mvn -pl apps/api -am test
-mvn -pl apps/api -am spotless:check
+mvn -B -ntp -f apps/api/pom.xml test
 ```
 
 前端常用验证：
@@ -126,7 +134,7 @@ pnpm lint
 pnpm typecheck
 pnpm test
 ```
-mvn -pl apps/api -am verify
+mvn -B -ntp -f apps/api/pom.xml verify
 
 契约与容器验证：
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { ROUTES } from "@/lib/config";
 
+/** App Router 统一 404 边界，为缺失作品/创作者提供返回首页入口。 */
 export default function NotFound() {
   return (
     <div className="mx-auto flex min-h-[60vh] w-full max-w-gallery flex-col items-center justify-center px-6 text-center">

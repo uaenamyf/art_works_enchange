@@ -141,9 +141,11 @@ if (process.env.NODE_ENV !== "production") {
 
 按 `security-best-practices` 的"先识别语言/框架再看 references"流程。后端是 Java + Spring Boot 3.5，**该 skill 不直接支持 Java**，但 `references/security-controls-and-assets.md` 与 `prompt-template.md`（来自 `security-threat-model`）通用。下面是按 Spring Boot 通用 OWASP Top 10 做的核查。
 
-### SEC-API-001 (Medium) — `ddl-auto: validate` 但无 Flyway migration
+### SEC-API-001 (已解决) — Flyway migration 已落地并移除 Hibernate ddl-auto
 
-**位置**：`apps/api/src/main/resources/application.yml:18-22`
+> 2026-08-26 更新：V1/V2 Flyway migration 已通过 PostgreSQL 17 Testcontainers；持久化层已迁移到 MyBatis-Plus，`spring.jpa.hibernate.ddl-auto` 已删除。以下保留原始审计证据，便于追溯。
+
+**原位置**：`apps/api/src/main/resources/application.yml:18-22`
 
 **证据**：
 
@@ -163,7 +165,7 @@ flyway:
 - `users` / `sessions` 表
 - 索引：email（unique）、refresh_token_hash
 
-**验证**：`./gradlew bootRun --args='--spring.profiles.active=local'` 应成功启动；Hibernate `validate` 通过。
+**验证**：`mvn -B -ntp -f apps/api/pom.xml -Dtest='UserRepositoryAdapterTest,CreatorRepositoryAdapterTest' test` 已通过；Flyway V1/V2 成功应用。
 
 ---
 
@@ -406,7 +408,7 @@ pnpm-lock.yaml.bak
 
 **位置**：`apps/api/build.gradle.kts`（缺）
 
-**证据**：AGENTS.md §8 提到 `./gradlew spotlessCheck`，但 `build.gradle.kts` 里没引入。
+**历史证据**：旧版 AGENTS.md §8 曾提到 `./gradlew spotlessCheck`，但旧版 `build.gradle.kts` 未引入。当前已迁移到 Maven，并由 `spotless-maven-plugin` 提供 `mvn spotless:check`。
 
 **影响**：无强制格式化 → PR 容易风格漂移。
 

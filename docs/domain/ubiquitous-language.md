@@ -18,7 +18,7 @@
 | 支付 | Payment | Payment | 外部支付提供商一次支付意图及其状态记录 | Order |
 | 履约 | Fulfillment | Ordering | 创作者接单、制作、发货和完成订单的过程 | Payment |
 | 领域事件 | DomainEvent | 单一上下文内部 | 聚合完成业务行为后产生的过去式事实 | 集成事件 |
-| 集成事件 | IntegrationEvent | 跨上下文 | 从领域事件转换出的稳定、版本化协作契约 | JPA Entity |
+| 集成事件 | IntegrationEvent | 跨上下文 | 从领域事件转换出的稳定、版本化协作契约 | PersistenceRow/DO |
 
 ## 命名规则
 

@@ -30,6 +30,10 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   rightIcon?: ReactNode;
 }
 
+/**
+ * 全站按钮基础组件，统一变体、尺寸、禁用态和 ref 透传。
+ * loading 会禁用点击以阻止重复提交；调用方仍应提供可感知的状态文案。
+ */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   {
     variant = "primary",

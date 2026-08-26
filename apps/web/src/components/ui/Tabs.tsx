@@ -17,6 +17,10 @@ export interface TabsProps {
   className?: string;
 }
 
+/**
+ * 基于 Radix 的无障碍页签，提供键盘切换和面板关联。
+ * defaultValue 仅控制初始非受控状态；空数组 fallback 不代表存在可选择页签。
+ */
 export function Tabs({ items, defaultValue, className }: TabsProps) {
   const fallback = useId();
   const initial = defaultValue ?? items[0]?.value ?? fallback;

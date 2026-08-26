@@ -29,6 +29,8 @@ export function isProblemDetails(value: unknown): value is ProblemDetails {
 }
 
 export function humanizeProblem(problem: ProblemDetails | null | undefined): string {
+  // 用户可见错误统一在此收口；未来业务码本地化不能散落到各页面。
+  // 服务端 detail 只在已知 Problem Details 边界内展示，缺失时使用固定通用文案。
   if (!problem) {
     return "请求失败，请稍后再试。";
   }

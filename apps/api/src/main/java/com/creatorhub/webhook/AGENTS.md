@@ -24,7 +24,7 @@
 
 ```bash
 cd apps/api
-./gradlew test --tests 'com.creatorhub.webhook.*'
+mvn -Dtest='com.creatorhub.webhook.**.*Test' test
 ```
 
 ## 交叉引用

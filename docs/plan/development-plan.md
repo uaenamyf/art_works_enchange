@@ -30,7 +30,7 @@
 
 1. **Contract first**：任何跨进程 API 先改 `docs/openapi.yaml`，CI 跑 `redocly lint`。
 2. **Domain first**：在 `apps/api` 先写聚合、值对象、领域事件、单元测试。
-3. **Adapter second**：application service + JPA/外部适配器 + Testcontainers 集成测试。
+3. **Adapter second**：application service + MyBatis-Plus/外部适配器 + Testcontainers 集成测试。
 4. **Interface last**：Controller、API DTO、Problem Details 映射、ArchUnit 边界测试。
 5. **Frontend follow**：用 OpenAPI 生成客户端，覆盖 loading/empty/error/success 四态。
 6. **E2E 校验**：关键路径 Playwright 全绿后，本周才视为完成。
@@ -53,8 +53,8 @@
 
 **后端**
 
-- Spring Boot 3 + Java 21 + Gradle（Kotlin DSL）。
-- 依赖：`spring-boot-starter-web`、`-security`、`-validation`、`-data-jpa`、`-actuator`、springdoc-openapi、flyway-core、postgresql、lettuce、jjwt、archunit-junit5、spring-modulith-test。
+- Spring Boot 3 + Java 21 + Maven。
+- 依赖：`spring-boot-starter-web`、`-security`、`-validation`、`-actuator`、MyBatis-Plus Boot 3 Starter、springdoc-openapi、flyway-core、postgresql、lettuce、jjwt、archunit-junit5、spring-modulith-test。
 - `CreatorHubApplication`、`sharedkernel` 骨架：`Money`、`AggregateRoot`、`DomainEvent`、`StrongId`、`Clock`。
 - 多 profile：`local` / `test` / `staging` / `production`。
 - ArchUnit 基线规则：domain 不依赖 infrastructure；interfaces 不直接读 domain。
@@ -72,7 +72,7 @@
 - `infra/compose.yaml`：`postgres`、`redis`、`minio`、`api`、`web`、健康检查、共享网络、卷。
 - `infra/env.example`，不含真实密钥。
 - Dockerfile（多阶段）。
-- GitHub Actions：`backend-ci`（Gradle 测试 + ArchUnit）、`frontend-ci`（pnpm lint/typecheck/test）、`contract-ci`（redocly lint）、`docker-ci`（compose build）。
+- GitHub Actions：`backend-ci`（Maven 测试 + ArchUnit）、`frontend-ci`（pnpm lint/typecheck/test）、`contract-ci`（redocly lint）、`docker-ci`（镜像构建）。
 
 **Week 1 验收**
 
@@ -228,7 +228,7 @@
 
 - 刷新后状态保持。
 - 幂等测试通过（重复 PUT/DELETE 返回相同结果）。
-- ArchUnit：collection 不直接 import catalog 的 JPA。
+- ArchUnit：collection 不直接 import catalog 的 Mapper、PersistenceRow/DO 或 infrastructure。
 
 ---
 
@@ -503,7 +503,7 @@ sharedkernel
 +| Stripe Webhook 重复 | Week 8 幂等测试 + 事件 ID 唯一索引 + 状态机守卫 |
 +| 上下文边界退化 | ArchUnit 在 CI 卡口，违反即失败 |
 +| 前端接口漂移 | OpenAPI 强制生成客户端 |
-+| 工具链不稳定 | 锁定 Node 22、pnpm 11、Java 21、Gradle Wrapper |
+| 工具链不稳定 | 锁定 Node 22、pnpm 11、Java 21、Maven 3.9 |
 +| 进度失控 | 每周五 scope review；超额需求强制进 Icebox |
 +| Creator 冷启动 | Week 14 前 1 周开始 BD 邀约 |
 

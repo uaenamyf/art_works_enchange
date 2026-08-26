@@ -25,7 +25,7 @@
 
 ```bash
 cd apps/api
-./gradlew test --tests 'com.creatorhub.config.*'
+mvn -Dtest='com.creatorhub.config.**.*Test' test
 ```
 
 ## 交叉引用

@@ -35,11 +35,11 @@
 
 ```bash
 cd apps/api
-./gradlew test --tests 'com.creatorhub.catalog.*'
+mvn -Dtest='com.creatorhub.catalog.**.*Test' test
 ```
 
 ## 交叉引用
 
 - Ordering：`StockAvailabilityPort` 在 `application/port/in` 暴露。
-- Creator：作品必须归属 `CreatorId`，禁止跨上下文 JPA 关联。
+- Creator：作品必须归属 `CreatorId`，禁止跨上下文访问 Mapper、PersistenceRow/DO 或数据库表。
 - Notification：消费 `ArtworkPublished`。

@@ -16,7 +16,7 @@
 5. `prd_tech_design.md` 与 `figma_design.md` 中的产品和视觉建议。
 6. `.agent/.skill` 下的通用技能参考。
 
-技能用于补充方法和检查清单，不得覆盖本项目已确定的架构、协议和安全决策。尤其不采用通用技能中的 `Result<T>` 成功响应包装、数字错误码、每端一个 BFF、微服务、Kafka、Event Sourcing、DDD4J、MyBatis 或 Sa-Token，除非用户批准对应 ADR。
+技能用于补充方法和检查清单，不得覆盖本项目已确定的架构、协议和安全决策。尤其不采用通用技能中的 `Result<T>` 成功响应包装、数字错误码、每端一个 BFF、微服务、Kafka、Event Sourcing、DDD4J 或 Sa-Token，除非用户批准对应 ADR。MyBatis-Plus 仅作为 infrastructure 层数据访问工具。
 
 MVP 目标是验证“发现作品 -> 了解创作者 -> 收藏/关注 -> 下单 -> 支付 -> 创作者履约”的闭环。首版不建设微服务、Kubernetes、Kafka、Elasticsearch和原生 App。
 
@@ -28,14 +28,14 @@ MVP 目标是验证“发现作品 -> 了解创作者 -> 收藏/关注 -> 下单
 | UI | Tailwind CSS 4、Radix UI、Lucide | 无障碍基础组件与统一图标 |
 | 请求与状态 | TanStack Query、React Hook Form、Zod | 服务端状态、表单与运行时校验 |
 | 后端 | Java 21、Spring Boot 3.5 | 单体应用、长期支持版本 JDK |
-| 后端组件 | Spring MVC、Security、Validation、Data JPA | REST、鉴权、校验、持久化 |
+| 后端组件 | Spring MVC、Security、Validation、MyBatis-Plus | REST、鉴权、校验、显式 SQL 持久化 |
 | 数据库 | PostgreSQL 17 | 业务事实数据与事务 |
 | 缓存 | Redis 8 | Refresh Token、热点数据、限流与幂等键 |
 | 对象存储 | S3 兼容存储；本地 MinIO | 图片直传与静态资源 |
 | 数据迁移 | Flyway | 只允许前向、可追踪的 Schema 迁移 |
 | 接口契约 | OpenAPI 3.1、springdoc-openapi | 设计优先并校验实现一致性 |
 | 测试 | JUnit 5、Testcontainers、Vitest、Playwright | 单元、集成、前端组件与关键路径 E2E |
-| 构建部署 | Gradle、pnpm、Docker Compose | 可复现构建和单机容器部署 |
+| 构建部署 | Maven、pnpm、Docker Compose | 可复现构建和单机容器部署 |
 
 不采用 Ant Design。消费者端需要鲜明的品牌视觉，Creator Studio 则使用相同 Token 构建更紧凑的操作界面，避免两套组件体系。
 
@@ -53,7 +53,7 @@ flowchart LR
     S -->|Webhook| B
 ```
 
-生产部署包含两个业务容器：`web` 与 `api`。Spring Boot 后端采用 DDD 模块化单体：一个进程、一个代码库、一个数据库，内部按限界上下文隔离。上下文之间只能通过公开的应用端口或领域事件协作，不能跨上下文直接访问 Repository、JPA Entity 或数据表。
+生产部署包含两个业务容器：`web` 与 `api`。Spring Boot 后端采用 DDD 模块化单体：一个进程、一个代码库、一个数据库，内部按限界上下文隔离。上下文之间只能通过公开的应用端口或领域事件协作，不能跨上下文直接访问 Repository、Mapper、PersistenceRow/DO 或数据表。
 
 ### 3.1 仓库建议结构
 
@@ -140,10 +140,10 @@ DDD 不是否定 Controller / Service / DAO，而是把它们按限界上下文�
 │   │   ├── command/               # 命令对象与命令处理器
 │   │   └── query/                 # 查询服务与只读 View
 │   ├── interfaces/
-│   │   ├── rest/                  # Controller、API DTO、Mapper
+│   │   ├── rest/                  # Controller、API DTO、DTO Converter
 │   │   └── dto/                   # 独立 DTO 包，避免与领域耦合
 │   └── infrastructure/
-│       ├── persistence/           # JPA Entity + Repository Adapter（“DAO 实现”）
+│       ├── persistence/           # PersistenceRow/DO + Mapper + Repository Adapter
 │       ├── messaging/             # Outbox 发布适配器
 │       ├── storage/               # S3/MinIO 适配器
 │       └── search/                # PostgreSQL FTS / pg_trgm 适配器
@@ -173,10 +173,11 @@ flowchart LR
     APPLICATION --> DOMAIN
 ```
 
-- `domain` 是纯 Java，不依赖 Spring MVC、JPA、Redis、Stripe 或 S3 SDK。
+- `domain` 是纯 Java，不依赖 Spring MVC、MyBatis-Plus、Redis、Stripe 或 S3 SDK。
 - `application/service` 编排用例、权限与事务，**不承载应属于聚合的业务规则**；业务规则只写在 `domain/model` 聚合方法或 `domain/service` 中。
 - `interfaces/rest` 负责协议转换；Controller 只依赖 `application/port/in`，不直接调用 Repository，不写业务逻辑。
-- `infrastructure/persistence` 实现 `domain/repository` 端口；JPA Entity 与领域模型分离，由 Adapter 映射，禁止把 Entity 透传到 Controller 或 application service。
+- `infrastructure/persistence` 实现 `domain/repository` 端口；PersistenceRow/DO 与领域模型分离，由 Adapter 显式映射，禁止把 Row/DO 透传到 Controller 或 application service。
+- Mapper 与 Mapper XML 只存在于 `infrastructure/persistence`。简单 CRUD 可使用 MyBatis-Plus `BaseMapper`/Wrapper；库存预占、Refresh Token 锁定、报表等关键 SQL 使用显式 XML 并由 PostgreSQL Testcontainers 验证。
 - 查询侧可直接生成只读 View/Projection，但不能借此绕过写模型的不变量。
 - 使用 ArchUnit 或 Spring Modulith 测试约束：Controller 不能 import Repository、domain 不能 import infrastructure、跨上下文只能 import 对方的 `application/port/in`
 
@@ -188,13 +189,13 @@ flowchart LR
     APPLICATION --> DOMAIN
 ```
 
-- `domain` 是纯 Java，不依赖 Spring MVC、JPA、Redis、Stripe 或 S3 SDK。
+- `domain` 是纯 Java，不依赖 Spring MVC、MyBatis-Plus、Redis、Stripe 或 S3 SDK。
 - `application` 编排用例、权限与事务，不承载应属于聚合的业务规则。
 - `interfaces` 负责协议转换；Controller 只依赖输入端口，不直接调用仓储。
-- `infrastructure` 实现仓储和外部端口。JPA Entity 与领域模型分离，由适配器映射。| Controller（“C”） | `interfaces/rest` | 协议转换、授权入口；不得依赖 Repository |
+- `infrastructure` 实现仓储和外部端口。PersistenceRow/DO 与领域模型分离，由适配器映射。| Controller（“C”） | `interfaces/rest` | 协议转换、授权入口；不得依赖 Repository 或 Mapper |
 | ApplicationService（“S”） | `application/service` | 编排用例与事务；不写业务规则 |
-| Repository Adapter（DAO 实现） | `infrastructure/persistence` | 实现 `domain/repository` 端口；返回聚合根，不返回 JPA Entity |
-| JPA Entity | `infrastructure/persistence` | 与领域模型分离，禁止进入 application/interfaces |- 查询侧可直接生成只读 View/Projection，但不能借此绕过写模型的不变量。
+| Repository Adapter（DAO 实现） | `infrastructure/persistence` | 实现 `domain/repository` 端口；返回聚合根，不返回 PersistenceRow/DO |
+| PersistenceRow/DO + Mapper | `infrastructure/persistence` | 与领域模型分离，禁止进入 application/interfaces；关键 SQL 使用 XML |- 查询侧可直接生成只读 View/Projection，但不能借此绕过写模型的不变量。
 - 使用 ArchUnit 或 Spring Modulith 测试约束上下文边界和依赖方向。
 
 端口归属以本表为准，不直接复制通用技能中的目录或 ArchUnit 矩阵：
@@ -225,7 +226,7 @@ MVP 只采用 L1 CQRS：Command 与 Query 在代码和 DTO 上分离，共享 Po
 - 只能通过聚合根修改聚合内部状态；聚合对外暴露表达业务意图的方法，如 `publish()`、`reserveStock()`、`markPaid()`，不暴露公共 setter。
 - 一个事务原则上只修改一个聚合。确需跨聚合一致性时，由应用服务协调，并优先通过领域事件实现最终一致。
 - Repository 以聚合根为单位定义在 domain，方法使用领域语言，不为每张表创建 Repository。
-- 跨上下文引用只保存强类型 ID 或不可变快照，禁止建立跨上下文 JPA 关联。
+- 跨上下文引用只保存强类型 ID 或不可变快照，禁止跨上下文访问 Mapper、PersistenceRow/DO 或数据表。
 - 领域服务只处理确实跨多个领域对象且无自然归属的规则；业务用例编排仍属于 application service。
 - 聚合在成功完成业务行为后记录过去式领域事件，由应用层在同一事务写入 Outbox。
 - 金额使用 `BigDecimal` 封装为 `Money` 值对象并携带 ISO 4217 币种；数据库金额字段使用 `numeric(19,2)`。
@@ -482,7 +483,7 @@ flowchart TB
     API --> STORE[(S3 / MinIO)]
 ```
 
-- `api` 使用多阶段构建：Gradle builder -> JRE 21 runtime。
+- `api` 使用多阶段构建：Maven 3.9 + JDK 21 builder -> JRE 21 runtime。
 - `web` 使用 Next.js `output: standalone` 多阶段构建。
 - 数据库、Redis 仅暴露在 Compose 内网；只有反向代理开放 80/443。
 - 容器使用非 root 用户、只读根文件系统（临时目录除外）、健康检查和资源上限。
@@ -519,7 +520,7 @@ APP_BASE_URL
 
 ### Phase 0：工程基座（1 周）
 
-- 初始化 Gradle、Next.js、Compose、CI、Flyway、OpenAPI 校验。
+- 初始化 Maven、Next.js、Compose、CI、Flyway、OpenAPI 校验。
 - 完成 Design Token、基础布局、认证骨架与错误模型。
 
 ### Phase 1：发现与内容（2-3 周）

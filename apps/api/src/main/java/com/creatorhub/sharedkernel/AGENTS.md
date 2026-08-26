@@ -17,7 +17,7 @@
 
 - 不放分页、Web 错误、Spring 配置或工具类。
 - 所有类型不可变；`Money` 必须携带 ISO 4217 币种。
-- 不得依赖 Spring/JPA/Stripe/S3/Redis。
+- 不得依赖 Spring/MyBatis-Plus/Stripe/S3/Redis。
 
 ## 交叉引用
 

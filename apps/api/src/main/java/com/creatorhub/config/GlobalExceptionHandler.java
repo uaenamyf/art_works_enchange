@@ -5,6 +5,7 @@ import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -20,65 +21,78 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    private static final URI PROBLEM_TYPE_BASE = URI.create("https://creatorhub.com/problems/");
+  private static final URI PROBLEM_TYPE_BASE = URI.create("https://creatorhub.com/problems/");
 
-    @ExceptionHandler(BusinessError.class)
-    public ResponseEntity<ProblemDetail> handleBusiness(BusinessError ex) {
-        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
-        detail.setType(URI.create(PROBLEM_TYPE_BASE + ex.code()));
-        detail.setTitle(ex.code());
-        detail.setProperty("code", ex.code());
-        detail.setProperty("details", ex.details());
-        return ResponseEntity.badRequest().body(detail);
+  @ExceptionHandler(BusinessError.class)
+  public ResponseEntity<ProblemDetail> handleBusiness(BusinessError ex) {
+    HttpStatus status =
+        switch (ex.code()) {
+          case "EMAIL_TAKEN", "CREATOR_ALREADY_EXISTS", "CREATOR_SLUG_TAKEN" -> HttpStatus.CONFLICT;
+          case "INVALID_CREDENTIALS", "REFRESH_TOKEN_INVALID" -> HttpStatus.UNAUTHORIZED;
+          case "RATE_LIMITED" -> HttpStatus.TOO_MANY_REQUESTS;
+          case "CREATOR_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+          default -> HttpStatus.BAD_REQUEST;
+        };
+    ProblemDetail detail = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
+    detail.setType(URI.create(PROBLEM_TYPE_BASE + ex.code()));
+    detail.setTitle(ex.code());
+    detail.setProperty("code", ex.code());
+    detail.setProperty("details", ex.details());
+    ResponseEntity.BodyBuilder response = ResponseEntity.status(status);
+    if (status == HttpStatus.TOO_MANY_REQUESTS) {
+      Object retryAfter = ex.details().get("retryAfterSeconds");
+      if (retryAfter != null) {
+        response.header(HttpHeaders.RETRY_AFTER, retryAfter.toString());
+      }
     }
+    return response.body(detail);
+  }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ProblemDetail> handleValidation(MethodArgumentNotValidException ex) {
-        Map<String, String> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
-                .collect(Collectors.toMap(
-                        f -> f.getField(),
-                        f -> f.getDefaultMessage() == null ? "invalid" : f.getDefaultMessage(),
-                        (a, b) -> a));
-        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Request validation failed");
-        detail.setType(URI.create(PROBLEM_TYPE_BASE + "VALIDATION_FAILED"));
-        detail.setTitle("VALIDATION_FAILED");
-        detail.setProperty("code", "VALIDATION_FAILED");
-        detail.setProperty("fieldErrors", fieldErrors);
-        return ResponseEntity.badRequest().body(detail);
-    }
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<ProblemDetail> handleValidation(MethodArgumentNotValidException ex) {
+    Map<String, String> fieldErrors =
+        ex.getBindingResult().getFieldErrors().stream()
+            .collect(
+                Collectors.toMap(
+                    f -> f.getField(),
+                    f -> f.getDefaultMessage() == null ? "invalid" : f.getDefaultMessage(),
+                    (a, b) -> a));
+    ProblemDetail detail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Request validation failed");
+    detail.setType(URI.create(PROBLEM_TYPE_BASE + "VALIDATION_FAILED"));
+    detail.setTitle("VALIDATION_FAILED");
+    detail.setProperty("code", "VALIDATION_FAILED");
+    detail.setProperty("fieldErrors", fieldErrors);
+    return ResponseEntity.badRequest().body(detail);
+  }
 
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ProblemDetail> handleConstraint(ConstraintViolationException ex) {
-        // SEC-API-004: do not echo the raw violation message. It can include
-        // method parameter names and other internal hints. The aggregated
-        // violations are still logged for the operator (separate path).
-        logUnexpected("constraint violation", ex);
-        ProblemDetail detail = ProblemDetail.forStatusAndDetail(
-                HttpStatus.BAD_REQUEST, "Request validation failed");
-        detail.setType(URI.create(PROBLEM_TYPE_BASE + "VALIDATION_FAILED"));
-        detail.setTitle("VALIDATION_FAILED");
-        detail.setProperty("code", "VALIDATION_FAILED");
-        return ResponseEntity.badRequest().body(detail);
-    }
+  @ExceptionHandler(ConstraintViolationException.class)
+  public ResponseEntity<ProblemDetail> handleConstraint(ConstraintViolationException ex) {
+    // 不回显原始约束消息，避免暴露方法参数名和内部实现提示。
+    logUnexpected("constraint violation", ex);
+    ProblemDetail detail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Request validation failed");
+    detail.setType(URI.create(PROBLEM_TYPE_BASE + "VALIDATION_FAILED"));
+    detail.setTitle("VALIDATION_FAILED");
+    detail.setProperty("code", "VALIDATION_FAILED");
+    return ResponseEntity.badRequest().body(detail);
+  }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ProblemDetail> handleUnexpected(Exception ex) {
-        // SEC-API-004: never expose ex.getMessage() to clients. Log the full
-        // exception server-side; respond with a fixed, non-leaky message.
-        logUnexpected("unexpected", ex);
-        ProblemDetail detail = ProblemDetail.forStatusAndDetail(
-                HttpStatus.INTERNAL_SERVER_ERROR, "Internal error");
-        detail.setType(URI.create(PROBLEM_TYPE_BASE + "INTERNAL_ERROR"));
-        detail.setTitle("INTERNAL_ERROR");
-        detail.setProperty("code", "INTERNAL_ERROR");
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(detail);
-    }
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<ProblemDetail> handleUnexpected(Exception ex) {
+    // 未预期异常只返回固定消息；完整异常仅在服务端记录，避免信息泄漏。
+    logUnexpected("unexpected", ex);
+    ProblemDetail detail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Internal error");
+    detail.setType(URI.create(PROBLEM_TYPE_BASE + "INTERNAL_ERROR"));
+    detail.setTitle("INTERNAL_ERROR");
+    detail.setProperty("code", "INTERNAL_ERROR");
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(detail);
+  }
 
-    private static void logUnexpected(String kind, Throwable ex) {
-        // org.slf4j.Logger is the project standard. Per AGENTS.md §7 we never
-        // log credentials, tokens, cookies, or PII; the message here is the
-        // exception class + a short kind label, not the message body.
-        org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class)
-                .error("{}: {}", kind, ex.getClass().getName(), ex);
-    }
+  private static void logUnexpected(String kind, Throwable ex) {
+    // 日志只写固定标签与异常类型，不主动拼接密码、Token、Cookie 或个人信息。
+    org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class)
+        .error("{}: {}", kind, ex.getClass().getName(), ex);
+  }
 }

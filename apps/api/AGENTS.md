@@ -56,15 +56,17 @@ com.creatorhub
 
 ```bash
 cd apps/api
-./gradlew test
-./gradlew spotlessCheck
-./gradlew bootRun --args='--spring.profiles.active=local'
+mvn test
+mvn spotless:check
+mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
 ## 5. 关键约束
 
 - 任何跨上下文协作都通过 `application/port/in` 或 Outbox 集成事件；不直接 import 其他上下文的 Repository、Entity 或表。
-- Domain 不得依赖 Spring/JPA/Stripe/S3/Redis SDK。
+- Domain 不得依赖 Spring/MyBatis-Plus/Stripe/S3/Redis SDK。
+- Mapper、PersistenceRow/DO 和 Mapper XML 只属于 `infrastructure/persistence`；Controller、application 与 domain 禁止直接依赖 Mapper。
+- Repository Adapter 负责领域聚合与 PersistenceRow/DO 显式转换；关键写 SQL 优先 XML 并使用 PostgreSQL Testcontainers 验证。
 - 业务规则只写在聚合方法或 `domain/service`；ApplicationService 只编排。
 - 写操作必须做对象级权限校验；金额、支付状态、库存不信任客户端。
 - 新增或修改表结构必须增加 Flyway migration；不要修改已共享的 migration。

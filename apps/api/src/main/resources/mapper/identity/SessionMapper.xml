@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.creatorhub.identity.infrastructure.persistence.SessionMapper">
+
+    <!--
+      会话轮换必须在同一数据库事务中锁定旧会话，保证并发刷新最多一个请求成功。
+      这里使用显式 PostgreSQL FOR UPDATE，而不是依赖 ORM 隐式锁语义。
+    -->
+    <select id="findByRefreshTokenHashForUpdate"
+            resultType="com.creatorhub.identity.infrastructure.persistence.SessionPersistenceRow">
+        SELECT id,
+               user_id,
+               refresh_token_hash,
+               expires_at,
+               revoked_at,
+               created_at
+        FROM identity_sessions
+        WHERE refresh_token_hash = #{refreshTokenHash}
+        FOR UPDATE
+    </select>
+</mapper>

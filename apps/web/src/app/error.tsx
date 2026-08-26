@@ -11,12 +11,13 @@ export interface ErrorPageProps {
   reset: () => void;
 }
 
+/**
+ * App Router 全局客户端错误边界：展示友好降级并允许用户触发 reset 重试。
+ * 生产环境不输出原始异常；后续监控只上报脱敏 digest 等关联信息。
+ */
 export default function ErrorPage({ error, reset }: ErrorPageProps) {
   useEffect(() => {
-    // SEC-WEB-005: do not gate on process.env.NODE_ENV — Next.js sets that
-    // automatically and we want a defence-in-depth check based on the
-    // application-level env instead. In production we will also forward
-    // `error.digest` to Sentry (when wired up).
+    // 只在显式应用开发环境打印；不依赖 Next.js 自动设置的 NODE_ENV。
     if (process.env.NEXT_PUBLIC_APP_ENV === "development") {
       console.error("App error:", error);
     }
@@ -40,7 +41,8 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
 }
 
 function parseProblem(error: Error): ProblemDetails | null {
-  // Next.js error 对象没有结构化 Problem Details 字段；保留接口便于后续客户端错误兜底。
+  // Next.js 错误对象不保证含完整 Problem Details；这里只提取稳定业务码，
+  // 不反射任意字段，也不把堆栈或内部异常详情展示给用户。
   const maybeCode = (error as unknown as { code?: unknown }).code;
   if (maybeCode !== undefined && maybeCode !== null) {
     return { code: String(maybeCode), detail: error.message };

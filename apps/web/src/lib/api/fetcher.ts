@@ -20,6 +20,10 @@ export interface ApiFetchOptions extends Omit<RequestInit, "headers" | "body"> {
   requestId?: string;
 }
 
+/**
+ * 前端统一 API 异常，保留 RFC 9457 Problem、HTTP 状态和 Request ID。
+ * 上层应按稳定业务码做本地化展示，并使用 Request ID 关联服务端日志。
+ */
 export class ApiError extends Error {
   readonly problem: ProblemDetails;
   readonly status: number;
@@ -35,10 +39,19 @@ export class ApiError extends Error {
 }
 
 export function getApiBaseUrl(): string {
+  // Server Component 可使用容器内 DNS；浏览器只能访问宿主机可达地址。
+  // NEXT_PUBLIC_* 会进入客户端产物，禁止在其中放置任何密钥或内部凭据。
+  if (typeof window === "undefined") {
+    return process.env.API_INTERNAL_BASE_URL ?? "http://api:8080";
+  }
   return process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 }
 
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
+  /**
+   * 统一注入 Request ID、JSON 编码、HttpOnly 会话 Cookie 和 Problem Details 解析。
+   * credentials=include 依赖服务端严格的 CORS/CSRF 策略；调用方不得手工持久化 Token。
+   */
   const requestId = options.requestId ?? generateRequestId();
   const headers: Record<string, string> = {
     Accept: "application/json",

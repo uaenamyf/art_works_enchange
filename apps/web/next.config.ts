@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Docker runtime copies standalone output；本机 Windows 构建不启用，避免 pnpm 软链接因权限失败。
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   experimental: {
     typedRoutes: false
   },

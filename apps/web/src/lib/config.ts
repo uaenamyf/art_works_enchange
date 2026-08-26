@@ -17,5 +17,6 @@ export const ROUTES = {
   artworkDetail: (id: string) => `/artworks/${id}`,
   creatorProfile: (id: string) => `/creators/${id}`,
   authLogin: "/auth/login",
-  authRegister: "/auth/register"
+  authRegister: "/auth/register",
+  creatorApply: "/studio/creator/apply"
 } as const;

@@ -117,7 +117,7 @@ CreatorHub 的工作流需要新增技能时：
 `.CLAUDE/skills/` 与 `.agent/.skill/` 同属"通用参考"层，**约束一致**：
 
 1. **不**用 `.CLAUDE/skills/` 中的模板覆盖 CreatorHub 已确定的技术选型（见 `DEVELOPMENT_GUIDE.md` §2）
-2. **不**采用其中与本仓库 `AGENTS.md` 冲突的 DDD 模板（特别是禁 `Result<T>`、数字错误码、每端一个 BFF、微服务、MyBatis、Sa-Token、DDD4J、COLA）
+2. **不**采用其中与本仓库 `AGENTS.md` 冲突的 DDD 模板（特别是禁 `Result<T>`、数字错误码、每端一个 BFF、微服务、Sa-Token、DDD4J、COLA）；MyBatis-Plus 仅按仓库 infrastructure 规则使用
 3. **不**把 `references/` 里的目录结构或文件路径直接复制到 CreatorHub 工程
 4. **不**把它当 git submodule 在 CreatorHub 仓内 commit；保留它作为独立子仓
 5. 引用具体 skill 时只引用**方法论与检查清单**，不直接拷贝代码片段到 CreatorHub 业务代码

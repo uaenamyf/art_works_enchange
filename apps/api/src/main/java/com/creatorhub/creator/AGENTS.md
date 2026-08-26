@@ -25,13 +25,13 @@
 - 一个 `UserId` 仅能绑定一个 `Creator`；不能关注自己。
 - `Follow` 操作幂等：重复 PUT 返回当前状态，不重复产生事件。
 - `CreatorSummary` 是 Catalog/Ordering 使用的不可变快照，跨上下文通过 port/in 获取或重新组装。
-- 禁止跨上下文 JPA 关联。
+- 禁止跨上下文访问 Identity Mapper、PersistenceRow/DO 或数据库表。
 
 ## 常用命令
 
 ```bash
 cd apps/api
-./gradlew test --tests 'com.creatorhub.creator.*'
+mvn -Dtest='com.creatorhub.creator.**.*Test' test
 ```
 
 ## 交叉引用

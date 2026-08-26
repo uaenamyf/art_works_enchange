@@ -26,7 +26,7 @@
 
 ```bash
 cd apps/api
-./gradlew bootRun --args='--spring.profiles.active=local'
+mvn spring-boot:run -Dspring-boot.run.profiles=local
 curl http://localhost:8080/actuator/health
 ```
 

@@ -9,59 +9,52 @@ import org.springframework.core.env.Environment;
 /**
  * 启动时确保 {@link AppClock} 使用系统 UTC；测试可通过 @BeforeEach 注入固定时钟。
  *
- * <p>同时校验 {@code creatorhub.security.jwt.secret} 不为占位值，避免生产环境
- * 忘设环境变量导致用弱默认密钥签发 Access Token。
+ * <p>同时校验 {@code creatorhub.security.jwt.secret} 不为占位值，避免生产环境 忘设环境变量导致用弱默认密钥签发 Access Token。
  */
 @Configuration
 public class ClockConfig {
 
-    @Value("${creatorhub.security.jwt.secret:}")
-    private String jwtSecret;
+  @Value("${creatorhub.security.jwt.secret:}")
+  private String jwtSecret;
 
-    private final Environment env;
+  private final Environment env;
 
-    public ClockConfig(Environment env) {
-        this.env = env;
+  public ClockConfig(Environment env) {
+    this.env = env;
+  }
+
+  @PostConstruct
+  void onStartup() {
+    AppClock.reset();
+    rejectPlaceholderJwtSecretInProduction();
+  }
+
+  private void rejectPlaceholderJwtSecretInProduction() {
+    // production 必须拒绝空值、公开占位密钥和不足 32 字节的 HS256 密钥。
+    // docker 只描述运行拓扑，不等同生产安全环境；本地容器开发可继续使用占位值。
+    boolean isProduction = isProfileActive("production");
+    if (!isProduction) {
+      return;
     }
-
-    @PostConstruct
-    void onStartup() {
-        AppClock.reset();
-        rejectPlaceholderJwtSecretInProduction();
+    if (jwtSecret == null
+        || jwtSecret.isBlank()
+        || "change-me-please-change-me-please-32bytes".equals(jwtSecret)) {
+      throw new IllegalStateException(
+          "creatorhub.security.jwt.secret is the placeholder value. "
+              + "Set the JWT_SECRET environment variable before running in production.");
     }
-
-    private void rejectPlaceholderJwtSecretInProduction() {
-        // SEC-API-002: the application.yml default secret is intentionally a
-        // well-known string. If a production deployment forgets to set
-        // JWT_SECRET we want to fail loudly rather than silently accept weak
-        // signing material. Dev / test profiles keep the placeholder for
-        // local convenience.
-        // "docker" describes the runtime topology, not the security
-        // environment. Docker-only development may use the placeholder;
-        // production deployments must also activate the "production" profile.
-        boolean isProduction = isProfileActive("production");
-        if (!isProduction) {
-            return;
-        }
-        if (jwtSecret == null
-                || jwtSecret.isBlank()
-                || "change-me-please-change-me-please-32bytes".equals(jwtSecret)) {
-            throw new IllegalStateException(
-                    "creatorhub.security.jwt.secret is the placeholder value. "
-                            + "Set the JWT_SECRET environment variable before running in production.");
-        }
-        if (jwtSecret.getBytes().length < 32) {
-            throw new IllegalStateException(
-                    "creatorhub.security.jwt.secret must be at least 32 bytes for HS256.");
-        }
+    if (jwtSecret.getBytes().length < 32) {
+      throw new IllegalStateException(
+          "creatorhub.security.jwt.secret must be at least 32 bytes for HS256.");
     }
+  }
 
-    private boolean isProfileActive(String profile) {
-        for (String p : env.getActiveProfiles()) {
-            if (profile.equalsIgnoreCase(p)) {
-                return true;
-            }
-        }
-        return false;
+  private boolean isProfileActive(String profile) {
+    for (String p : env.getActiveProfiles()) {
+      if (profile.equalsIgnoreCase(p)) {
+        return true;
+      }
     }
+    return false;
+  }
 }

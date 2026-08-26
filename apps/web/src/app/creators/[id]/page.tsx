@@ -9,6 +9,10 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+/**
+ * 创作者公开主页：按路由 ID 解析创作者，缺失时返回 404，并展示其公开作品。
+ * “关注”目前是无状态占位；Week 6 必须通过 Follow 用例校验登录状态和禁止自关注规则。
+ */
 export default async function CreatorProfilePage({ params }: PageProps) {
   const { id } = await params;
   const creator = findCreator(id);
