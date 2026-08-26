@@ -465,6 +465,30 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+  /artworks/{artworkId}/submit-review:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      tags: [Studio]
+      operationId: submitArtworkForReview
+      summary: 提交作品审核（Week 4）
+      parameters:
+        - $ref: '#/components/parameters/ArtworkId'
+      responses:
+        '200':
+          description: 已进入审核队列
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /artworks/{artworkId}/archive:
     parameters:
       - $ref: '#/components/parameters/RequestId'

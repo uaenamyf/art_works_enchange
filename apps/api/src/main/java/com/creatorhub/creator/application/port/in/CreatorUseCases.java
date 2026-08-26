@@ -11,6 +11,8 @@ public interface CreatorUseCases {
 
   CreatorView get(UUID creatorId);
 
+  CreatorView getByUserId(UUID userId);
+
   /** 申请命令中的 owner 始终来自认证上下文，不允许客户端传入。 */
   record ApplyCommand(
       String displayName, String slug, String category, String bio, String location) {}

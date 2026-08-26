@@ -75,6 +75,15 @@ public class CreatorService implements CreatorUseCases {
         .orElseThrow(() -> new BusinessError("CREATOR_NOT_FOUND", "Creator profile not found"));
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public CreatorView getByUserId(UUID userId) {
+    return creators
+        .findByUserId(UserId.of(userId))
+        .map(CreatorService::toView)
+        .orElseThrow(() -> new BusinessError("CREATOR_NOT_FOUND", "Creator profile not found"));
+  }
+
   private static CreatorView toView(Creator creator) {
     return new CreatorView(
         creator.id().value(),

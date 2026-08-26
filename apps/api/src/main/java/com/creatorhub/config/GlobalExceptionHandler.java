@@ -9,6 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -31,6 +32,8 @@ public class GlobalExceptionHandler {
           case "INVALID_CREDENTIALS", "REFRESH_TOKEN_INVALID" -> HttpStatus.UNAUTHORIZED;
           case "RATE_LIMITED" -> HttpStatus.TOO_MANY_REQUESTS;
           case "CREATOR_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+          case "ARTWORK_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+          case "ARTWORK_VERSION_CONFLICT" -> HttpStatus.CONFLICT;
           default -> HttpStatus.BAD_REQUEST;
         };
     ProblemDetail detail = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
@@ -64,6 +67,16 @@ public class GlobalExceptionHandler {
     detail.setProperty("code", "VALIDATION_FAILED");
     detail.setProperty("fieldErrors", fieldErrors);
     return ResponseEntity.badRequest().body(detail);
+  }
+
+  /** 方法级权限拒绝统一返回 403，避免被通用异常处理器误判为 500。 */
+  @ExceptionHandler(AuthorizationDeniedException.class)
+  public ResponseEntity<ProblemDetail> handleAuthorizationDenied(AuthorizationDeniedException ex) {
+    ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Forbidden");
+    detail.setType(URI.create(PROBLEM_TYPE_BASE + "FORBIDDEN"));
+    detail.setTitle("FORBIDDEN");
+    detail.setProperty("code", "FORBIDDEN");
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(detail);
   }
 
   @ExceptionHandler(ConstraintViolationException.class)
