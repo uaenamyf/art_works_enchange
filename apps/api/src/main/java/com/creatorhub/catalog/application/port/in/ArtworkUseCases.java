@@ -10,6 +10,8 @@ public interface ArtworkUseCases {
 
   ArtworkView create(UUID userId, WriteCommand command);
 
+  ArtworkView getPublished(UUID artworkId);
+
   ArtworkView update(UUID userId, UUID artworkId, WriteCommand command);
 
   ArtworkView submitForReview(UUID userId, UUID artworkId);

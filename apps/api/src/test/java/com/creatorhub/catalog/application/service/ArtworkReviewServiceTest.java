@@ -112,6 +112,11 @@ class ArtworkReviewServiceTest {
     }
 
     @Override
+    public Optional<Artwork> findPublishedById(ArtworkId id) {
+      return findById(id).filter(value -> value.status() == ArtworkStatus.PUBLISHED);
+    }
+
+    @Override
     public Optional<Artwork> findByOwnerId(UserId ownerId, ArtworkId id) {
       return findById(id).filter(value -> value.ownerId().equals(ownerId));
     }

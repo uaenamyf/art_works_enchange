@@ -29,6 +29,12 @@ public class ArtworkRepositoryAdapter implements ArtworkRepository {
   }
 
   @Override
+  public Optional<Artwork> findPublishedById(ArtworkId id) {
+    return Optional.ofNullable(mapper.findPublishedById(id.value()))
+        .map(row -> toDomain(row, mediaMapper.findIdsByArtworkId(row.getId())));
+  }
+
+  @Override
   public Optional<Artwork> findByOwnerId(UserId ownerId, ArtworkId id) {
     return Optional.ofNullable(mapper.findByOwnerId(ownerId.value(), id.value()))
         .map(row -> toDomain(row, mediaMapper.findIdsByArtworkId(row.getId())));

@@ -46,6 +46,15 @@ public class ArtworkService implements ArtworkUseCases {
   }
 
   @Override
+  @Transactional(readOnly = true)
+  public ArtworkView getPublished(UUID artworkId) {
+    return artworks
+        .findPublishedById(ArtworkId.of(artworkId))
+        .map(ArtworkService::view)
+        .orElseThrow(() -> new BusinessError("ARTWORK_NOT_FOUND", "Artwork not found"));
+  }
+
+  @Override
   public ArtworkView update(UUID userId, UUID artworkId, WriteCommand command) {
     Artwork artwork = owned(userId, artworkId);
     if (artwork.version() != command.version()) {

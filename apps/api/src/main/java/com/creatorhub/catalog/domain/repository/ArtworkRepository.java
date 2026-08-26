@@ -10,6 +10,8 @@ public interface ArtworkRepository {
 
   Optional<Artwork> findById(ArtworkId id);
 
+  Optional<Artwork> findPublishedById(ArtworkId id);
+
   Optional<Artwork> findByOwnerId(UserId ownerId, ArtworkId id);
 
   Artwork save(Artwork artwork);

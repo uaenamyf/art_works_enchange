@@ -112,6 +112,20 @@ class ArtworkControllerTest {
   }
 
   @Test
+  void anonymousUserCanReadPublishedArtwork() throws Exception {
+    UUID artworkId = UUID.randomUUID();
+    when(artworks.getPublished(artworkId)).thenReturn(view(artworkId, ArtworkStatus.PUBLISHED));
+
+    mvc.perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(
+                "/api/v1/artworks/{artworkId}", artworkId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("PUBLISHED"));
+
+    verify(artworks).getPublished(artworkId);
+  }
+
+  @Test
   void creatorCannotApproveArtworkReview() throws Exception {
     mvc.perform(
             post("/api/v1/artworks/{artworkId}/review/approve", UUID.randomUUID())

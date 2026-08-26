@@ -17,6 +17,7 @@ import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -35,6 +36,12 @@ public class ArtworkController {
   public ArtworkController(ArtworkUseCases artworks, ArtworkReviewUseCases reviews) {
     this.artworks = artworks;
     this.reviews = reviews;
+  }
+
+  /** 公开详情只读取审核通过并已发布的作品，未发布状态统一按不存在处理。 */
+  @GetMapping("/{artworkId}")
+  ResponseEntity<ArtworkView> getPublished(@PathVariable UUID artworkId) {
+    return ResponseEntity.ok(artworks.getPublished(artworkId));
   }
 
   /** 创建草稿；作品默认 DRAFT，不因创建成功直接公开。 */

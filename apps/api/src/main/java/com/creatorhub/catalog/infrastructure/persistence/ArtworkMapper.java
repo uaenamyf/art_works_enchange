@@ -31,4 +31,15 @@ interface ArtworkMapper extends BaseMapper<ArtworkPersistenceRow> {
       WHERE id = #{id}
       """)
   ArtworkPersistenceRow findByIdValue(@Param("id") UUID id);
+
+  /** 公开查询在 SQL 层过滤状态，避免调用方遗漏审核门禁。 */
+  @Select(
+      """
+      SELECT id, owner_id, creator_id, title, description, category,
+             price_amount, price_currency, stock, status, version,
+             review_reason, reviewed_at, created_at, updated_at
+      FROM artworks
+      WHERE id = #{id} AND status = 'PUBLISHED'
+      """)
+  ArtworkPersistenceRow findPublishedById(@Param("id") UUID id);
 }
