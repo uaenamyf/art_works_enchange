@@ -12,7 +12,7 @@
 
 ## 2. 固定技术边界
 
-- 后端：Java 21、Spring Boot 3、Gradle、PostgreSQL、Redis、Flyway。
+- 后端：Java 21、Spring Boot 3、Maven、PostgreSQL、Redis、Flyway。
 - 前端：Next.js App Router、React、TypeScript、Tailwind CSS、Radix UI。
 - 部署：Docker 镜像与 Docker Compose。
 - 架构：DDD 模块化单体，以限界上下文为一级代码边界。未经明确 ADR 和用户批准，禁止引入微服务、Kafka、Kubernetes、服务发现或分布式事务。
@@ -107,8 +107,15 @@
 
 ```bash
 cd apps/api
-./gradlew test
-./gradlew spotlessCheck
+mvn test
+mvn spotless:check
+```
+
+或从仓库根运行（多模块视感，便于 CI）：
+
+```bash
+mvn -pl apps/api -am test
+mvn -pl apps/api -am spotless:check
 ```
 
 前端常用验证：
@@ -119,6 +126,7 @@ pnpm lint
 pnpm typecheck
 pnpm test
 ```
+mvn -pl apps/api -am verify
 
 契约与容器验证：
 
