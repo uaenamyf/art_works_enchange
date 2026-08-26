@@ -63,6 +63,39 @@ public final class Artwork extends AggregateRoot<ArtworkId> {
         id, ownerId, creatorId, title, description, category, price, stock, mediaIds, now);
   }
 
+  /** 仅供仓储适配器恢复完整作品状态；恢复不会触发新的业务版本递增。 */
+  public static Artwork reconstitute(
+      ArtworkId id,
+      UserId ownerId,
+      UUID creatorId,
+      String title,
+      String description,
+      String category,
+      Money price,
+      int stock,
+      List<UUID> mediaIds,
+      ArtworkStatus status,
+      long version,
+      Instant createdAt,
+      Instant updatedAt) {
+    Artwork artwork =
+        new Artwork(
+            id,
+            ownerId,
+            creatorId,
+            title,
+            description,
+            category,
+            price,
+            stock,
+            mediaIds,
+            createdAt);
+    artwork.status = Objects.requireNonNull(status, "status");
+    artwork.version = version;
+    artwork.updatedAt = Objects.requireNonNull(updatedAt, "updatedAt");
+    return artwork;
+  }
+
   /** 修改草稿或被拒绝作品；已发布、封禁和归档作品不能绕过状态机编辑。 */
   public void update(
       String title,
