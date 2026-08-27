@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Heart, Share2 } from "lucide-react";
+import { Share2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { FavoriteButton } from "@/features/favorites/FavoriteButton";
 import { MediaGallery, type MediaGalleryItem } from "@/components/domain/MediaGallery";
 import { ROUTES } from "@/lib/config";
 import { apiFetch, ApiError } from "@/lib/api/fetcher";
@@ -73,9 +74,7 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
               {/* Week 2 占位操作：尚未创建订单、收藏或分享副作用。 */}
               <Button size="lg">立即购买</Button>
               <div className="grid grid-cols-2 gap-2">
-                <Button variant="secondary" leftIcon={<Heart className="size-4" />}>
-                  收藏
-                </Button>
+                <FavoriteButton artworkId={artwork.id} />
                 <Button variant="secondary" leftIcon={<Share2 className="size-4" />}>
                   分享
                 </Button>
