@@ -45,19 +45,21 @@ interface CreatorDetail {
 }
 
 interface PageProps {
-  searchParams: Promise<{ query?: string; category?: string }>;
+  searchParams: Promise<{ query?: string; category?: string; cursor?: string }>;
 }
 
 /** Discover 页面：读取公开作品列表，并将媒体与 Creator 快照映射为卡片视图。 */
 export default async function DiscoverPage({ searchParams }: PageProps) {
   const filters = await searchParams;
   const query = filters.query?.trim() ?? "";
+  const cursor = filters.cursor ?? "";
   const category = categories.includes(filters.category as (typeof categories)[number])
-    ? filters.category
+    ? (filters.category ?? "")
     : "";
   const params = new URLSearchParams({ sort: "LATEST", limit: "20" });
   if (query) params.set("query", query);
   if (category) params.set("category", category);
+  if (cursor) params.set("cursor", cursor);
   const response = await apiFetch<ArtworkListResponse>(`/api/v1/artworks?${params.toString()}`);
   const latest = await toCardData(response.items);
 
@@ -104,17 +106,17 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
           {
             value: "latest",
             label: "最新",
-            content: <ArtworkGrid items={latest} priorityFirst />
+            content: <ArtworkGrid items={latest} priorityFirst nextCursor={response.nextCursor} query={query} category={category} />
           },
           {
             value: "popular",
             label: "热门",
-            content: <ArtworkGrid items={latest} />
+            content: <ArtworkGrid items={latest} nextCursor={response.nextCursor} query={query} category={category} />
           },
           {
             value: "trending",
             label: "趋势",
-            content: <ArtworkGrid items={latest} />
+            content: <ArtworkGrid items={latest} nextCursor={response.nextCursor} query={query} category={category} />
           }
         ]}
       />
@@ -148,10 +150,16 @@ async function toCardData(items: ArtworkListItem[]): Promise<ArtworkCardData[]> 
 
 function ArtworkGrid({
   items,
-  priorityFirst = false
+  priorityFirst = false,
+  nextCursor,
+  query,
+  category
 }: {
   items: ArtworkCardData[];
   priorityFirst?: boolean;
+  nextCursor: string | null;
+  query: string;
+  category: string;
 }) {
   if (items.length === 0) {
     return (
@@ -163,15 +171,27 @@ function ArtworkGrid({
   }
 
   return (
-    <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {items.map((artwork, index) => (
-        <li key={artwork.id}>
-          <ArtworkCard
-            artwork={artwork}
-            priority={priorityFirst && index === 0}
-          />
-        </li>
-      ))}
-    </ul>
+    <>
+      <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {items.map((artwork, index) => (
+          <li key={artwork.id}>
+            <ArtworkCard
+              artwork={artwork}
+              priority={priorityFirst && index === 0}
+            />
+          </li>
+        ))}
+      </ul>
+      {nextCursor ? (
+        <div className="mt-10 text-center">
+          <Link
+            href={`/?${new URLSearchParams({ ...(query ? { query } : {}), ...(category ? { category } : {}), cursor: nextCursor }).toString()}`}
+            className="inline-flex h-11 items-center rounded-token border border-ink-900 px-5 text-sm text-ink-900 hover:bg-ink-900 hover:text-white"
+          >
+            加载更多作品
+          </Link>
+        </div>
+      ) : null}
+    </>
   );
 }

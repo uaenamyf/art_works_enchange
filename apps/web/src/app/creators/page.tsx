@@ -1,6 +1,7 @@
 import { CreatorCard } from "@/components/domain/CreatorCard";
 import type { CreatorCardData } from "@/components/domain/types";
 import { apiFetch } from "@/lib/api/fetcher";
+import Link from "next/link";
 
 const categories = [
   "ART",
@@ -15,7 +16,7 @@ const categories = [
 ] as const;
 
 interface PageProps {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; cursor?: string }>;
 }
 
 interface CreatorPageResponse {
@@ -41,8 +42,10 @@ export default async function CreatorsPage({ searchParams }: PageProps) {
   const category = categories.includes(filters.category as (typeof categories)[number])
     ? filters.category
     : "";
+  const cursor = filters.cursor ?? "";
   const params = new URLSearchParams({ limit: "20" });
   if (category) params.set("category", category);
+  if (cursor) params.set("cursor", cursor);
   const response = await apiFetch<CreatorPageResponse>(`/api/v1/creators?${params.toString()}`);
   const creators = response.items.map(toCardData);
 
@@ -69,6 +72,16 @@ export default async function CreatorsPage({ searchParams }: PageProps) {
           {creators.map((creator) => <li key={creator.id}><CreatorCard creator={creator} /></li>)}
         </ul>
       )}
+      {response.nextCursor ? (
+        <div className="mt-10 text-center">
+          <Link
+            href={`/creators?${new URLSearchParams({ ...(category ? { category } : {}), cursor: response.nextCursor }).toString()}`}
+            className="inline-flex h-11 items-center rounded-token border border-ink-900 px-5 text-sm text-ink-900 hover:bg-ink-900 hover:text-white"
+          >
+            加载更多创作者
+          </Link>
+        </div>
+      ) : null}
     </main>
   );
 }
