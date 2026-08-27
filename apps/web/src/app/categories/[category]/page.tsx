@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Search } from "lucide-react";
 import { artworkCategories, ArtworkRow, getArtworkCategory, loadArtworkCards } from "@/features/artworks/artworkCatalog";
 
 interface PageProps {
@@ -23,9 +24,14 @@ export default async function ArtworkCategoryPage({ params, searchParams }: Page
         <h1 className="mt-4 text-5xl leading-[1.05] text-ink-900 md:text-7xl">{category[0]}</h1>
         <p className="mt-5 max-w-xl text-base leading-7 text-ink-700">浏览这一类别中正在发生的独立创作。</p>
       </header>
-      <form method="get" className="mb-10 flex max-w-2xl flex-col gap-3 border-y border-ink-300 py-4 sm:flex-row sm:items-end">
-        <label className="flex flex-1 flex-col gap-1.5 text-sm text-ink-700">搜索此分类<input name="query" defaultValue={query} placeholder="输入标题或描述" className="h-11 rounded-token border border-ink-300 bg-white px-3 focus-visible:border-ink-900 focus-visible:outline-none" /></label>
-        <button type="submit" className="h-11 rounded-token bg-ink-900 px-5 text-sm font-medium text-white hover:bg-ink-700">搜索</button>
+      <form method="get" className="mb-8 flex max-w-3xl items-center gap-3 rounded-full border border-ink-300 bg-white px-4 py-1.5 shadow-card transition-colors focus-within:border-ink-900 focus-within:shadow-pop">
+        <Search aria-hidden className="size-4 shrink-0 text-ink-500" />
+        <label className="min-w-0 flex-1">
+          <span className="sr-only">搜索此分类</span>
+          <input name="query" defaultValue={query} placeholder="搜索艺术品标题或描述" className="h-10 w-full min-w-0 bg-transparent text-sm text-ink-900 outline-none placeholder:text-ink-500" />
+        </label>
+        {query ? <Link href={`/categories/${category[1]}`} aria-label="清除搜索" className="shrink-0 px-2 text-sm text-ink-500 hover:text-ink-900">清除</Link> : null}
+        <button type="submit" aria-label="提交搜索" className="flex h-10 shrink-0 items-center justify-center rounded-full bg-ink-900 px-5 text-sm font-medium text-white transition-colors hover:bg-ink-700">搜索</button>
       </form>
       <nav aria-label="作品分类" className="mb-12 flex gap-2 overflow-x-auto pb-2">
         {artworkCategories.map(([label, value]) => <Link key={value} href={`/categories/${value}`} className={`shrink-0 rounded-full px-4 py-2 text-sm ${value === category[1] ? "bg-ink-900 text-white" : "border border-ink-300 text-ink-700 hover:border-ink-900"}`}>{label}</Link>)}
