@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Search } from "lucide-react";
-import { artworkCategories, ArtworkRow, getArtworkCategory, loadArtworkCards } from "@/features/artworks/artworkCatalog";
+import { ArtworkRow, getArtworkCategory, loadArtworkCards } from "@/features/artworks/artworkCatalog";
 
 interface PageProps {
   params: Promise<{ category: string }>;
@@ -33,9 +33,6 @@ export default async function ArtworkCategoryPage({ params, searchParams }: Page
         {query ? <Link href={`/categories/${category[1]}`} aria-label="清除搜索" className="shrink-0 px-2 text-sm text-ink-500 hover:text-ink-900">清除</Link> : null}
         <button type="submit" aria-label="提交搜索" className="flex h-10 shrink-0 items-center justify-center rounded-full bg-ink-900 px-5 text-sm font-medium text-white transition-colors hover:bg-ink-700">搜索</button>
       </form>
-      <nav aria-label="作品分类" className="mb-8 flex gap-2 overflow-x-auto pb-2">
-        {artworkCategories.map(([label, value]) => <Link key={value} href={`/categories/${value}`} className={`shrink-0 rounded-full px-4 py-2 text-sm ${value === category[1] ? "bg-ink-900 text-white" : "border border-ink-300 text-ink-700 hover:border-ink-900"}`}>{label}</Link>)}
-      </nav>
       <ArtworkRow items={response.items} nextCursor={response.nextCursor} query={query} category={category[1]} layout="grid" />
     </main>
   );
