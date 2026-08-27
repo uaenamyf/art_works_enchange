@@ -52,7 +52,7 @@ public class OrderRepositoryAdapter implements OrderRepository {
     row.setUpdatedAt(order.updatedAt());
     if (mapper.findByIdValue(row.getId()) == null) {
       mapper.insertOrder(row);
-    } else if (mapper.cancel(row) != 1) {
+    } else if (mapper.updateStatus(row) != 1) {
       throw new IllegalStateException("Order update conflict");
     }
     return order;

@@ -30,6 +30,10 @@ interface OrderMapper extends BaseMapper<OrderPersistenceRow> {
       "UPDATE orders SET status = #{status}, updated_at = #{updatedAt} WHERE id = #{id} AND status = 'PENDING_PAYMENT'")
   int cancel(OrderPersistenceRow row);
 
+  /** 仅持久化聚合状态变化；状态合法性由领域聚合负责，数据库按订单 ID 原子更新。 */
+  @Update("UPDATE orders SET status = #{status}, updated_at = #{updatedAt} WHERE id = #{id}")
+  int updateStatus(OrderPersistenceRow row);
+
   @Select(
       "SELECT * FROM orders WHERE status = 'PENDING_PAYMENT' AND expires_at <= #{now} ORDER BY expires_at ASC, id ASC LIMIT #{limit}")
   List<OrderPersistenceRow> findExpiredPending(Instant now, int limit);
