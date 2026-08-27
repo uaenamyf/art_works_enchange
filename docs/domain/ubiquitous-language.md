@@ -19,10 +19,18 @@
 | 履约 | Fulfillment | Ordering | 创作者接单、制作、发货和完成订单的过程 | Payment |
 | 领域事件 | DomainEvent | 单一上下文内部 | 聚合完成业务行为后产生的过去式事实 | 集成事件 |
 | 集成事件 | IntegrationEvent | 跨上下文 | 从领域事件转换出的稳定、版本化协作契约 | PersistenceRow/DO |
+| 产品类型 | ProductType | Catalog | 作品的交易形态，`PHYSICAL` 或 `DIGITAL`，决定订单履约规则 | ArtworkCategory |
+| 数字资产 | DigitalAsset | Catalog | 私有对象存储中的可交付文件及其不可变版本 | 公开媒体 |
+| 购买授权 | Entitlement | Digital Delivery | 支付确认后买家获得的数字资产访问权 | 下载 URL、下载次数 |
+| 下载凭证 | DownloadGrant | Digital Delivery | 为一次下载申请签发的短期、可撤销、可审计凭证 | 永久访问权 |
+| 实体履约 | PhysicalFulfillment | Ordering | 地址、库存、制作、发货和完成组成的履约过程 | 数字交付 |
+| 数字交付 | DigitalFulfillment | Ordering/Digital Delivery | 支付确认后创建授权并提供受控下载的履约过程 | 实体发货 |
 
 ## 命名规则
 
 - 聚合行为使用业务动词，如 `publish`、`reserveStock`、`markPaid`，避免 `setStatus`。
 - 事件使用过去式，如 `ArtworkPublished`、`PaymentSucceeded`。
 - API 与代码使用 `Artwork`，不引入 `Product`；订单上下文需要引用作品时使用 `ArtworkSnapshot`。
+- `PHYSICAL` 与 `DIGITAL` 是产品类型，不使用 `shippingRequired` 这类由客户端推导的布尔字段；地址是否允许由服务端根据产品类型决定。
+- `DigitalAsset`、`Entitlement` 和 `DownloadGrant` 分别表示资产、长期授权和短期凭证，不得使用 `downloadUrl` 统称三者。
 - 数据库表可使用技术复数命名，但字段含义必须与本词表一致。

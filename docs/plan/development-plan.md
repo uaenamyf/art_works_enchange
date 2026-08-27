@@ -3,7 +3,7 @@
 > 角色视角：CTO + Tech Lead + Product Engineer
 > 适配对象：2–5 人小团队从 0 到 1
 > 现状：仓库仅含 `apps/web`、`apps/api` 空目录骨架与文档基线。
-> 目标：以最小范围在 14 周内跑通“发现 → 关注/收藏 → 下单 → 多渠道支付 → 履约 → Studio”核心闭环，并具备生产部署与基础监控能力。
+> 目标：以最小范围在 14 周内跑通“发现 → 关注/收藏 → 下单 → 支付 → 实体或数字履约 → Studio”核心闭环，并具备生产部署与基础监控能力。
 
 ## 0. 战略不动摇
 
@@ -35,6 +35,21 @@
 5. **Frontend follow**：用 OpenAPI 生成客户端，覆盖 loading/empty/error/success 四态。
 6. **E2E 校验**：关键路径 Playwright 全绿后，本周才视为完成。
 7. **范围控制**：发现会拖慢 MVP 的需求一律进 Icebox，本周不接。
+
+## 3.1 产品形态与复用策略
+
+CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、价格快照、订单、幂等和 Outbox，不拆成两套商城。
+
+| 维度 | 实体产品 `PHYSICAL` | 数字产品 `DIGITAL` |
+| --- | --- | --- |
+| 下单 | 数量 + 收货地址 | 数量通常为 1，不收集地址 |
+| 库存 | PostgreSQL 条件扣减和释放 | 默认不扣实体库存；有限许可证另建额度 |
+| 付款后履约 | 制作、发货、物流 | 创建购买授权，生成短期下载地址 |
+| 个人信息 | 仅收集履约所需地址和电话 | `shipping_address` 必须为 NULL |
+
+数字产品复用 `Artwork`、价格快照、`Order`、幂等键、支付占位和 Outbox；新增 `ProductType`、`DigitalAsset`、`Entitlement`、`DownloadGrant` 四个稳定概念。原始数字文件使用私有对象存储，不能与公开作品媒体混用。
+
+关键不变量：服务端依据产品类型决定是否需要地址和库存；客户端不能通过发送空地址绕过校验；公开 API、日志和事件中不得出现原始 object key、签名 URL 或下载 Token。
 
 ## 3. 团队假设
 
@@ -151,8 +166,9 @@
 **Catalog 上下文**
 
 - 聚合：`Artwork`；值对象：`Money`、`Stock`、`MediaSet`、`ArtworkId`。
-- 不变量：发布前至少 1 张媒体；库存非负；价格有效。
+- 不变量：发布前至少 1 张公开媒体；价格有效；`PHYSICAL` 库存非负，`DIGITAL` 至少绑定一个已扫描的数字资产版本。
 - 端口：`ArtworkRepository`、`MediaStoragePort`（S3/MinIO 输出端口）、`StockAvailabilityPort`（供 Ordering 使用）。
+- 数字资产端口：`DigitalAssetStore`、`MalwareScanner`、`DownloadGrantIssuer`；第三方扫描和对象存储 SDK 只能存在 infrastructure。
 - 应用服务：`CreateArtworkDraft`、`UpdateArtwork`、`PublishArtwork`、`ArchiveArtwork`。
 - 搜索：PostgreSQL FTS + `pg_trgm`。
 - 领域事件：`ArtworkPublished` → Outbox。
@@ -163,12 +179,14 @@
 - 浏览器直传 MinIO/S3。
 - 服务端在媒体归属上做对象级授权。
 - `GET /media/{mediaId}` 只为已绑定到 `PUBLISHED` 作品的媒体签发短期 GET URL。
+- 数字文件使用独立私有 bucket/prefix；上传完成后经过扫描、哈希、MIME 和大小校验后才能绑定到数字作品版本。
 
 **前端**
 
 - `studio/artworks/new`：上传组件 + 草稿。
 - `studio/artworks/[id]`：编辑。
 - 公共详情页接真实 API，并通过短期媒体 URL 渲染画廊。
+- Studio 根据产品类型显示实体库存或数字资产上传/版本管理；消费者只看到交付类型和文件规格，不看到原始存储地址。
 - 页面视觉采用“独立首页 + 共享分类页”：`/` 展示品牌叙事和类别预览，`/categories/[category]` 负责分类搜索与作品网格。
 
 **Week 4 验收**
@@ -261,12 +279,16 @@
 - 已完成幂等入口：PostgreSQL 先 claim 幂等键，再执行库存和订单写入，成功后 complete；相同 Key 不重复扣库存，不同请求摘要返回冲突。
 - 订单超期定时任务：返还库存必须幂等。
 - 复用 Catalog `StockAvailabilityPort`，Ordering 不直接读 `artworks` 表。
+- 创建订单根据作品类型分流：实体订单必须有地址并预占库存；数字订单数量通常为 1，地址必须为空，不扣实体库存。
+- 订单表增加 `fulfillment_type`，并由数据库约束保证实体订单地址非空、数字订单地址为空。
+- 数字订单支付确认后通过 Outbox 发布 `DigitalEntitlementRequested`，由数字交付模块幂等创建授权；订单详情只返回授权状态，不返回下载 URL。
 
 **前端**
 
 - 结算页骨架：地址、订单摘要、跳支付占位。
 - 我的订单列表 + 详情。
-- 当前已完成创建订单 HTTP 入口；结算页、订单列表/详情待后续补齐。
+- 当前已完成创建订单 HTTP 入口、结算页、订单列表和订单详情；支付跳转仍等待具体 Provider。
+- 结算页按产品类型渲染不同表单：数字产品不展示地址字段，也不发送空地址对象。
 - 本周不接具体支付 Provider，支付会话留到 Week 8 的统一 Payment Provider 端口。
 
 **Week 7 验收**
@@ -276,7 +298,8 @@
 - 相同幂等键同请求重放同一订单，不同请求摘要返回 `409 IDEMPOTENCY_KEY_REUSED`，并发请求只允许一个执行。
 - 订单超期返还库存幂等。
 - PostgreSQL Testcontainers 覆盖条件更新失败、并发预占、缓存降级、超时返还和事务回滚；Redis Testcontainers 覆盖 Lua 原子脚本。
-- 当前剩余：真实 PostgreSQL/Redis Testcontainers 并发验收、数据库幂等适配器集成测试，以及订单查询和结算页。
+- 当前剩余：Redis 缓存重建、真实 Redis Testcontainers 验收、Outbox 业务事件接入，以及实体/数字双履约实现。
+- 数字产品验收新增：地址不落库、数字订单不扣实体库存、授权幂等、下载越权和撤销授权测试。
 
 ---
 
@@ -332,6 +355,7 @@
 
 - MVP 事件：`ArtworkPublished`、`PaymentSucceeded`、`PaymentFailed`、`OrderStatusChanged`。
 - 通道：站内通知 + 邮件 stub（控制台 + 适配器接口），不接真实 SMTP。
+- 数字产品事件：`DigitalEntitlementGranted`、`DigitalAssetRecalled`；通知只携带订单或作品入口，不携带签名下载 URL。
 
 **Week 9 验收**
 
@@ -358,6 +382,8 @@
 - Dashboard：4 个核心数字卡。
 - 作品列表/编辑/发布：乐观锁版本号，字段错误展示；当前已完成新建、编辑和审核提交，Studio 作品列表待补。
 - 订单列表/详情/履约：状态推进按钮。
+- 数字产品工作流：创建数字产品 → 上传私有资产 → 病毒扫描/哈希校验 → 发布不可变资产版本 → 查看数字订单与下载统计；Studio 不读取买家下载 Token。
+- 新增数据模型：`digital_assets`、`digital_asset_versions`、`entitlements`、`download_grants`。替换文件必须创建新版本，保留旧版本审计记录。
 
 **Week 10 验收**
 
@@ -373,8 +399,10 @@
 **前端**
 
 - Checkout：地址表单（React Hook Form + Zod）、订单摘要、Stripe Element、错误展示。
+- Checkout 根据产品类型选择地址表单；数字产品不收集地址，并显示支付完成后的交付说明。
 - Order Result：成功/失败/待处理三态。
 - Order History：分页、状态筛选、空态。
+- Digital Delivery：订单详情展示授权状态、文件名、大小和版本；只有授权有效时才能申请短期下载链接，过期后重新申请。
 - Mobile responsive：375 / 768 / 1440。
 - 动效：160–240ms，遵守 `prefers-reduced-motion`。
 
@@ -382,6 +410,7 @@
 
 - Order 详情返回最新状态和支付信息。
 - 幂等与错误响应在所有写接口完整。
+- 数字交付接口：`GET /orders/{id}/entitlement`、`POST /orders/{id}/download-grants`；仅已支付且授权有效的买家可调用，长期权限与短期下载凭证分离。
 
 **Week 11 验收**
 
@@ -403,6 +432,7 @@
 - Rate Limit：登录/注册/刷新/支付意图。
 - Input Validation：Bean Validation + 自定义业务校验。
 - Object-level Authorization：每个 Controller 校验资源 owner。
+- 数字资产安全：私有 bucket、短期签名 URL、对象级授权、下载审计、撤销授权和防枚举；禁止通过公开媒体 URL 访问原始文件。
 - Stripe Webhook Signature：所有路径强制验签。
 - 依赖扫描：GitHub Dependabot + OWASP dependency-check。
 - 日志：禁记密码、Token、Cookie、支付信息、完整地址与邮箱。
@@ -410,9 +440,10 @@
 **E2E（4 条核心）**
 
 1. **Discover**：搜索 → 列表 → 详情 → 返回。
-2. **Purchase**：作品 → 下单 → Stripe 测试支付 → 订单 PAID。
-3. **Creator Publish**：申请 Creator → 上传作品 → 发布 → 消费者可见。
-4. **Creator Fulfillment**：用户下单 → 创作者接单 → 发货 → 状态推进。
+2. **Physical Purchase**：实体作品 → 地址结算 → 测试支付 → 订单 PAID → 创作者履约。
+3. **Digital Purchase**：数字作品 → 无地址结算 → 测试支付 → 授权生成 → 获取下载 → 越权访问被拒。
+4. **Creator Publish**：申请 Creator → 上传作品或数字资产 → 发布 → 消费者可见。
+5. **Creator Fulfillment**：用户下单 → 创作者接单 → 发货或更新数字资产版本 → 状态推进。
 
 **Week 12 验收**
 
@@ -437,6 +468,7 @@
 
 - RDS 自动备份 + 至少一次恢复演练。
 - 对象存储生命周期策略。
+- 数字资产生命周期：原始文件私有存储并按版本保留；扫描失败自动隔离，未绑定资产定期清理；下载日志只保留必要审计字段，不记录签名 URL。
 
 **监控告警（轻量）**
 

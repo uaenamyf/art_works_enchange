@@ -27,6 +27,9 @@
 | `PaymentSucceeded` v1 | 集成事件 | Payment | Ordering、Notification | `paymentId`、`orderId`、`amount`、`currency` | 已支付订单保持 `PAID`，不重复迁移 |
 | `PaymentFailed` v1 | 集成事件 | Payment | Ordering | `paymentId`、`orderId`、`reasonCode` | 不回退已支付订单 |
 | `OrderStatusChanged` v1 | 集成事件 | Ordering | Notification | `orderId`、`fromStatus`、`toStatus` | 每个订单版本只通知一次 |
+| `DigitalEntitlementRequested` v1 | 集成事件 | Ordering | Digital Delivery | `orderId`、`artworkId`、`assetVersionId`、`buyerId` | 同一订单只创建一次购买授权 |
+| `DigitalEntitlementGranted` v1 | 集成事件 | Digital Delivery | Ordering、Notification | `orderId`、`assetVersionId`、`entitlementId` | 已授权订单不重复创建下载权限 |
+| `DigitalAssetRecalled` v1 | 集成事件 | Catalog/Digital Delivery | Ordering、Notification | `artworkId`、`assetVersionId`、`reasonCode` | 撤销授权后不能继续签发下载凭证 |
 
 ## 演进规则
 
@@ -34,3 +37,4 @@
 - 消费者至少兼容当前版本和前一版本，未知字段必须忽略。
 - 不直接将领域对象、PersistenceRow/DO 或第三方 Webhook 载荷作为事件载荷。
 - 新增消费者时必须记录幂等键、失败重试和补偿行为。
+- 数字交付事件不得包含对象存储 key、签名 URL、下载 Token、买家地址或其他个人信息；下载地址必须在授权校验后临时生成。
