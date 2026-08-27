@@ -2,6 +2,19 @@ import { Tabs } from "@/components/ui/Tabs";
 import { ArtworkCard } from "@/components/domain/ArtworkCard";
 import type { ArtworkCardData } from "@/components/domain/types";
 import { apiFetch } from "@/lib/api/fetcher";
+import Link from "next/link";
+
+const categories = [
+  "ART",
+  "PHOTOGRAPHY",
+  "CERAMICS",
+  "WOODWORK",
+  "LEATHER",
+  "JEWELRY",
+  "FASHION",
+  "DIGITAL",
+  "COLLECTIBLES"
+] as const;
 
 interface ArtworkListResponse {
   items: ArtworkListItem[];
@@ -31,9 +44,21 @@ interface CreatorDetail {
   displayName: string;
 }
 
+interface PageProps {
+  searchParams: Promise<{ query?: string; category?: string }>;
+}
+
 /** Discover 页面：读取公开作品列表，并将媒体与 Creator 快照映射为卡片视图。 */
-export default async function DiscoverPage() {
-  const response = await apiFetch<ArtworkListResponse>("/api/v1/artworks?sort=LATEST&limit=20");
+export default async function DiscoverPage({ searchParams }: PageProps) {
+  const filters = await searchParams;
+  const query = filters.query?.trim() ?? "";
+  const category = categories.includes(filters.category as (typeof categories)[number])
+    ? filters.category
+    : "";
+  const params = new URLSearchParams({ sort: "LATEST", limit: "20" });
+  if (query) params.set("query", query);
+  if (category) params.set("category", category);
+  const response = await apiFetch<ArtworkListResponse>(`/api/v1/artworks?${params.toString()}`);
   const latest = await toCardData(response.items);
 
   return (
@@ -44,6 +69,35 @@ export default async function DiscoverPage() {
           每一件作品背后都是一个人。看看他们最近在做什么，收藏你喜欢的创作者。
         </p>
       </section>
+
+      <form method="get" className="mb-8 grid gap-3 border-y border-ink-300 py-4 md:grid-cols-[1fr_14rem_auto]">
+        <label className="flex flex-col gap-1.5 text-sm text-ink-700">
+          搜索作品
+          <input
+            name="query"
+            defaultValue={query}
+            placeholder="输入标题或描述"
+            className="h-11 rounded-token border border-ink-300 bg-white px-3 text-ink-900 focus-visible:border-ink-900 focus-visible:outline-none"
+          />
+        </label>
+        <label className="flex flex-col gap-1.5 text-sm text-ink-700">
+          类别
+          <select
+            name="category"
+            defaultValue={category}
+            className="h-11 rounded-token border border-ink-300 bg-white px-3 text-ink-900 focus-visible:border-ink-900 focus-visible:outline-none"
+          >
+            <option value="">全部类别</option>
+            {categories.map((item) => <option key={item}>{item}</option>)}
+          </select>
+        </label>
+        <div className="flex items-end gap-3">
+          <button type="submit" className="h-11 rounded-token bg-ink-900 px-5 text-sm font-medium text-white hover:bg-ink-700">
+            搜索
+          </button>
+          {query || category ? <Link href="/" className="pb-3 text-sm text-ink-500 hover:text-ink-900">清除</Link> : null}
+        </div>
+      </form>
 
       <Tabs
         items={[
