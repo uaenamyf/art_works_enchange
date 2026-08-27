@@ -39,10 +39,10 @@ export class ApiError extends Error {
 }
 
 export function getApiBaseUrl(): string {
-  // Server Component 可使用容器内 DNS；浏览器只能访问宿主机可达地址。
+  // 本机 Web 进程的 Server Component 访问宿主机 API；容器部署通过环境变量覆盖。
   // NEXT_PUBLIC_* 会进入客户端产物，禁止在其中放置任何密钥或内部凭据。
   if (typeof window === "undefined") {
-    return process.env.API_INTERNAL_BASE_URL ?? "http://api:8080";
+    return process.env.API_INTERNAL_BASE_URL ?? "http://localhost:8080";
   }
   return process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 }
