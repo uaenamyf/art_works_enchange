@@ -20,5 +20,7 @@ export const ROUTES = {
   authRegister: "/auth/register",
   creatorApply: "/studio/creator/apply",
   favorites: "/me/favorites",
-  follows: "/me/follows"
+  follows: "/me/follows",
+  orders: "/orders",
+  orderDetail: (id: string) => `/orders/${id}`
 } as const;
