@@ -56,18 +56,19 @@ export async function loadArtworkCards(options: {
   return { ...response, items: await toCardData(response.items) };
 }
 
-export function ArtworkRow({ items, nextCursor, query, category }: {
+export function ArtworkRow({ items, nextCursor, query, category, layout = "row" }: {
   items: ArtworkCardData[];
   nextCursor: string | null;
   query?: string;
   category: ArtworkCategory;
+  layout?: "row" | "grid";
 }) {
   if (items.length === 0) return <div className="border-b border-ink-300 py-12 text-sm text-ink-500">暂无已发布作品</div>;
   return (
     <>
-      <ul className="flex snap-x gap-4 overflow-x-auto pb-3">
+      <ul className={layout === "grid" ? "grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-3 lg:grid-cols-4" : "flex snap-x gap-4 overflow-x-auto pb-3"}>
         {items.map((artwork, index) => (
-          <li key={artwork.id} className="w-[72vw] shrink-0 snap-start sm:w-[40vw] md:w-[30vw] lg:w-[23vw]">
+          <li key={artwork.id} className={layout === "grid" ? "min-w-0" : "w-[72vw] shrink-0 snap-start sm:w-[40vw] md:w-[30vw] lg:w-[23vw]"}>
             <ArtworkCard artwork={artwork} priority={index === 0} />
           </li>
         ))}

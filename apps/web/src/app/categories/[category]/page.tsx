@@ -30,7 +30,7 @@ export default async function ArtworkCategoryPage({ params, searchParams }: Page
       <nav aria-label="作品分类" className="mb-12 flex gap-2 overflow-x-auto pb-2">
         {artworkCategories.map(([label, value]) => <Link key={value} href={`/categories/${value}`} className={`shrink-0 rounded-full px-4 py-2 text-sm ${value === category[1] ? "bg-ink-900 text-white" : "border border-ink-300 text-ink-700 hover:border-ink-900"}`}>{label}</Link>)}
       </nav>
-      <ArtworkRow items={response.items} nextCursor={response.nextCursor} query={query} category={category[1]} />
+      <ArtworkRow items={response.items} nextCursor={response.nextCursor} query={query} category={category[1]} layout="grid" />
     </main>
   );
 }
