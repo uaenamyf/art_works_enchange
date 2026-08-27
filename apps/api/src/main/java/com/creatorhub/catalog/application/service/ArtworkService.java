@@ -127,6 +127,7 @@ public class ArtworkService implements ArtworkUseCases {
                     new ArtworkListView(
                         artwork.id().value(),
                         artwork.title(),
+                        artwork.category(),
                         artwork.price().amount(),
                         artwork.price().currency().getCurrencyCode(),
                         artwork.stock(),

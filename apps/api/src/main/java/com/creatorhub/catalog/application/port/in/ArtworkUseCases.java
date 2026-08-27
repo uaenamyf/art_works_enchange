@@ -55,6 +55,7 @@ public interface ArtworkUseCases {
   record ArtworkListView(
       UUID id,
       String title,
+      String category,
       BigDecimal priceAmount,
       String priceCurrency,
       int stock,

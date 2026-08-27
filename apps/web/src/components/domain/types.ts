@@ -8,6 +8,7 @@ import { clsx } from "clsx";
 export interface ArtworkCardData {
   id: string;
   title: string;
+  category?: string;
   creatorId: string;
   creatorName: string;
   priceCents: number;

@@ -1467,13 +1467,15 @@ components:
           type: boolean
     ArtworkListItem:
       type: object
-      required: [id, title, priceAmount, priceCurrency, stock, creatorId, coverMediaId, status, publishedAt]
+      required: [id, title, category, priceAmount, priceCurrency, stock, creatorId, coverMediaId, status, publishedAt]
       properties:
         id:
           type: string
           format: uuid
         title:
           type: string
+        category:
+          $ref: '#/components/schemas/ArtworkCategory'
         priceAmount:
           type: string
           pattern: '^\d+(\.\d{1,2})?$'
