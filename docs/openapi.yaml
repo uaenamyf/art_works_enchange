@@ -1460,11 +1460,41 @@ components:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/ArtworkSummary'
+            $ref: '#/components/schemas/ArtworkListItem'
         nextCursor:
           type: [string, 'null']
         hasMore:
           type: boolean
+    ArtworkListItem:
+      type: object
+      required: [id, title, priceAmount, priceCurrency, stock, creatorId, coverMediaId, status, publishedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        priceAmount:
+          type: string
+          pattern: '^\d+(\.\d{1,2})?$'
+        priceCurrency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        stock:
+          type: integer
+          minimum: 0
+        creatorId:
+          type: string
+          format: uuid
+        coverMediaId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [PUBLISHED]
+        publishedAt:
+          type: string
+          format: date-time
     CreatorPage:
       type: object
       required: [items, hasMore]

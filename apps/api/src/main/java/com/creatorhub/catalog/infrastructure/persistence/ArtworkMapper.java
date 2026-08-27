@@ -1,6 +1,8 @@
 package com.creatorhub.catalog.infrastructure.persistence;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -9,6 +11,35 @@ import org.apache.ibatis.annotations.Select;
 /** Artwork 主表 Mapper；UUID 主键查询显式声明，避免 MyBatis-Plus 属性推断问题。 */
 @Mapper
 interface ArtworkMapper extends BaseMapper<ArtworkPersistenceRow> {
+
+  /** 按 created_at/id 的稳定倒序游标查询公开作品；关键词和分类均在数据库过滤。 */
+  @Select(
+      """
+            <script>
+            SELECT id, owner_id, creator_id, title, description, category,
+                         price_amount, price_currency, stock, status, version,
+                         review_reason, reviewed_at, created_at, updated_at
+            FROM artworks
+            WHERE status = 'PUBLISHED'
+                <if test='query != null and query != ""'>
+                    AND (title ILIKE CONCAT('%', #{query}, '%') OR description ILIKE CONCAT('%', #{query}, '%'))
+                </if>
+                <if test='category != null and category != ""'>AND category = #{category}</if>
+                <if test='creatorId != null'>AND creator_id = #{creatorId}</if>
+                <if test='beforeCreatedAt != null'>
+                    AND (created_at, id) &lt; (#{beforeCreatedAt}, #{beforeId})
+                </if>
+            ORDER BY created_at DESC, id DESC
+            LIMIT #{limit}
+            </script>
+            """)
+  List<ArtworkPersistenceRow> findPublishedPage(
+      @Param("query") String query,
+      @Param("category") String category,
+      @Param("creatorId") UUID creatorId,
+      @Param("beforeCreatedAt") Instant beforeCreatedAt,
+      @Param("beforeId") UUID beforeId,
+      @Param("limit") int limit);
 
   /** 查询指定 owner 的作品，用于对象级权限校验。 */
   @Select(

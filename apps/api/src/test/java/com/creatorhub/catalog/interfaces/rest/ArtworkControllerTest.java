@@ -34,7 +34,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 /** 验证作品写接口的 Creator 权限、嵌套金额校验和发布用例转发。 */
 @WebMvcTest(
-  controllers = {ArtworkController.class, StudioArtworkController.class},
+    controllers = {ArtworkController.class, StudioArtworkController.class},
     properties = {
       "creatorhub.security.jwt.secret=change-me-please-change-me-please-32bytes",
       "creatorhub.security.jwt.issuer=creatorhub",
@@ -124,6 +124,19 @@ class ArtworkControllerTest {
         .andExpect(jsonPath("$.status").value("PUBLISHED"));
 
     verify(artworks).getPublished(artworkId);
+  }
+
+  @Test
+  void anonymousUserCanListPublishedArtworks() throws Exception {
+    when(artworks.listPublished(null, null, null, "LATEST", null, 20))
+        .thenReturn(new ArtworkUseCases.ArtworkPage(List.of(), null, false));
+
+    mvc.perform(get("/api/v1/artworks").param("sort", "LATEST"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items").isArray())
+        .andExpect(jsonPath("$.hasMore").value(false));
+
+    verify(artworks).listPublished(null, null, null, "LATEST", null, 20);
   }
 
   @Test

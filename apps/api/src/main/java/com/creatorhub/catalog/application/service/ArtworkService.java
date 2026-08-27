@@ -9,6 +9,10 @@ import com.creatorhub.sharedkernel.UserId;
 import com.creatorhub.sharedkernel.domain.AppClock;
 import com.creatorhub.sharedkernel.domain.Money;
 import com.creatorhub.sharedkernel.error.BusinessError;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Base64;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -98,6 +102,43 @@ public class ArtworkService implements ArtworkUseCases {
     return view(artworks.save(artwork));
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public ArtworkPage listPublished(
+      String query, String category, UUID creatorId, String sort, String cursor, int limit) {
+    int pageSize = Math.min(Math.max(limit, 1), 50);
+    Cursor decoded = Cursor.decode(cursor);
+    List<Artwork> results =
+        artworks.findPublishedPage(
+            new ArtworkRepository.PublishedPageQuery(
+                blankToNull(query),
+                blankToNull(category),
+                creatorId,
+                decoded.createdAt(),
+                decoded.id(),
+                pageSize + 1));
+    boolean hasMore = results.size() > pageSize;
+    List<Artwork> page = results.stream().limit(pageSize).toList();
+    String nextCursor = hasMore ? Cursor.encode(page.get(page.size() - 1)) : null;
+    return new ArtworkPage(
+        page.stream()
+            .map(
+                artwork ->
+                    new ArtworkListView(
+                        artwork.id().value(),
+                        artwork.title(),
+                        artwork.price().amount(),
+                        artwork.price().currency().getCurrencyCode(),
+                        artwork.stock(),
+                        artwork.creatorId(),
+                        artwork.mediaIds().get(0),
+                        artwork.status(),
+                        artwork.createdAt()))
+            .toList(),
+        nextCursor,
+        hasMore);
+  }
+
   private Artwork owned(UUID userId, UUID artworkId) {
     return artworks
         .findByOwnerId(UserId.of(userId), ArtworkId.of(artworkId))
@@ -108,6 +149,30 @@ public class ArtworkService implements ArtworkUseCases {
     return Money.of(
         Objects.requireNonNull(command.priceAmount(), "priceAmount").toPlainString(),
         Objects.requireNonNull(command.priceCurrency(), "priceCurrency"));
+  }
+
+  private static String blankToNull(String value) {
+    return value == null || value.isBlank() ? null : value.trim();
+  }
+
+  private record Cursor(Instant createdAt, ArtworkId id) {
+    static Cursor decode(String value) {
+      if (value == null || value.isBlank()) return new Cursor(null, null);
+      try {
+        String decoded = new String(Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8);
+        String[] parts = decoded.split("\\|", 2);
+        return new Cursor(Instant.parse(parts[0]), ArtworkId.of(UUID.fromString(parts[1])));
+      } catch (RuntimeException ex) {
+        throw new BusinessError("INVALID_CURSOR", "Cursor is invalid");
+      }
+    }
+
+    static String encode(Artwork artwork) {
+      String value = artwork.createdAt() + "|" + artwork.id().value();
+      return Base64.getUrlEncoder()
+          .withoutPadding()
+          .encodeToString(value.getBytes(StandardCharsets.UTF_8));
+    }
   }
 
   private static ArtworkView view(Artwork artwork) {

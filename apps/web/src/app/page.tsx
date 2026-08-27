@@ -1,17 +1,40 @@
 import { Tabs } from "@/components/ui/Tabs";
 import { ArtworkCard } from "@/components/domain/ArtworkCard";
-import { mockArtworks } from "@/lib/mock/data";
 import type { ArtworkCardData } from "@/components/domain/types";
+import { apiFetch } from "@/lib/api/fetcher";
 
-/**
- * Discover 页面：Week 1-2 阶段只渲染静态骨架 + mock 数据。
- * 视觉上强调留白与 4:5 作品比例，避免促销型电商模板。
- */
-export default function DiscoverPage() {
-  const latest: ArtworkCardData[] = [...mockArtworks].sort(
-    (a, b) => +new Date(b.publishedAt) - +new Date(a.publishedAt)
-  );
-  const popular = [...mockArtworks].reverse();
+interface ArtworkListResponse {
+  items: ArtworkListItem[];
+  hasMore: boolean;
+  nextCursor: string | null;
+}
+
+interface ArtworkListItem {
+  id: string;
+  title: string;
+  priceAmount: string;
+  priceCurrency: string;
+  stock: number;
+  creatorId: string;
+  coverMediaId: string;
+  status: "PUBLISHED";
+  publishedAt: string;
+}
+
+interface PublicMedia {
+  id: string;
+  url: string;
+}
+
+interface CreatorDetail {
+  id: string;
+  displayName: string;
+}
+
+/** Discover 页面：读取公开作品列表，并将媒体与 Creator 快照映射为卡片视图。 */
+export default async function DiscoverPage() {
+  const response = await apiFetch<ArtworkListResponse>("/api/v1/artworks?sort=LATEST&limit=20");
+  const latest = await toCardData(response.items);
 
   return (
     <div className="mx-auto w-full max-w-gallery px-6 py-16">
@@ -32,16 +55,40 @@ export default function DiscoverPage() {
           {
             value: "popular",
             label: "热门",
-            content: <ArtworkGrid items={popular} />
+            content: <ArtworkGrid items={latest} />
           },
           {
             value: "trending",
             label: "趋势",
-            content: <ArtworkGrid items={popular.slice().reverse()} />
+            content: <ArtworkGrid items={latest} />
           }
         ]}
       />
     </div>
+  );
+}
+
+async function toCardData(items: ArtworkListItem[]): Promise<ArtworkCardData[]> {
+  return Promise.all(
+    items.map(async (item) => {
+      const [media, creator] = await Promise.all([
+        apiFetch<PublicMedia>(`/api/v1/media/${item.coverMediaId}`),
+        apiFetch<CreatorDetail>(`/api/v1/creators/${item.creatorId}`)
+      ]);
+      return {
+        id: item.id,
+        title: item.title,
+        creatorId: item.creatorId,
+        creatorName: creator.displayName,
+        priceCents: Math.round(Number(item.priceAmount) * 100),
+        currency: item.priceCurrency,
+        imageUrl: media.url,
+        aspect: "4/5",
+        publishedAt: item.publishedAt,
+        isFavorite: false,
+        isForSale: item.stock > 0
+      } satisfies ArtworkCardData;
+    })
   );
 }
 
@@ -52,6 +99,15 @@ function ArtworkGrid({
   items: ArtworkCardData[];
   priorityFirst?: boolean;
 }) {
+  if (items.length === 0) {
+    return (
+      <div className="border-y border-ink-300 py-16 text-center">
+        <h2 className="text-xl text-ink-900">暂时没有已发布作品</h2>
+        <p className="mt-2 text-sm text-ink-500">新的作品会在通过审核后出现在这里。</p>
+      </div>
+    );
+  }
+
   return (
     <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {items.map((artwork, index) => (

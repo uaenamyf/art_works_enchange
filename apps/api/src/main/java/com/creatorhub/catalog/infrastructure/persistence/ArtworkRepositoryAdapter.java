@@ -7,6 +7,7 @@ import com.creatorhub.sharedkernel.UserId;
 import com.creatorhub.sharedkernel.domain.AppClock;
 import com.creatorhub.sharedkernel.domain.Money;
 import com.creatorhub.sharedkernel.error.BusinessError;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
@@ -38,6 +39,21 @@ public class ArtworkRepositoryAdapter implements ArtworkRepository {
   public Optional<Artwork> findByOwnerId(UserId ownerId, ArtworkId id) {
     return Optional.ofNullable(mapper.findByOwnerId(ownerId.value(), id.value()))
         .map(row -> toDomain(row, mediaMapper.findIdsByArtworkId(row.getId())));
+  }
+
+  @Override
+  public List<Artwork> findPublishedPage(PublishedPageQuery query) {
+    return mapper
+        .findPublishedPage(
+            query.query(),
+            query.category(),
+            query.creatorId(),
+            query.beforeCreatedAt(),
+            query.beforeId() == null ? null : query.beforeId().value(),
+            query.limit())
+        .stream()
+        .map(row -> toDomain(row, mediaMapper.findIdsByArtworkId(row.getId())))
+        .toList();
   }
 
   @Override

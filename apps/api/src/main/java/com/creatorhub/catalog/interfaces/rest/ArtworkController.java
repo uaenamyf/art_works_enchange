@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Artwork 写接口适配器；owner 只来自安全上下文，审核状态只能由后台审核用例推进。 */
@@ -36,6 +37,19 @@ public class ArtworkController {
   public ArtworkController(ArtworkUseCases artworks, ArtworkReviewUseCases reviews) {
     this.artworks = artworks;
     this.reviews = reviews;
+  }
+
+  /** 公开作品列表；数据库只读取 PUBLISHED，排序参数保留为兼容契约入口。 */
+  @GetMapping
+  ResponseEntity<ArtworkUseCases.ArtworkPage> list(
+      @RequestParam(required = false) String query,
+      @RequestParam(required = false) String category,
+      @RequestParam(required = false) UUID creatorId,
+      @RequestParam(defaultValue = "LATEST") String sort,
+      @RequestParam(required = false) String cursor,
+      @RequestParam(defaultValue = "20") int limit) {
+    return ResponseEntity.ok(
+        artworks.listPublished(query, category, creatorId, sort, cursor, limit));
   }
 
   /** 公开详情只读取审核通过并已发布的作品，未发布状态统一按不存在处理。 */

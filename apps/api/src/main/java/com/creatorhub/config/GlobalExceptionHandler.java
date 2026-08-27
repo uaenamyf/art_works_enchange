@@ -34,6 +34,7 @@ public class GlobalExceptionHandler {
           case "CREATOR_NOT_FOUND" -> HttpStatus.NOT_FOUND;
           case "ARTWORK_NOT_FOUND" -> HttpStatus.NOT_FOUND;
           case "MEDIA_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+          case "INVALID_CURSOR" -> HttpStatus.BAD_REQUEST;
           case "ARTWORK_VERSION_CONFLICT" -> HttpStatus.CONFLICT;
           default -> HttpStatus.BAD_REQUEST;
         };

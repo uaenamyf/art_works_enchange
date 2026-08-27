@@ -2,6 +2,7 @@ package com.creatorhub.catalog.application.port.in;
 
 import com.creatorhub.catalog.domain.model.ArtworkStatus;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,6 +22,9 @@ public interface ArtworkUseCases {
   ArtworkView publish(UUID userId, UUID artworkId);
 
   ArtworkView archive(UUID userId, UUID artworkId);
+
+  ArtworkPage listPublished(
+      String query, String category, UUID creatorId, String sort, String cursor, int limit);
 
   /** 只读作品快照，后续可扩展媒体详情而不泄露领域对象。 */
   record ArtworkView(
@@ -45,4 +49,17 @@ public interface ArtworkUseCases {
       int stock,
       List<UUID> mediaIds,
       long version) {}
+
+  record ArtworkPage(List<ArtworkListView> items, String nextCursor, boolean hasMore) {}
+
+  record ArtworkListView(
+      UUID id,
+      String title,
+      BigDecimal priceAmount,
+      String priceCurrency,
+      int stock,
+      UUID creatorId,
+      UUID coverMediaId,
+      ArtworkStatus status,
+      Instant publishedAt) {}
 }
