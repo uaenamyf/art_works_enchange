@@ -74,7 +74,7 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
             </p>
             <div className="mt-4 flex flex-col gap-2">
               {/* Week 2 占位操作：尚未创建订单、收藏或分享副作用。 */}
-              <Button size="lg">立即购买</Button>
+              <Link href={`/checkout/${artwork.id}`} className="inline-flex h-12 items-center justify-center rounded-token bg-ink-900 px-5 text-base font-medium text-white hover:bg-ink-700">立即购买</Link>
               <div className="grid grid-cols-2 gap-2">
                 <FavoriteButton artworkId={artwork.id} initialFavorited={artwork.favoritedByMe} />
                 <Button variant="secondary" leftIcon={<Share2 className="size-4" />}>
