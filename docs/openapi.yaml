@@ -823,6 +823,40 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+  /orders/{orderId}/payment-session:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      tags: [Payments]
+      operationId: createPaymentSession
+      summary: 为订单创建或复用支付会话（Week 8）
+      description: 支付渠道由服务端配置决定具体实现；客户端不得据此直接修改订单状态。
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentSessionRequest'
+      responses:
+        '200':
+          description: Provider-specific 客户端支付参数
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /payments/webhooks/stripe:
     parameters:
       - $ref: '#/components/parameters/RequestId'
@@ -1761,6 +1795,34 @@ components:
           const: STRIPE
         clientSecret:
           type: string
+    PaymentProvider:
+      type: string
+      enum: [STRIPE, WECHAT, ALIPAY]
+    CreatePaymentSessionRequest:
+      type: object
+      required: [provider]
+      properties:
+        provider:
+          $ref: '#/components/schemas/PaymentProvider'
+    PaymentSession:
+      type: object
+      required: [paymentId, orderId, provider, status, clientPayload]
+      properties:
+        paymentId:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+        provider:
+          $ref: '#/components/schemas/PaymentProvider'
+        status:
+          type: string
+          enum: [REQUIRES_ACTION, PROCESSING, SUCCEEDED, FAILED]
+        clientPayload:
+          type: object
+          additionalProperties: true
+          description: Provider-specific payload；不得包含商户密钥或 Webhook secret
     UpdateOrderStatusRequest:
       type: object
       required: [status]
