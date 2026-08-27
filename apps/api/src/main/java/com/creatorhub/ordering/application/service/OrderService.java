@@ -10,6 +10,7 @@ import com.creatorhub.ordering.application.port.out.StockReservationGate;
 import com.creatorhub.ordering.domain.model.Order;
 import com.creatorhub.ordering.domain.model.OrderId;
 import com.creatorhub.ordering.domain.model.OrderLine;
+import com.creatorhub.ordering.domain.model.OrderStatus;
 import com.creatorhub.ordering.domain.repository.OrderRepository;
 import com.creatorhub.sharedkernel.UserId;
 import com.creatorhub.sharedkernel.domain.Money;
@@ -140,8 +141,55 @@ public class OrderService implements OrderUseCases {
     return expired;
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public OrderView get(UUID buyerId, UUID orderId) {
+    Order order =
+        orders
+            .findById(orderId)
+            .filter(candidate -> candidate.buyerId().value().equals(buyerId))
+            .orElseThrow(() -> new BusinessError("ORDER_NOT_FOUND", "Order not found"));
+    return view(order);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public OrderPage list(UUID buyerId, OrderStatus status, String cursor, int limit) {
+    int pageSize = Math.min(Math.max(limit, 1), 50);
+    Cursor decoded = Cursor.decode(cursor);
+    var results =
+        orders.findByBuyer(buyerId, status, decoded.createdAt(), decoded.id(), pageSize + 1);
+    boolean hasMore = results.size() > pageSize;
+    var page = results.stream().limit(pageSize).toList();
+    return new OrderPage(
+        page.stream().map(OrderService::view).toList(),
+        hasMore ? Cursor.encode(page.get(page.size() - 1)) : null,
+        hasMore);
+  }
+
   private static String orderNumber() {
     return "CH" + UUID.randomUUID().toString().replace("-", "").substring(0, 18).toUpperCase();
+  }
+
+  private record Cursor(Instant createdAt, UUID id) {
+    static Cursor decode(String value) {
+      if (value == null || value.isBlank()) return new Cursor(null, null);
+      try {
+        String[] parts =
+            new String(java.util.Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8)
+                .split("\\|", 2);
+        return new Cursor(Instant.parse(parts[0]), UUID.fromString(parts[1]));
+      } catch (RuntimeException exception) {
+        throw new BusinessError("INVALID_CURSOR", "Cursor is invalid");
+      }
+    }
+
+    static String encode(Order order) {
+      return java.util.Base64.getUrlEncoder()
+          .withoutPadding()
+          .encodeToString(
+              (order.createdAt() + "|" + order.id().value()).getBytes(StandardCharsets.UTF_8));
+    }
   }
 
   private static Order buildOrder(

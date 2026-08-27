@@ -22,6 +22,7 @@ import com.creatorhub.ordering.domain.model.ShippingAddress;
 import com.creatorhub.ordering.domain.repository.OrderRepository;
 import com.creatorhub.sharedkernel.UserId;
 import com.creatorhub.sharedkernel.domain.Money;
+import com.creatorhub.sharedkernel.error.BusinessError;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;
@@ -249,6 +250,49 @@ class OrderServiceTest {
             org.mockito.ArgumentMatchers.eq(artworkId),
             org.mockito.ArgumentMatchers.eq(2),
             org.mockito.ArgumentMatchers.any());
+  }
+
+  @Test
+  void readsOnlyBuyerOrdersAndUsesCursorPagination() {
+    var orders = mock(OrderRepository.class);
+    var service =
+        new OrderService(
+            mock(ArtworkUseCases.class),
+            mock(StockAvailabilityPort.class),
+            orders,
+            mock(OrderIdempotencyPort.class),
+            mock(StockReservationGate.class));
+    UUID buyerId = UUID.randomUUID();
+    Order first = pendingOrder(buyerId, UUID.randomUUID());
+    Order second = pendingOrder(buyerId, UUID.randomUUID());
+    when(orders.findByBuyer(buyerId, OrderStatus.PENDING_PAYMENT, null, null, 3))
+        .thenReturn(java.util.List.of(first, second));
+
+    var result = service.list(buyerId, OrderStatus.PENDING_PAYMENT, null, 2);
+
+    assertThat(result.items()).hasSize(2);
+    assertThat(result.hasMore()).isFalse();
+    verify(orders).findByBuyer(buyerId, OrderStatus.PENDING_PAYMENT, null, null, 3);
+  }
+
+  @Test
+  void hidesOrderFromAnotherBuyer() {
+    var orders = mock(OrderRepository.class);
+    var service =
+        new OrderService(
+            mock(ArtworkUseCases.class),
+            mock(StockAvailabilityPort.class),
+            orders,
+            mock(OrderIdempotencyPort.class),
+            mock(StockReservationGate.class));
+    UUID ownerId = UUID.randomUUID();
+    Order order = pendingOrder(ownerId, UUID.randomUUID());
+    when(orders.findById(order.id().value())).thenReturn(Optional.of(order));
+
+    assertThatThrownBy(() -> service.get(UUID.randomUUID(), order.id().value()))
+        .isInstanceOf(BusinessError.class)
+        .extracting(error -> ((BusinessError) error).code())
+        .isEqualTo("ORDER_NOT_FOUND");
   }
 
   private static Order pendingOrder(UUID buyerId, UUID artworkId) {

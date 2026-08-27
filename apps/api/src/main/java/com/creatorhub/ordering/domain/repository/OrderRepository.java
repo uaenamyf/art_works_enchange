@@ -1,6 +1,7 @@
 package com.creatorhub.ordering.domain.repository;
 
 import com.creatorhub.ordering.domain.model.Order;
+import com.creatorhub.ordering.domain.model.OrderStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -17,4 +18,7 @@ public interface OrderRepository {
   boolean cancel(Order order);
 
   List<Order> findExpiredPending(Instant now, int limit);
+
+  List<Order> findByBuyer(
+      UUID buyerId, OrderStatus status, Instant beforeCreatedAt, UUID beforeId, int limit);
 }

@@ -3,6 +3,7 @@ package com.creatorhub.ordering.infrastructure.persistence;
 import com.creatorhub.catalog.domain.model.ArtworkId;
 import com.creatorhub.ordering.domain.model.Order;
 import com.creatorhub.ordering.domain.model.OrderLine;
+import com.creatorhub.ordering.domain.model.OrderStatus;
 import com.creatorhub.ordering.domain.model.ShippingAddress;
 import com.creatorhub.ordering.domain.repository.OrderRepository;
 import com.creatorhub.sharedkernel.UserId;
@@ -74,6 +75,14 @@ public class OrderRepositoryAdapter implements OrderRepository {
   @Override
   public List<Order> findExpiredPending(Instant now, int limit) {
     return mapper.findExpiredPending(now, limit).stream().map(this::toDomain).toList();
+  }
+
+  @Override
+  public List<Order> findByBuyer(
+      UUID buyerId, OrderStatus status, Instant beforeCreatedAt, UUID beforeId, int limit) {
+    return mapper.findByBuyer(buyerId, status, beforeCreatedAt, beforeId, limit).stream()
+        .map(this::toDomain)
+        .toList();
   }
 
   private Order toDomain(OrderPersistenceRow row) {

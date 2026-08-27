@@ -4,6 +4,7 @@ import com.creatorhub.ordering.domain.model.OrderStatus;
 import com.creatorhub.ordering.domain.model.ShippingAddress;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /** 订单公开用例；金额和商品信息由 Catalog 快照决定，客户端只能提交数量和收货地址。 */
@@ -14,6 +15,10 @@ public interface OrderUseCases {
   OrderView cancel(UUID buyerId, UUID orderId);
 
   int expirePendingOrders(Instant now, int limit);
+
+  OrderView get(UUID buyerId, UUID orderId);
+
+  OrderPage list(UUID buyerId, OrderStatus status, String cursor, int limit);
 
   record CreateCommand(UUID artworkId, int quantity, ShippingAddress shippingAddress) {}
 
@@ -34,4 +39,6 @@ public interface OrderUseCases {
       Instant expiresAt) {}
 
   record IdempotencyRecord(String requestHash, OrderView response) {}
+
+  record OrderPage(List<OrderView> items, String nextCursor, boolean hasMore) {}
 }

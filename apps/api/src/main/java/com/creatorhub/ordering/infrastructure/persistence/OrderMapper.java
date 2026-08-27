@@ -1,6 +1,7 @@
 package com.creatorhub.ordering.infrastructure.persistence;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.creatorhub.ordering.domain.model.OrderStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -32,4 +33,18 @@ interface OrderMapper extends BaseMapper<OrderPersistenceRow> {
   @Select(
       "SELECT * FROM orders WHERE status = 'PENDING_PAYMENT' AND expires_at <= #{now} ORDER BY expires_at ASC, id ASC LIMIT #{limit}")
   List<OrderPersistenceRow> findExpiredPending(Instant now, int limit);
+
+  @Select(
+      """
+            <script>
+            SELECT * FROM orders
+            WHERE buyer_id = #{buyerId}
+                <if test='status != null'>AND status = #{status}</if>
+                <if test='beforeCreatedAt != null'>AND (created_at, id) &lt; (#{beforeCreatedAt}, #{beforeId})</if>
+            ORDER BY created_at DESC, id DESC
+            LIMIT #{limit}
+            </script>
+            """)
+  List<OrderPersistenceRow> findByBuyer(
+      UUID buyerId, OrderStatus status, Instant beforeCreatedAt, UUID beforeId, int limit);
 }

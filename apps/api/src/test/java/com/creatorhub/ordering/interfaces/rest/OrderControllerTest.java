@@ -4,8 +4,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.creatorhub.config.GlobalExceptionHandler;
@@ -110,6 +112,37 @@ class OrderControllerTest {
                 .contentType("application/json")
                 .content("{}"))
         .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void authenticatedUserCanListOrders() throws Exception {
+    UUID buyerId = UUID.randomUUID();
+    when(orders.list(buyerId, OrderStatus.PENDING_PAYMENT, "cursor", 10))
+        .thenReturn(new OrderUseCases.OrderPage(java.util.List.of(), null, false));
+
+    mvc.perform(
+            get("/api/v1/orders")
+                .param("status", "PENDING_PAYMENT")
+                .param("cursor", "cursor")
+                .param("limit", "10")
+                .with(authentication(user(buyerId))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items").isArray())
+        .andExpect(jsonPath("$.hasMore").value(false));
+
+    verify(orders).list(buyerId, OrderStatus.PENDING_PAYMENT, "cursor", 10);
+  }
+
+  @Test
+  void authenticatedUserCanReadOwnOrder() throws Exception {
+    UUID buyerId = UUID.randomUUID();
+    UUID orderId = UUID.randomUUID();
+    when(orders.get(buyerId, orderId)).thenReturn(null);
+
+    mvc.perform(get("/api/v1/orders/{orderId}", orderId).with(authentication(user(buyerId))))
+        .andExpect(status().isOk());
+
+    verify(orders).get(buyerId, orderId);
   }
 
   private static UsernamePasswordAuthenticationToken user(UUID userId) {
