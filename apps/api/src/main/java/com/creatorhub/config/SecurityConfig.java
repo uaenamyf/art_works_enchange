@@ -57,7 +57,11 @@ public class SecurityConfig {
                     "/api/v1/auth/login",
                     "/api/v1/auth/refresh",
                     "/api/v1/auth/logout",
-                    "/api/v1/me/creator"))
+                    "/api/v1/me/creator",
+                    "/api/v1/media/upload-requests",
+                    "/api/v1/media/*/confirm",
+                    "/api/v1/favorites/**",
+                    "/api/v1/artworks/**"))
         .cors(Customizer.withDefaults())
         .headers(
             headers ->

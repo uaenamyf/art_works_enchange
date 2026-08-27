@@ -3,7 +3,6 @@ package com.creatorhub.catalog.infrastructure.persistence;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.annotation.Version;
 import com.creatorhub.catalog.domain.model.ArtworkStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -25,7 +24,7 @@ class ArtworkPersistenceRow {
   private String priceCurrency;
   private int stock;
   private ArtworkStatus status;
-  @Version private long version;
+  private long version;
   private String reviewReason;
   private Instant reviewedAt;
   private Instant createdAt;
