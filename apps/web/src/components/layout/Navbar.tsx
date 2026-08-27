@@ -61,7 +61,7 @@ export function Navbar() {
                     <p className="text-xs uppercase tracking-[0.18em] text-ink-500">按类别浏览</p>
                     <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
                       {artworkCategories.map(([label, value]) => (
-                        <Link key={value} href={`/?category=${value}`} className="py-1 text-sm text-ink-700 hover:text-brand-500">
+                        <Link key={value} href={`/categories/${value}`} className="py-1 text-sm text-ink-700 hover:text-brand-500">
                           {label}
                         </Link>
                       ))}
