@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 /** Artwork 聚合仓储适配器，显式转换领域模型和 MyBatis 持久化行。 */
 @Repository
@@ -100,6 +101,7 @@ public class ArtworkRepositoryAdapter implements ArtworkRepository, StockAvailab
   }
 
   @Override
+  @Transactional
   public boolean reserve(UUID artworkId, int quantity, UUID reservationId) {
     if (quantity < 1 || quantity > 99) {
       throw new IllegalArgumentException("quantity is invalid");
@@ -116,6 +118,7 @@ public class ArtworkRepositoryAdapter implements ArtworkRepository, StockAvailab
   }
 
   @Override
+  @Transactional
   public boolean release(UUID artworkId, int quantity, UUID reservationId) {
     if (quantity < 1 || quantity > 99) {
       throw new IllegalArgumentException("quantity is invalid");
