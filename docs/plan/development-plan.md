@@ -162,19 +162,21 @@
 - `/media/upload-requests` 颁发预签名 PUT。
 - 浏览器直传 MinIO/S3。
 - 服务端在媒体归属上做对象级授权。
+- `GET /media/{mediaId}` 只为已绑定到 `PUBLISHED` 作品的媒体签发短期 GET URL。
 
 **前端**
 
 - `studio/artworks/new`：上传组件 + 草稿。
 - `studio/artworks/[id]`：编辑。
-- 公共详情页接真实 API。
+- 公共详情页接真实 API，并通过短期媒体 URL 渲染画廊。
+- 页面视觉采用“独立首页 + 共享分类页”：`/` 展示品牌叙事和类别预览，`/categories/[category]` 负责分类搜索与作品网格。
 
 **Week 4 验收**
 
 - Creator：上传图片 → 创建设置 → 发布。
 - 消费者：作品详情页能看到图片。
-- Vitest + Playwright 覆盖：上传成功/失败、发布前缺图阻止。
-- 集成测试：FTS 查询、预签名适配器。
+- Vitest 覆盖上传表单的无图提交阻止、媒体可见性和公开详情读取；Playwright 待补齐本地 E2E 基础设施后执行。
+- 预签名上传、媒体归属、公开媒体状态门禁和作品发布链路已通过后端测试；FTS 查询待 Week 5/搜索数据模型完善后执行。
 
 ---
 
@@ -184,21 +186,23 @@
 
 **前端**
 
-- Discover：Latest、Popular、Trending、Category。
-- Marketplace：搜索、筛选、游标分页。
-- Artwork Detail：完整字段、媒体画廊、收藏按钮占位、关注按钮占位。
-- Creator Profile：完整字段、Grid 布局、作品瀑布流。
+- 独立首页 `/`：品牌叙事、按类别横向预览作品，不显示搜索栏。
+- 分类页 `/categories/[category]`：共享模板、分类内搜索、分类切换和作品网格。
+- Creator 目录 `/creators` 与 Creator Profile `/creators/[id]`：真实 API、分类筛选和公开作品展示。
+- Artwork Detail：真实字段、短期媒体画廊和收藏按钮。
+- 作品列表与 Creator 列表使用游标分页，并保留可分享 URL 状态。
 - Empty / Loading / Error / Success 四态全覆盖。
 - 无障碍：键盘可达、焦点可见、44px 触控目标。
 
 **后端补强**
 
-- 列表/搜索响应、详情 DTO 完整。
-- 推荐：**仅规则**：latest、popular、trending、category 同类去重。
+- `GET /artworks` 已支持已发布作品、关键词、类别、Creator 筛选和稳定游标分页。
+- `GET /creators` 已支持类别筛选和稳定游标分页。
+- 推荐：**待实现**；当前 `POPULAR`、`TRENDING` 暂不伪造统计排序，待收藏/趋势统计数据模型完成后按规则实现。
 
 **Week 5 验收**
 
-- 端到端：搜索 → 列表 → 详情 → 创作者 → 返回。
+- 页面路由链路已具备：分类搜索 → 作品列表 → 详情 → Creator Profile → 返回；Playwright 端到端测试待补。
 - Lighthouse 移动端基线（无障碍 ≥ 90，性能 ≥ 80）。
 - 不引入 ML 推荐。
 
@@ -208,10 +212,13 @@
 
 **目标**：用户能关注/取消关注、收藏/取消收藏，并在刷新后保持。
 
+> 进度备注：收藏基础链路已提前完成，包括 `PUT/DELETE /favorites/{artworkId}`、V6 收藏关系表、幂等约束，以及作品详情页乐观更新和失败回滚。
+
 **Collection 上下文**
 
 - 聚合：`FavoriteCollection`。
 - API：`PUT/DELETE /favorites/{artworkId}`、`GET /me/favorites`。
+- 后续补齐：`GET /me/favorites`、收藏列表游标分页，以及列表/详情中的真实 `favoriteCount` 与 `favoritedByMe` 投影。
 
 **Creator Follow**
 
@@ -326,9 +333,9 @@
 
 **前端**
 
-- `app/studio/layout.tsx`：侧边栏 + 信息密度布局。
+- `app/studio/layout.tsx`：侧边栏 + 信息密度布局（当前尚未实现，现有页面暂复用全站 AppShell）。
 - Dashboard：4 个核心数字卡。
-- 作品列表/编辑/发布：乐观锁版本号，字段错误展示。
+- 作品列表/编辑/发布：乐观锁版本号，字段错误展示；当前已完成新建、编辑和审核提交，Studio 作品列表待补。
 - 订单列表/详情/履约：状态推进按钮。
 
 **Week 10 验收**
