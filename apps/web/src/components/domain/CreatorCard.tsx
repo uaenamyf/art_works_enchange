@@ -23,20 +23,22 @@ export function CreatorCard({ creator, className }: CreatorCardProps) {
       )}
     >
       <div className="relative aspect-[16/9] bg-ink-100">
-        <Image
-          src={creator.coverUrl}
-          alt={`${creator.name} 封面`}
-          fill
-          sizes="(min-width: 1024px) 33vw, 100vw"
-          className="object-cover transition-transform duration-200 group-hover:scale-[1.02]"
-        />
+        {creator.coverUrl ? (
+          <Image
+            src={creator.coverUrl}
+            alt={`${creator.name} 封面`}
+            fill
+            sizes="(min-width: 1024px) 33vw, 100vw"
+            className="object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+          />
+        ) : <span className="flex size-full items-center justify-center text-sm text-ink-500">Creator Studio</span>}
       </div>
       <div className="flex items-start gap-3 p-4">
         <span
           aria-hidden
           className="relative -mt-8 size-12 overflow-hidden rounded-full border-2 border-white bg-ink-100 shadow-card"
         >
-          <Image src={creator.avatarUrl} alt="" fill sizes="48px" className="object-cover" />
+          {creator.avatarUrl ? <Image src={creator.avatarUrl} alt="" fill sizes="48px" className="object-cover" /> : null}
         </span>
         <div className="flex flex-col">
           <span className="text-base text-ink-900">{creator.name}</span>

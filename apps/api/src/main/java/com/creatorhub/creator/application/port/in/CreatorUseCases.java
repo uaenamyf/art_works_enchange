@@ -1,5 +1,6 @@
 package com.creatorhub.creator.application.port.in;
 
+import java.util.List;
 import java.util.UUID;
 
 /** Creator 申请、更新与公开查询用例集合。 */
@@ -12,6 +13,8 @@ public interface CreatorUseCases {
   CreatorView get(UUID creatorId);
 
   CreatorView getByUserId(UUID userId);
+
+  CreatorPage list(String category, String cursor, int limit);
 
   /** 申请命令中的 owner 始终来自认证上下文，不允许客户端传入。 */
   record ApplyCommand(
@@ -28,4 +31,16 @@ public interface CreatorUseCases {
       String category,
       String bio,
       String location) {}
+
+  record CreatorPage(List<CreatorSummaryView> items, String nextCursor, boolean hasMore) {}
+
+  record CreatorSummaryView(
+      UUID id,
+      String slug,
+      String displayName,
+      String avatarUrl,
+      String category,
+      boolean verified,
+      long followerCount,
+      boolean followedByMe) {}
 }

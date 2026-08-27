@@ -82,6 +82,10 @@ class CreatorServiceTest {
       return creators.stream().filter(creator -> creator.userId().equals(userId)).findFirst();
     }
 
+    public List<Creator> findPage(PageQuery query) {
+      return List.of();
+    }
+
     public Creator save(Creator creator) {
       creators.removeIf(existing -> existing.id().equals(creator.id()));
       creators.add(creator);

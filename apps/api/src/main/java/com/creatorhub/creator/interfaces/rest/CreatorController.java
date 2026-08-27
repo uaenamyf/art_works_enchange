@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -35,6 +36,15 @@ public class CreatorController {
 
   public CreatorController(CreatorUseCases creators) {
     this.creators = creators;
+  }
+
+  /** 公开 Creator 列表；只读查询按创建时间稳定分页，统计字段暂由占位投影返回。 */
+  @GetMapping("/creators")
+  ResponseEntity<CreatorUseCases.CreatorPage> list(
+      @RequestParam(required = false) String category,
+      @RequestParam(required = false) String cursor,
+      @RequestParam(defaultValue = "20") int limit) {
+    return ResponseEntity.ok(creators.list(category, cursor, limit));
   }
 
   /** 申请 Creator，成功返回 201 与公开资源 Location。 */

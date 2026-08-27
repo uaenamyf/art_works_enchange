@@ -62,6 +62,19 @@ class CreatorControllerTest {
   }
 
   @Test
+  void publicCreatorListSupportsCategoryFilter() throws Exception {
+    when(creators.list("ART", null, 20))
+        .thenReturn(new CreatorUseCases.CreatorPage(List.of(), null, false));
+
+    mvc.perform(get("/api/v1/creators").param("category", "ART"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items").isArray())
+        .andExpect(jsonPath("$.hasMore").value(false));
+
+    verify(creators).list("ART", null, 20);
+  }
+
+  @Test
   void authenticatedUserAppliesForCreatorUsingPrincipalAsOwner() throws Exception {
     UUID userId = UUID.randomUUID();
     UUID creatorId = UUID.randomUUID();

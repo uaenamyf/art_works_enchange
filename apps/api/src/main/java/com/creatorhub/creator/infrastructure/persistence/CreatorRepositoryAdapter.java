@@ -6,6 +6,7 @@ import com.creatorhub.creator.domain.model.CreatorId;
 import com.creatorhub.creator.domain.repository.CreatorRepository;
 import com.creatorhub.sharedkernel.UserId;
 import com.creatorhub.sharedkernel.domain.AppClock;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
@@ -45,6 +46,19 @@ public class CreatorRepositoryAdapter implements CreatorRepository {
                     .eq("user_id", userId.value())
                     .last("LIMIT 1")))
         .map(CreatorRepositoryAdapter::toDomain);
+  }
+
+  @Override
+  public List<Creator> findPage(PageQuery query) {
+    return mapper
+        .findPage(
+            query.category(),
+            query.beforeCreatedAt(),
+            query.beforeId() == null ? null : query.beforeId().value(),
+            query.limit())
+        .stream()
+        .map(CreatorRepositoryAdapter::toDomain)
+        .toList();
   }
 
   @Override

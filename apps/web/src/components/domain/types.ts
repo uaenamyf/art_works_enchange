@@ -24,8 +24,8 @@ export interface CreatorCardData {
   id: string;
   name: string;
   handle: string;
-  avatarUrl: string;
-  coverUrl: string;
+  avatarUrl: string | null;
+  coverUrl: string | null;
   bio: string;
   location: string;
   followers: number;

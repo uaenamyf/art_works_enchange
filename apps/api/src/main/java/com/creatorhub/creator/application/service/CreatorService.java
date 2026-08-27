@@ -8,6 +8,10 @@ import com.creatorhub.identity.application.port.in.PromoteUserToCreatorUseCase;
 import com.creatorhub.sharedkernel.UserId;
 import com.creatorhub.sharedkernel.domain.AppClock;
 import com.creatorhub.sharedkernel.error.BusinessError;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Base64;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -82,6 +86,58 @@ public class CreatorService implements CreatorUseCases {
         .findByUserId(UserId.of(userId))
         .map(CreatorService::toView)
         .orElseThrow(() -> new BusinessError("CREATOR_NOT_FOUND", "Creator profile not found"));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public CreatorPage list(String category, String cursor, int limit) {
+    int pageSize = Math.min(Math.max(limit, 1), 50);
+    Cursor decoded = Cursor.decode(cursor);
+    List<Creator> results =
+        creators.findPage(
+            new CreatorRepository.PageQuery(
+                category == null || category.isBlank() ? null : category.trim(),
+                decoded.createdAt(),
+                decoded.id(),
+                pageSize + 1));
+    boolean hasMore = results.size() > pageSize;
+    List<Creator> page = results.stream().limit(pageSize).toList();
+    return new CreatorPage(
+        page.stream()
+            .map(
+                creator ->
+                    new CreatorSummaryView(
+                        creator.id().value(),
+                        creator.slug(),
+                        creator.displayName(),
+                        null,
+                        creator.category(),
+                        false,
+                        0,
+                        false))
+            .toList(),
+        hasMore ? Cursor.encode(page.get(page.size() - 1)) : null,
+        hasMore);
+  }
+
+  private record Cursor(Instant createdAt, CreatorId id) {
+    static Cursor decode(String value) {
+      if (value == null || value.isBlank()) return new Cursor(null, null);
+      try {
+        String decoded = new String(Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8);
+        String[] parts = decoded.split("\\|", 2);
+        return new Cursor(Instant.parse(parts[0]), CreatorId.of(UUID.fromString(parts[1])));
+      } catch (RuntimeException ex) {
+        throw new BusinessError("INVALID_CURSOR", "Cursor is invalid");
+      }
+    }
+
+    static String encode(Creator creator) {
+      String value = creator.createdAt() + "|" + creator.id().value();
+      return Base64.getUrlEncoder()
+          .withoutPadding()
+          .encodeToString(value.getBytes(StandardCharsets.UTF_8));
+    }
   }
 
   private static CreatorView toView(Creator creator) {
