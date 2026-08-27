@@ -23,7 +23,7 @@ class CreatorServiceTest {
   void appliesCreatorAndPromotesIdentityRoleThroughPublicPort() {
     InMemoryCreators creators = new InMemoryCreators();
     RecordingPromotion promotion = new RecordingPromotion();
-    CreatorService service = new CreatorService(creators, promotion);
+    CreatorService service = new CreatorService(creators, promotion, followStats());
     UUID userId = UUID.randomUUID();
 
     var result =
@@ -39,7 +39,7 @@ class CreatorServiceTest {
   @Test
   void rejectsSecondCreatorForSameUser() {
     InMemoryCreators creators = new InMemoryCreators();
-    CreatorService service = new CreatorService(creators, userId -> {});
+    CreatorService service = new CreatorService(creators, userId -> {}, followStats());
     UUID userId = UUID.randomUUID();
     ApplyCommand command =
         new ApplyCommand("Alice Studio", "alice-studio", "ILLUSTRATION", "Bio", null);
@@ -61,6 +61,18 @@ class CreatorServiceTest {
     public void promote(UUID userId) {
       promoted = userId;
     }
+  }
+
+  private static com.creatorhub.follow.application.port.in.FollowUseCases.ReadPort followStats() {
+    return new com.creatorhub.follow.application.port.in.FollowUseCases.ReadPort() {
+      public long countByCreatorId(UUID creatorId) {
+        return 0;
+      }
+
+      public boolean isFollowing(UUID userId, UUID creatorId) {
+        return false;
+      }
+    };
   }
 
   private static final class InMemoryCreators implements CreatorRepository {

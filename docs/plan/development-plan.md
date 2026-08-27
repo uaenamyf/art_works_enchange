@@ -3,7 +3,7 @@
 > 角色视角：CTO + Tech Lead + Product Engineer
 > 适配对象：2–5 人小团队从 0 到 1
 > 现状：仓库仅含 `apps/web`、`apps/api` 空目录骨架与文档基线。
-> 目标：以最小范围在 14 周内跑通“发现 → 关注/收藏 → 下单 → Stripe 支付 → 履约 → Studio”核心闭环，并具备生产部署与基础监控能力。
+> 目标：以最小范围在 14 周内跑通“发现 → 关注/收藏 → 下单 → 多渠道支付 → 履约 → Studio”核心闭环，并具备生产部署与基础监控能力。
 
 ## 0. 战略不动摇
 
@@ -218,23 +218,26 @@
 
 - 聚合：`FavoriteCollection`。
 - API：`PUT/DELETE /favorites/{artworkId}`、`GET /me/favorites`。
-- 后续补齐：`GET /me/favorites`、收藏列表游标分页，以及列表/详情中的真实 `favoriteCount` 与 `favoritedByMe` 投影。
+- 已完成：`GET /me/favorites`、收藏列表游标分页，以及收藏页的认证、空态、错误态和成功态。
+- 待补强：作品列表/详情中的真实 `favoriteCount` 与 `favoritedByMe` 投影。
 
 **Creator Follow**
 
-- 同一上下文内新增 `Follow` 聚合与方法。
-- API：`PUT/DELETE /creators/{id}/follow`、`GET /creators/{id}/followers`、`GET /me/follows`。
-- 幂等：重复操作返回当前状态，不重复产生事件。
+- 已完成：同一上下文内的 `Follow` 关系、V7 迁移及幂等关注/取消关注。
+- 已完成 API：`PUT/DELETE /creators/{id}/follow`、`GET /creators/{id}/followers`、`GET /me/follows`。
+- 已完成投影：Creator 列表/详情返回真实 `followerCount` 和认证用户的 `followedByMe`。
+- 待补强：关注列表和粉丝列表的前端页面，以及完整 E2E 测试。
 
 **前端**
 
 - 详情页和创作者页：Follow / Favorite 切换按钮，乐观更新 + 失败回滚。
-- 我的收藏页、个人中心 follow 列表。
+- 已完成我的收藏页和我的关注页；Creator 详情页使用服务端初始关注状态。
 
 **Week 6 验收**
 
-- 刷新后状态保持。
-- 幂等测试通过（重复 PUT/DELETE 返回相同结果）。
+- 刷新后状态保持：收藏页和 Creator 详情页已接入真实 API 与服务端状态。
+- 幂等测试通过：重复 PUT/DELETE 由唯一键、删除幂等和服务层测试覆盖。
+- 读取 API 测试通过：我的关注、粉丝列表、认证与公开访问均有 Controller 覆盖。
 - ArchUnit：collection 不直接 import catalog 的 Mapper、PersistenceRow/DO 或 infrastructure。
 
 ---
@@ -248,7 +251,14 @@
 - 聚合：`Order`；值对象：`OrderLine`、`Address`、`Money`。
 - 不变量：金额使用价格快照；订单项创建后不可变；状态机严格。
 - 应用服务：`CreateOrder`、`CancelPendingOrder`、`GetOrder`、`ListMyOrders`。
-- 关键事务：单一事务内使用条件更新 `stock >= quantity` 预占库存，并写 `outbox_events`。
+- 已完成基础链路：`POST /orders`、`Order` 聚合、价格快照、`PENDING_PAYMENT` 初始状态、地址校验和 `201 + Location` 响应。
+- 已完成订单生命周期基础能力：`POST /orders/{orderId}/cancel`、待支付订单条件取消、过期扫描和库存幂等释放。
+- 已完成库存审计基础能力：V10 `inventory_movements` 流水表，预占/释放使用 `reservation_id` 幂等记录。
+- 关键事务：单一 PostgreSQL 事务内使用条件更新 `stock >= quantity` 预占库存，并写订单、库存流水和 `outbox_events`；PostgreSQL 是库存最终事实源。
+- Redis 只作为高并发前置闸门和短期缓存：使用 Lua 脚本原子校验/扣减可用库存并生成带 TTL 的 reservation token，不能绕过数据库条件更新，也不能单独决定订单成功。
+- Redis 预占成功但数据库事务失败时必须释放 token 并补回缓存；Redis 重启、淘汰、主从切换或缓存不一致时，从 PostgreSQL 重建库存缓存，宁可降级为数据库路径也不能放行超卖。
+- 幂等记录使用 PostgreSQL 唯一约束保存“用户 + createOrder + Idempotency-Key + 请求摘要 + 响应快照”；Redis 锁只用于缩短竞争窗口，不能作为唯一幂等事实源。
+- 已完成幂等入口：PostgreSQL 先 claim 幂等键，再执行库存和订单写入，成功后 complete；相同 Key 不重复扣库存，不同请求摘要返回冲突。
 - 订单超期定时任务：返还库存必须幂等。
 - 复用 Catalog `StockAvailabilityPort`，Ordering 不直接读 `artworks` 表。
 
@@ -256,27 +266,38 @@
 
 - 结算页骨架：地址、订单摘要、跳支付占位。
 - 我的订单列表 + 详情。
-- 不在本周接 Stripe。
+- 当前已完成创建订单 HTTP 入口；结算页、订单列表/详情待后续补齐。
+- 本周不接具体支付 Provider，支付会话留到 Week 8 的统一 Payment Provider 端口。
 
 **Week 7 验收**
 
 - 高并发库存测试：100 并发抢 10 库存，最多成交 10 笔。
+- Redis 正常、Redis 不可用、缓存重建和数据库条件更新失败四种路径均不得超卖；库存最终值与订单/库存流水一致。
+- 相同幂等键同请求重放同一订单，不同请求摘要返回 `409 IDEMPOTENCY_KEY_REUSED`，并发请求只允许一个执行。
 - 订单超期返还库存幂等。
-- 集成测试覆盖条件更新失败、并发预占、超时返还。
+- PostgreSQL Testcontainers 覆盖条件更新失败、并发预占、缓存降级、超时返还和事务回滚；Redis Testcontainers 覆盖 Lua 原子脚本。
+- 当前剩余：真实 PostgreSQL/Redis Testcontainers 并发验收、数据库幂等适配器集成测试，以及订单查询和结算页。
 
 ---
 
-### Week 8：Stripe Payment
+### Week 8：Payment Providers
 
-**目标**：真实支付闭环 + Webhook 幂等。
+**目标**：在统一支付端口下完成 Stripe、微信支付和支付宝的可插拔支付闭环，并保证异步通知幂等。
 
 **Payment 上下文**
 
-- 适配器：Stripe PaymentIntent、Webhook 验签、退款（stub）。
-- 应用服务：`CreatePaymentIntent`、`MarkPaymentSucceeded`、`MarkPaymentFailed`。
+- 领域端口不暴露第三方 SDK：`PaymentProviderPort` 统一抽象 `createPayment`、`queryPayment`、`closePayment`、`refundPayment` 和 `verifyNotification`，返回领域 `PaymentSession`/`PaymentNotification`。
+- Stripe 适配器：PaymentIntent、`Idempotency-Key`、原始请求体验签 Webhook、退款。
+- 微信支付适配器：API v3 商户请求签名、JSAPI/Native/H5 支付会话（MVP 先落地一种渠道）、回调平台证书验签与 AES-GCM 解密、查单/关单/退款。
+- 支付宝适配器：RSA2 请求签名、交易创建/查询/关闭/退款、异步通知验签与金额、商户号、应用号校验。
+- Provider 配置、证书和密钥只从环境变量或 Secret 注入；第三方 SDK 类型只存在 infrastructure 适配器。
+- 应用服务：`CreatePaymentSession`、`MarkPaymentSucceeded`、`MarkPaymentFailed`。
 - 集成事件：`PaymentSucceeded`、`PaymentFailed` → Outbox。
-- API：`POST /orders/{id}/payment-intent`（`Idempotency-Key`）、`POST /payments/webhooks/stripe`（`Stripe-Signature` 验签）。
+- API：`POST /orders/{id}/payment-session`（`provider` + `Idempotency-Key`）；各 Provider 使用独立回调入口和验签协议。
+- 统一返回 `PaymentSession`，允许 Provider-specific `clientPayload`：Stripe `clientSecret`、微信 `prepayId`/调起参数、支付宝支付表单或交易号，不强行把三者建模成同一字段。
 - **强约束**：前端不得直接修改订单状态为 `PAID`；只能由验签后的 Webhook 推进。
+- 回调先验签/解密，再校验订单号、金额、币种、商户/应用标识和支付状态；按 `provider + providerEventId` 唯一去重，重复通知返回 2xx 且不重复推进订单。
+- 支付通知不能依赖到达顺序；查单结果是补偿依据，最终仍由订单状态机和幂等消费者决定。
 
 **编排**
 
@@ -284,15 +305,15 @@
 
 **前端**
 
-- Stripe Payment Element 集成。
-- 支付结果页、成功/失败 toast。
+- 根据服务端返回的 `PaymentSession` 选择 Stripe、微信或支付宝支付组件/跳转方式；前端不保存商户密钥、不直接修改订单状态。
+- 支付结果页、成功/失败/处理中状态和重复提交保护。
 
 **Week 8 验收**
 
-- Stripe 测试模式：成功支付、失败支付、3DS、重复 Webhook 全部通过。
-- PaymentIntent 重放相同 `Idempotency-Key` 返回同一结果。
-- Webhook 验签失败的请求全部拒绝。
-- 集成测试：覆盖 Stripe 异常码、超时。
+- Stripe 测试模式：成功、失败、3DS、重复 Webhook 全部通过；相同 `Idempotency-Key` 重放返回同一结果。
+- 微信支付和支付宝沙箱/模拟适配器：下单、查单、关单/退款、成功通知、失败通知、重复通知和验签失败均有集成测试；真实商户联调列为上线前门槛。
+- 三种 Provider 的通知均验证原始载荷/签名，验签失败、金额不匹配、商户标识不匹配全部拒绝。
+- 统一 Payment Port 的契约测试覆盖超时、5xx、重复请求、查单补偿和退款状态。
 
 ---
 

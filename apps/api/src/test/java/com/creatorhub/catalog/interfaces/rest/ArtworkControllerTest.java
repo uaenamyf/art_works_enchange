@@ -115,7 +115,8 @@ class ArtworkControllerTest {
   @Test
   void anonymousUserCanReadPublishedArtwork() throws Exception {
     UUID artworkId = UUID.randomUUID();
-    when(artworks.getPublished(artworkId)).thenReturn(view(artworkId, ArtworkStatus.PUBLISHED));
+    when(artworks.getPublished(artworkId, null))
+        .thenReturn(view(artworkId, ArtworkStatus.PUBLISHED));
 
     mvc.perform(
             org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(
@@ -123,12 +124,12 @@ class ArtworkControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("PUBLISHED"));
 
-    verify(artworks).getPublished(artworkId);
+    verify(artworks).getPublished(artworkId, null);
   }
 
   @Test
   void anonymousUserCanListPublishedArtworks() throws Exception {
-    when(artworks.listPublished(null, null, null, "LATEST", null, 20))
+    when(artworks.listPublished(null, null, null, "LATEST", null, 20, null))
         .thenReturn(new ArtworkUseCases.ArtworkPage(List.of(), null, false));
 
     mvc.perform(get("/api/v1/artworks").param("sort", "LATEST"))
@@ -136,7 +137,7 @@ class ArtworkControllerTest {
         .andExpect(jsonPath("$.items").isArray())
         .andExpect(jsonPath("$.hasMore").value(false));
 
-    verify(artworks).listPublished(null, null, null, "LATEST", null, 20);
+    verify(artworks).listPublished(null, null, null, "LATEST", null, 20, null);
   }
 
   @Test
@@ -219,6 +220,8 @@ class ArtworkControllerTest {
         2,
         List.of(),
         status,
-        0);
+        0,
+        0,
+        false);
   }
 }

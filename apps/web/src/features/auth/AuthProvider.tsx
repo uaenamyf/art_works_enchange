@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { apiFetch, type ApiFetchOptions } from "@/lib/api/fetcher";
 import type { AuthSession } from "./types";
 
@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSessionState(null);
   }
 
-  async function authenticatedFetch<T>(path: string, options: ApiFetchOptions = {}) {
+  const authenticatedFetch = useCallback(async function authenticatedFetch<T>(path: string, options: ApiFetchOptions = {}) {
     if (!session?.accessToken) {
       throw new Error("Authentication is required");
     }
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ...options,
       headers: { ...options.headers, Authorization: `Bearer ${session.accessToken}` }
     });
-  }
+  }, [session]);
 
   return (
     <AuthContext.Provider

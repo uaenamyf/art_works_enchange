@@ -7,10 +7,29 @@ import java.util.UUID;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 /** Artwork 主表 Mapper；UUID 主键查询显式声明，避免 MyBatis-Plus 属性推断问题。 */
 @Mapper
 interface ArtworkMapper extends BaseMapper<ArtworkPersistenceRow> {
+
+  /** 数据库最终裁决库存，条件不满足时不会修改任何行。 */
+  @Update(
+      """
+            UPDATE artworks
+            SET stock = stock - #{quantity}, updated_at = CURRENT_TIMESTAMP
+            WHERE id = #{artworkId} AND status = 'PUBLISHED' AND stock >= #{quantity}
+            """)
+  int reserveStock(@Param("artworkId") UUID artworkId, @Param("quantity") int quantity);
+
+  /** 返还库存只由 Ordering 的取消/过期流程调用，并在应用层保证幂等。 */
+  @Update(
+      """
+            UPDATE artworks
+            SET stock = stock + #{quantity}, updated_at = CURRENT_TIMESTAMP
+            WHERE id = #{artworkId}
+            """)
+  int releaseStock(@Param("artworkId") UUID artworkId, @Param("quantity") int quantity);
 
   /** 按 created_at/id 的稳定倒序游标查询公开作品；关键词和分类均在数据库过滤。 */
   @Select(

@@ -4,6 +4,7 @@ import com.creatorhub.catalog.application.port.in.ArtworkUseCases;
 import com.creatorhub.catalog.domain.model.Artwork;
 import com.creatorhub.catalog.domain.model.ArtworkId;
 import com.creatorhub.catalog.domain.repository.ArtworkRepository;
+import com.creatorhub.collection.application.port.in.FavoriteUseCases;
 import com.creatorhub.creator.application.port.in.CreatorUseCases;
 import com.creatorhub.sharedkernel.UserId;
 import com.creatorhub.sharedkernel.domain.AppClock;
@@ -25,10 +26,15 @@ public class ArtworkService implements ArtworkUseCases {
 
   private final ArtworkRepository artworks;
   private final CreatorUseCases creators;
+  private final FavoriteUseCases.ReadPort favoriteStats;
 
-  public ArtworkService(ArtworkRepository artworks, CreatorUseCases creators) {
+  public ArtworkService(
+      ArtworkRepository artworks,
+      CreatorUseCases creators,
+      FavoriteUseCases.ReadPort favoriteStats) {
     this.artworks = artworks;
     this.creators = creators;
+    this.favoriteStats = favoriteStats;
   }
 
   @Override
@@ -52,9 +58,15 @@ public class ArtworkService implements ArtworkUseCases {
   @Override
   @Transactional(readOnly = true)
   public ArtworkView getPublished(UUID artworkId) {
+    return getPublished(artworkId, null);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public ArtworkView getPublished(UUID artworkId, UUID userId) {
     return artworks
         .findPublishedById(ArtworkId.of(artworkId))
-        .map(ArtworkService::view)
+        .map(artwork -> view(artwork, userId))
         .orElseThrow(() -> new BusinessError("ARTWORK_NOT_FOUND", "Artwork not found"));
   }
 
@@ -106,6 +118,19 @@ public class ArtworkService implements ArtworkUseCases {
   @Transactional(readOnly = true)
   public ArtworkPage listPublished(
       String query, String category, UUID creatorId, String sort, String cursor, int limit) {
+    return listPublished(query, category, creatorId, sort, cursor, limit, null);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public ArtworkPage listPublished(
+      String query,
+      String category,
+      UUID creatorId,
+      String sort,
+      String cursor,
+      int limit,
+      UUID userId) {
     int pageSize = Math.min(Math.max(limit, 1), 50);
     Cursor decoded = Cursor.decode(cursor);
     List<Artwork> results =
@@ -134,7 +159,9 @@ public class ArtworkService implements ArtworkUseCases {
                         artwork.creatorId(),
                         artwork.mediaIds().get(0),
                         artwork.status(),
-                        artwork.createdAt()))
+                        artwork.createdAt(),
+                        favoriteStats.countByArtworkId(artwork.id().value()),
+                        userId != null && favoriteStats.isFavorited(userId, artwork.id().value())))
             .toList(),
         nextCursor,
         hasMore);
@@ -176,7 +203,11 @@ public class ArtworkService implements ArtworkUseCases {
     }
   }
 
-  private static ArtworkView view(Artwork artwork) {
+  private ArtworkView view(Artwork artwork) {
+    return view(artwork, null);
+  }
+
+  private ArtworkView view(Artwork artwork, UUID userId) {
     return new ArtworkView(
         artwork.id().value(),
         artwork.creatorId(),
@@ -188,6 +219,8 @@ public class ArtworkService implements ArtworkUseCases {
         artwork.stock(),
         artwork.mediaIds(),
         artwork.status(),
-        artwork.version());
+        artwork.version(),
+        favoriteStats.countByArtworkId(artwork.id().value()),
+        userId != null && favoriteStats.isFavorited(userId, artwork.id().value()));
   }
 }

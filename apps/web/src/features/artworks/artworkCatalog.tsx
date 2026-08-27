@@ -33,6 +33,8 @@ interface ArtworkListItem {
   coverMediaId: string;
   status: "PUBLISHED";
   publishedAt: string;
+  favoriteCount: number;
+  favoritedByMe: boolean;
 }
 
 interface PublicMedia { id: string; url: string }
@@ -92,7 +94,8 @@ async function toCardData(items: ArtworkListItem[]): Promise<ArtworkCardData[]> 
       id: item.id, title: item.title, category: item.category, creatorId: item.creatorId,
       creatorName: creator.displayName, priceCents: Math.round(Number(item.priceAmount) * 100),
       currency: item.priceCurrency, imageUrl: media.url, aspect: "4/5",
-      publishedAt: item.publishedAt, isFavorite: false, isForSale: item.stock > 0
+      publishedAt: item.publishedAt, isFavorite: item.favoritedByMe,
+      favoriteCount: item.favoriteCount, isForSale: item.stock > 0
     } satisfies ArtworkCardData;
   }));
 }

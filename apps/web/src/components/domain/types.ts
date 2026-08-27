@@ -18,6 +18,7 @@ export interface ArtworkCardData {
   aspect: "4/5" | "16/9" | "1/1";
   publishedAt: string;
   isFavorite: boolean;
+  favoriteCount?: number;
   isForSale: boolean;
 }
 

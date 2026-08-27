@@ -1,5 +1,6 @@
 package com.creatorhub.catalog.infrastructure.persistence;
 
+import com.creatorhub.catalog.application.port.in.StockAvailabilityPort;
 import com.creatorhub.catalog.domain.model.Artwork;
 import com.creatorhub.catalog.domain.model.ArtworkId;
 import com.creatorhub.catalog.domain.repository.ArtworkRepository;
@@ -9,18 +10,24 @@ import com.creatorhub.sharedkernel.domain.Money;
 import com.creatorhub.sharedkernel.error.BusinessError;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.stereotype.Repository;
 
 /** Artwork 聚合仓储适配器，显式转换领域模型和 MyBatis 持久化行。 */
 @Repository
-public class ArtworkRepositoryAdapter implements ArtworkRepository {
+public class ArtworkRepositoryAdapter implements ArtworkRepository, StockAvailabilityPort {
 
   private final ArtworkMapper mapper;
   private final ArtworkMediaMapper mediaMapper;
+  private final InventoryMovementMapper inventoryMovements;
 
-  public ArtworkRepositoryAdapter(ArtworkMapper mapper, ArtworkMediaMapper mediaMapper) {
+  public ArtworkRepositoryAdapter(
+      ArtworkMapper mapper,
+      ArtworkMediaMapper mediaMapper,
+      InventoryMovementMapper inventoryMovements) {
     this.mapper = mapper;
     this.mediaMapper = mediaMapper;
+    this.inventoryMovements = inventoryMovements;
   }
 
   @Override
@@ -90,6 +97,38 @@ public class ArtworkRepositoryAdapter implements ArtworkRepository {
       }
     }
     return toDomain(mapper.findByIdValue(row.getId()), mediaMapper.findIdsByArtworkId(row.getId()));
+  }
+
+  @Override
+  public boolean reserve(UUID artworkId, int quantity, UUID reservationId) {
+    if (quantity < 1 || quantity > 99) {
+      throw new IllegalArgumentException("quantity is invalid");
+    }
+    if (mapper.reserveStock(artworkId, quantity) != 1) {
+      return false;
+    }
+    if (inventoryMovements.record(
+            UUID.randomUUID(), reservationId, artworkId, "RESERVE", quantity, AppClock.now())
+        != 1) {
+      throw new IllegalStateException("Inventory reservation record failed");
+    }
+    return true;
+  }
+
+  @Override
+  public boolean release(UUID artworkId, int quantity, UUID reservationId) {
+    if (quantity < 1 || quantity > 99) {
+      throw new IllegalArgumentException("quantity is invalid");
+    }
+    if (inventoryMovements.record(
+            UUID.randomUUID(), reservationId, artworkId, "RELEASE", quantity, AppClock.now())
+        != 1) {
+      return false;
+    }
+    if (mapper.releaseStock(artworkId, quantity) != 1) {
+      throw new IllegalStateException("Artwork not found while releasing stock");
+    }
+    return true;
   }
 
   private static Artwork toDomain(

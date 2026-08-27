@@ -254,12 +254,14 @@ stateDiagram-v2
 下单是风险最高的路径，必须满足：
 
 1. 客户端携带 `Idempotency-Key` 创建订单；相同用户与 Key 返回同一结果。
-2. 事务内使用条件更新扣减库存：`stock >= quantity` 才成功。
-3. 订单创建为 `PENDING_PAYMENT`，保存价格快照，不信任客户端金额。
-4. 订单事务提交后，再以 `orderId` 作为 Stripe 幂等键创建 PaymentIntent；客户端只接收 `client_secret`。
-5. 只有验签后的 Stripe Webhook 可以把订单置为 `PAID`。
-6. Webhook 事件 ID 建唯一索引，重复投递直接返回 2xx。
-7. 未支付订单由定时任务关闭并返还库存；返还操作必须幂等。
+2. PostgreSQL 事务内使用条件更新扣减库存：`stock >= quantity` 才成功，数据库是库存最终事实源。
+3. Redis 只能作为可失效的库存预检/短期 reservation 缓存；Lua 脚本可保证 Redis 内原子性，但 Redis 不得单独决定订单成功。
+4. Redis 不可用、重启、淘汰或缓存落后时，必须回源 PostgreSQL 或拒绝请求，禁止以缓存缺失/过期为理由放行库存。
+5. 订单创建为 `PENDING_PAYMENT`，保存价格快照，不信任客户端金额。
+6. 订单事务提交后，通过统一 `PaymentProviderPort` 创建支付会话；Provider 使用订单号与幂等键组合，客户端只接收可公开的支付会话数据。
+7. 只有验签后的 Provider 异步通知或可信查单结果可以把订单置为 `PAID`；前端回调不能改订单状态。
+8. Webhook/异步通知按 `provider + provider_event_id` 建唯一索引，重复投递直接返回 2xx。
+9. 未支付订单由定时任务关闭并返还库存；返还操作必须幂等。
 
 Ordering 应用服务协调 Catalog 的库存端口与 Order 聚合。支付结果通过 Payment 上下文发布的领域事件驱动 Order 状态迁移；不得由 Controller 或 Stripe 适配器直接改订单表。
 
@@ -270,18 +272,18 @@ sequenceDiagram
     participant Web
     participant Ordering
     participant DB
-    participant Stripe
+    participant Provider[Payment Provider]
     participant Payment
 
     Web->>Ordering: 创建订单 + Idempotency-Key
     Ordering->>DB: 事务：预占库存、保存订单和 Outbox
     DB-->>Ordering: 提交成功
     Ordering-->>Web: 201 PENDING_PAYMENT
-    Web->>Payment: 创建或获取 PaymentIntent
-    Payment->>Stripe: orderId 作为幂等键
-    Stripe-->>Payment: client_secret 或可重试错误
+    Web->>Payment: 创建或获取 PaymentSession
+    Payment->>Provider: orderId + Idempotency-Key
+    Provider-->>Payment: Provider-specific payment payload
     Payment-->>Web: PaymentIntent 结果
-    Stripe->>Payment: 已验签 Webhook
+    Provider->>Payment: 已验签异步通知
     Payment->>DB: 事务：Payment 状态 + PaymentSucceeded Outbox
     Ordering->>DB: 幂等消费事件并迁移订单状态
 ```

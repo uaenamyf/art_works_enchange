@@ -18,5 +18,7 @@ export const ROUTES = {
   creatorProfile: (id: string) => `/creators/${id}`,
   authLogin: "/auth/login",
   authRegister: "/auth/register",
-  creatorApply: "/studio/creator/apply"
+  creatorApply: "/studio/creator/apply",
+  favorites: "/me/favorites",
+  follows: "/me/follows"
 } as const;

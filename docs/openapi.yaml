@@ -366,7 +366,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ArtworkPage'
+                $ref: '#/components/schemas/FavoritePage'
     post:
       tags: [Studio]
       operationId: createArtworkDraft
@@ -1495,6 +1495,56 @@ components:
           type: string
           enum: [PUBLISHED]
         publishedAt:
+          type: string
+          format: date-time
+        favoriteCount:
+          type: integer
+          minimum: 0
+        favoritedByMe:
+          type: boolean
+    FavoritePage:
+      type: object
+      required: [items, hasMore]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/FavoriteArtworkItem'
+        nextCursor:
+          type: [string, 'null']
+        hasMore:
+          type: boolean
+    FavoriteArtworkItem:
+      type: object
+      required: [id, creatorId, title, description, category, priceAmount, priceCurrency, stock, mediaIds, favoritedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        creatorId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          $ref: '#/components/schemas/ArtworkCategory'
+        priceAmount:
+          type: string
+          pattern: '^\d+(\.\d{1,2})?$'
+        priceCurrency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        stock:
+          type: integer
+          minimum: 0
+        mediaIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        favoritedAt:
           type: string
           format: date-time
     CreatorPage:

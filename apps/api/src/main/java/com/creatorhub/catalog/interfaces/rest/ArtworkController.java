@@ -47,15 +47,17 @@ public class ArtworkController {
       @RequestParam(required = false) UUID creatorId,
       @RequestParam(defaultValue = "LATEST") String sort,
       @RequestParam(required = false) String cursor,
-      @RequestParam(defaultValue = "20") int limit) {
+      @RequestParam(defaultValue = "20") int limit,
+      @AuthenticationPrincipal UUID userId) {
     return ResponseEntity.ok(
-        artworks.listPublished(query, category, creatorId, sort, cursor, limit));
+        artworks.listPublished(query, category, creatorId, sort, cursor, limit, userId));
   }
 
   /** 公开详情只读取审核通过并已发布的作品，未发布状态统一按不存在处理。 */
   @GetMapping("/{artworkId}")
-  ResponseEntity<ArtworkView> getPublished(@PathVariable UUID artworkId) {
-    return ResponseEntity.ok(artworks.getPublished(artworkId));
+  ResponseEntity<ArtworkView> getPublished(
+      @PathVariable UUID artworkId, @AuthenticationPrincipal UUID userId) {
+    return ResponseEntity.ok(artworks.getPublished(artworkId, userId));
   }
 
   /** 创建草稿；作品默认 DRAFT，不因创建成功直接公开。 */

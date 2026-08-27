@@ -11,6 +11,7 @@ import com.creatorhub.catalog.domain.model.Artwork;
 import com.creatorhub.catalog.domain.model.ArtworkId;
 import com.creatorhub.catalog.domain.model.ArtworkStatus;
 import com.creatorhub.catalog.domain.repository.ArtworkRepository;
+import com.creatorhub.collection.application.port.in.FavoriteUseCases;
 import com.creatorhub.creator.application.port.in.CreatorUseCases;
 import com.creatorhub.sharedkernel.UserId;
 import com.creatorhub.sharedkernel.domain.Money;
@@ -29,7 +30,7 @@ class ArtworkServiceTest {
   void fetchesOneExtraRecordAndForwardsFilters() {
     ArtworkRepository repository = mock(ArtworkRepository.class);
     CreatorUseCases creators = mock(CreatorUseCases.class);
-    ArtworkService service = new ArtworkService(repository, creators);
+    ArtworkService service = new ArtworkService(repository, creators, favoriteStats());
     Artwork first = publishedArtwork("first");
     Artwork second = publishedArtwork("second");
     UUID creatorId = UUID.randomUUID();
@@ -49,6 +50,18 @@ class ArtworkServiceTest {
     assertThat(page.items().get(0).coverMediaId()).isEqualTo(first.mediaIds().get(0));
     assertThat(page.hasMore()).isTrue();
     assertThat(page.nextCursor()).isNotBlank();
+  }
+
+  private static FavoriteUseCases.ReadPort favoriteStats() {
+    return new FavoriteUseCases.ReadPort() {
+      public long countByArtworkId(UUID artworkId) {
+        return 0;
+      }
+
+      public boolean isFavorited(UUID userId, UUID artworkId) {
+        return false;
+      }
+    };
   }
 
   private static Artwork publishedArtwork(String title) {

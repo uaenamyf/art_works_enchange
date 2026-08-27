@@ -5,6 +5,8 @@ import { ArtworkCard } from "@/components/domain/ArtworkCard";
 import { ROUTES } from "@/lib/config";
 import { ApiError, apiFetch } from "@/lib/api/fetcher";
 import type { ArtworkCardData } from "@/components/domain/types";
+import { FollowButton } from "@/features/follows/FollowButton";
+import { FollowersList } from "@/features/follows/FollowersList";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -20,6 +22,7 @@ interface CreatorDetail {
   avatarUrl: string | null;
   coverUrl: string | null;
   followerCount: number;
+  followedByMe: boolean;
   artworkCount: number;
 }
 
@@ -38,6 +41,8 @@ interface ArtworkListItem {
   creatorId: string;
   coverMediaId: string;
   publishedAt: string;
+  favoriteCount: number;
+  favoritedByMe: boolean;
 }
 
 interface PublicMedia {
@@ -82,12 +87,7 @@ export default async function CreatorProfilePage({ params }: PageProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="h-11 rounded-token border border-ink-900 px-4 text-sm text-ink-900 hover:bg-ink-900 hover:text-white"
-            >
-              关注
-            </button>
+            <FollowButton creatorId={creator.id} initialFollowing={creator.followedByMe} />
             <Link
               href={ROUTES.home}
               className="text-sm text-ink-500 hover:text-ink-900"
@@ -125,6 +125,10 @@ export default async function CreatorProfilePage({ params }: PageProps) {
             </ul>
           )}
         </section>
+        <section className="mt-12 border-t border-ink-300 pt-8" aria-labelledby="followers-heading">
+          <h2 id="followers-heading" className="text-xl text-ink-900">关注者</h2>
+          <FollowersList creatorId={creator.id} />
+        </section>
       </div>
     </div>
   );
@@ -144,7 +148,8 @@ async function toCardData(items: ArtworkListItem[]): Promise<ArtworkCardData[]> 
         imageUrl: media.url,
         aspect: "4/5",
         publishedAt: item.publishedAt,
-        isFavorite: false,
+        isFavorite: item.favoritedByMe,
+        favoriteCount: item.favoriteCount,
         isForSale: item.stock > 0
       } satisfies ArtworkCardData;
     })

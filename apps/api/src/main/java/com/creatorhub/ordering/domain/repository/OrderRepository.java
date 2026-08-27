@@ -1,0 +1,20 @@
+package com.creatorhub.ordering.domain.repository;
+
+import com.creatorhub.ordering.domain.model.Order;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+/** 以订单聚合为单位定义仓储端口，应用层不感知订单表和持久化行。 */
+public interface OrderRepository {
+
+  Order save(Order order);
+
+  Optional<Order> findById(UUID orderId);
+
+  /** 仅允许待支付订单原子切换为已取消，返回 false 表示已被其他请求处理。 */
+  boolean cancel(Order order);
+
+  List<Order> findExpiredPending(Instant now, int limit);
+}

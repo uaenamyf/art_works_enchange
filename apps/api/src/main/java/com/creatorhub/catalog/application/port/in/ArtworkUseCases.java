@@ -13,6 +13,10 @@ public interface ArtworkUseCases {
 
   ArtworkView getPublished(UUID artworkId);
 
+  default ArtworkView getPublished(UUID artworkId, UUID userId) {
+    return getPublished(artworkId);
+  }
+
   ArtworkView getOwned(UUID userId, UUID artworkId);
 
   ArtworkView update(UUID userId, UUID artworkId, WriteCommand command);
@@ -26,6 +30,17 @@ public interface ArtworkUseCases {
   ArtworkPage listPublished(
       String query, String category, UUID creatorId, String sort, String cursor, int limit);
 
+  default ArtworkPage listPublished(
+      String query,
+      String category,
+      UUID creatorId,
+      String sort,
+      String cursor,
+      int limit,
+      UUID userId) {
+    return listPublished(query, category, creatorId, sort, cursor, limit);
+  }
+
   /** 只读作品快照，后续可扩展媒体详情而不泄露领域对象。 */
   record ArtworkView(
       UUID id,
@@ -38,7 +53,9 @@ public interface ArtworkUseCases {
       int stock,
       List<UUID> mediaIds,
       ArtworkStatus status,
-      long version) {}
+      long version,
+      long favoriteCount,
+      boolean favoritedByMe) {}
 
   record WriteCommand(
       String title,
@@ -62,5 +79,7 @@ public interface ArtworkUseCases {
       UUID creatorId,
       UUID coverMediaId,
       ArtworkStatus status,
-      Instant publishedAt) {}
+      Instant publishedAt,
+      long favoriteCount,
+      boolean favoritedByMe) {}
 }

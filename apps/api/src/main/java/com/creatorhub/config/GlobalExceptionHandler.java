@@ -35,7 +35,9 @@ public class GlobalExceptionHandler {
           case "ARTWORK_NOT_FOUND" -> HttpStatus.NOT_FOUND;
           case "MEDIA_NOT_FOUND" -> HttpStatus.NOT_FOUND;
           case "INVALID_CURSOR" -> HttpStatus.BAD_REQUEST;
-          case "ARTWORK_VERSION_CONFLICT" -> HttpStatus.CONFLICT;
+          case "ARTWORK_VERSION_CONFLICT", "ORDER_CONFLICT" -> HttpStatus.CONFLICT;
+          case "ORDER_FORBIDDEN" -> HttpStatus.FORBIDDEN;
+          case "ORDER_NOT_FOUND" -> HttpStatus.NOT_FOUND;
           default -> HttpStatus.BAD_REQUEST;
         };
     ProblemDetail detail = ProblemDetail.forStatusAndDetail(status, ex.getMessage());

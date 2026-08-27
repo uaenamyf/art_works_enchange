@@ -21,6 +21,8 @@ type ArtworkDetail = {
   stock: number;
   mediaIds: string[];
   status: string;
+  favoriteCount: number;
+  favoritedByMe: boolean;
 };
 
 type PublicMedia = { id: string; url: string; contentType: string };
@@ -74,7 +76,7 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
               {/* Week 2 占位操作：尚未创建订单、收藏或分享副作用。 */}
               <Button size="lg">立即购买</Button>
               <div className="grid grid-cols-2 gap-2">
-                <FavoriteButton artworkId={artwork.id} />
+                <FavoriteButton artworkId={artwork.id} initialFavorited={artwork.favoritedByMe} />
                 <Button variant="secondary" leftIcon={<Share2 className="size-4" />}>
                   分享
                 </Button>

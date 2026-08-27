@@ -96,6 +96,8 @@ export function Navbar() {
                   </Link>
                 </li>
               ) : null}
+              <li><Link href={ROUTES.favorites} className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900">收藏</Link></li>
+              <li><Link href={ROUTES.follows} className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900">关注</Link></li>
               <li>
                 <button type="button" className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900" onClick={() => void logout()}>
                   注销

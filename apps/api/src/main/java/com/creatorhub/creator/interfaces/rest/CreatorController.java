@@ -4,6 +4,7 @@ import com.creatorhub.creator.application.port.in.CreatorUseCases;
 import com.creatorhub.creator.application.port.in.CreatorUseCases.ApplyCommand;
 import com.creatorhub.creator.application.port.in.CreatorUseCases.CreatorView;
 import com.creatorhub.creator.application.port.in.CreatorUseCases.UpdateCommand;
+import com.creatorhub.follow.application.port.in.FollowUseCases;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -33,9 +34,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class CreatorController {
 
   private final CreatorUseCases creators;
+  private final FollowUseCases.ReadPort followStats;
 
-  public CreatorController(CreatorUseCases creators) {
+  public CreatorController(CreatorUseCases creators, FollowUseCases.ReadPort followStats) {
     this.creators = creators;
+    this.followStats = followStats;
   }
 
   /** 公开 Creator 列表；只读查询按创建时间稳定分页，统计字段暂由占位投影返回。 */
@@ -76,10 +79,16 @@ public class CreatorController {
     return ResponseEntity.ok(CreatorDetailResponse.from(updated));
   }
 
-  /** 获取公开 Creator 详情；关注数和作品数将在后续上下文接入后替换零值投影。 */
+  /** 获取公开 Creator 详情；关注数从 Follow 查询端口读取，关注状态对匿名请求保持 false。 */
   @GetMapping("/creators/{creatorId}")
-  ResponseEntity<CreatorDetailResponse> get(@PathVariable UUID creatorId) {
-    return ResponseEntity.ok(CreatorDetailResponse.from(creators.get(creatorId)));
+  ResponseEntity<CreatorDetailResponse> get(
+      @PathVariable UUID creatorId, @AuthenticationPrincipal UUID userId) {
+    CreatorView creator = creators.get(creatorId);
+    return ResponseEntity.ok(
+        CreatorDetailResponse.from(
+            creator,
+            followStats.countByCreatorId(creatorId),
+            userId != null && followStats.isFollowing(userId, creatorId)));
   }
 
   /** 与 OpenAPI ApplyCreatorRequest 对齐的输入模型。 */
@@ -113,6 +122,10 @@ public class CreatorController {
       List<String> socialLinks) {
 
     static CreatorDetailResponse from(CreatorView view) {
+      return from(view, 0, false);
+    }
+
+    static CreatorDetailResponse from(CreatorView view, long followerCount, boolean followedByMe) {
       return new CreatorDetailResponse(
           view.id(),
           view.slug(),
@@ -120,8 +133,8 @@ public class CreatorController {
           null,
           view.category(),
           false,
-          0,
-          false,
+          followerCount,
+          followedByMe,
           view.bio(),
           null,
           view.location(),

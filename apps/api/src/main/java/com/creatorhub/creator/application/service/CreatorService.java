@@ -4,6 +4,7 @@ import com.creatorhub.creator.application.port.in.CreatorUseCases;
 import com.creatorhub.creator.domain.model.Creator;
 import com.creatorhub.creator.domain.model.CreatorId;
 import com.creatorhub.creator.domain.repository.CreatorRepository;
+import com.creatorhub.follow.application.port.in.FollowUseCases;
 import com.creatorhub.identity.application.port.in.PromoteUserToCreatorUseCase;
 import com.creatorhub.sharedkernel.UserId;
 import com.creatorhub.sharedkernel.domain.AppClock;
@@ -27,10 +28,15 @@ public class CreatorService implements CreatorUseCases {
 
   private final CreatorRepository creators;
   private final PromoteUserToCreatorUseCase promoteUser;
+  private final FollowUseCases.ReadPort followStats;
 
-  public CreatorService(CreatorRepository creators, PromoteUserToCreatorUseCase promoteUser) {
+  public CreatorService(
+      CreatorRepository creators,
+      PromoteUserToCreatorUseCase promoteUser,
+      FollowUseCases.ReadPort followStats) {
     this.creators = creators;
     this.promoteUser = promoteUser;
+    this.followStats = followStats;
   }
 
   @Override
@@ -113,7 +119,7 @@ public class CreatorService implements CreatorUseCases {
                         null,
                         creator.category(),
                         false,
-                        0,
+                        followStats.countByCreatorId(creator.id().value()),
                         false))
             .toList(),
         hasMore ? Cursor.encode(page.get(page.size() - 1)) : null,
