@@ -3,6 +3,7 @@ package com.creatorhub.catalog.infrastructure.storage;
 import com.creatorhub.catalog.application.port.out.DigitalAssetStoragePort;
 import com.creatorhub.catalog.application.port.out.MediaStoragePort;
 import com.creatorhub.catalog.domain.model.MediaUploadRequest;
+import com.creatorhub.digitaldelivery.application.port.out.DigitalAssetPrivateStoragePort;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
@@ -21,7 +22,8 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 
 /** MinIO/S3 存储适配器，负责真实预签名和对象存在性检查，不向业务层泄露 SDK 类型。 */
 @Component
-public class S3MediaStorageAdapter implements MediaStoragePort, DigitalAssetStoragePort {
+public class S3MediaStorageAdapter
+    implements MediaStoragePort, DigitalAssetStoragePort, DigitalAssetPrivateStoragePort {
 
   private final S3Presigner presigner;
   private final S3Client client;
@@ -118,5 +120,21 @@ public class S3MediaStorageAdapter implements MediaStoragePort, DigitalAssetStor
     PresignedPutObjectRequest signed = presigner.presignPutObject(presignRequest);
     return new DigitalAssetStoragePort.PresignedUpload(
         signed.url().toString(), "PUT", contentType, expiresAt);
+  }
+
+  @Override
+  public String presignDownload(String objectKey, String contentType, Instant expiresAt) {
+    GetObjectRequest getObject =
+        GetObjectRequest.builder()
+            .bucket(bucket)
+            .key(objectKey)
+            .responseContentType(contentType)
+            .build();
+    GetObjectPresignRequest request =
+        GetObjectPresignRequest.builder()
+            .signatureDuration(Duration.between(Instant.now(), expiresAt))
+            .getObjectRequest(getObject)
+            .build();
+    return presigner.presignGetObject(request).url().toString();
   }
 }

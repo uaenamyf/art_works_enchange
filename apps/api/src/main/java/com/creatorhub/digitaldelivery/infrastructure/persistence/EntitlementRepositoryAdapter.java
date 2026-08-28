@@ -1,5 +1,6 @@
 package com.creatorhub.digitaldelivery.infrastructure.persistence;
 
+import com.creatorhub.digitaldelivery.application.port.out.DigitalDownloadAsset;
 import com.creatorhub.digitaldelivery.domain.model.Entitlement;
 import com.creatorhub.digitaldelivery.domain.repository.EntitlementRepository;
 import com.creatorhub.sharedkernel.error.BusinessError;
@@ -42,6 +43,11 @@ public class EntitlementRepositoryAdapter implements EntitlementRepository {
   public Optional<Entitlement> findAvailableByBuyer(UUID buyerId, UUID orderId) {
     return Optional.ofNullable(mapper.findAvailableByBuyer(buyerId, orderId))
         .map(EntitlementRepositoryAdapter::toDomain);
+  }
+
+  @Override
+  public Optional<DigitalDownloadAsset> findDownloadAsset(UUID buyerId, UUID orderId) {
+    return Optional.ofNullable(mapper.findDownloadAsset(buyerId, orderId));
   }
 
   private static EntitlementPersistenceRow toRow(Entitlement entitlement) {
