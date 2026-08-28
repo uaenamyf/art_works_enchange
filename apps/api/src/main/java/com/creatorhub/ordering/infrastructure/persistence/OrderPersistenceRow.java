@@ -2,6 +2,7 @@ package com.creatorhub.ordering.infrastructure.persistence;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.creatorhub.ordering.domain.model.FulfillmentType;
 import com.creatorhub.ordering.domain.model.OrderStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -21,6 +22,7 @@ class OrderPersistenceRow {
   private int quantity;
   private BigDecimal subtotal;
   private OrderStatus status;
+  private FulfillmentType fulfillmentType;
   private String shippingAddress;
   private Instant expiresAt;
   private Instant createdAt;
@@ -104,6 +106,14 @@ class OrderPersistenceRow {
 
   public void setStatus(OrderStatus status) {
     this.status = status;
+  }
+
+  public FulfillmentType getFulfillmentType() {
+    return fulfillmentType;
+  }
+
+  public void setFulfillmentType(FulfillmentType fulfillmentType) {
+    this.fulfillmentType = fulfillmentType;
   }
 
   public String getShippingAddress() {

@@ -72,12 +72,11 @@ public class OrderController {
   }
 
   record CreateOrderRequest(
-      @NotNull UUID artworkId,
-      @Min(1) @Max(99) int quantity,
-      @NotNull @Valid AddressInput shippingAddress) {
+      @NotNull UUID artworkId, @Min(1) @Max(99) int quantity, @Valid AddressInput shippingAddress) {
 
     CreateCommand command() {
-      return new CreateCommand(artworkId, quantity, shippingAddress.toDomain());
+      return new CreateCommand(
+          artworkId, quantity, shippingAddress == null ? null : shippingAddress.toDomain());
     }
   }
 

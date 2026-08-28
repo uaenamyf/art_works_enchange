@@ -42,8 +42,12 @@ public class OrderRepositoryAdapter implements OrderRepository {
     row.setQuantity(line.quantity());
     row.setSubtotal(line.subtotal().amount());
     row.setStatus(order.status());
+    row.setFulfillmentType(order.fulfillmentType());
     try {
-      row.setShippingAddress(objectMapper.writeValueAsString(order.shippingAddress()));
+      row.setShippingAddress(
+          order.shippingAddress() == null
+              ? null
+              : objectMapper.writeValueAsString(order.shippingAddress()));
     } catch (JsonProcessingException exception) {
       throw new IllegalStateException("Shipping address serialization failed", exception);
     }
@@ -102,7 +106,10 @@ public class OrderRepositoryAdapter implements OrderRepository {
           row.getCreatedAt(),
           row.getExpiresAt(),
           row.getStatus(),
-          row.getUpdatedAt());
+          row.getUpdatedAt(),
+          row.getFulfillmentType() == null
+              ? com.creatorhub.ordering.domain.model.FulfillmentType.PHYSICAL
+              : row.getFulfillmentType());
     } catch (JsonProcessingException exception) {
       throw new IllegalStateException("Shipping address deserialization failed", exception);
     }

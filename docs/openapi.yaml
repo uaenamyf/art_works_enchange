@@ -1849,7 +1849,7 @@ components:
           maxLength: 30
     CreateOrderRequest:
       type: object
-      required: [artworkId, quantity, shippingAddress]
+      required: [artworkId, quantity]
       properties:
         artworkId:
           type: string
@@ -1881,7 +1881,7 @@ components:
           $ref: '#/components/schemas/Money'
     OrderDetail:
       type: object
-      required: [id, orderNumber, buyerId, seller, status, items, subtotal, shippingFee, total, shippingAddress, createdAt, updatedAt]
+      required: [id, orderNumber, buyerId, seller, status, fulfillmentType, items, subtotal, shippingFee, total, shippingAddress, createdAt, updatedAt]
       properties:
         id:
           type: string
@@ -1895,6 +1895,9 @@ components:
           $ref: '#/components/schemas/CreatorSummary'
         status:
           $ref: '#/components/schemas/OrderStatus'
+        fulfillmentType:
+          type: string
+          enum: [PHYSICAL, DIGITAL]
         items:
           type: array
           minItems: 1
@@ -1907,7 +1910,9 @@ components:
         total:
           $ref: '#/components/schemas/Money'
         shippingAddress:
-          $ref: '#/components/schemas/AddressInput'
+          anyOf:
+            - $ref: '#/components/schemas/AddressInput'
+            - type: 'null'
         trackingNumber:
           type: [string, 'null']
         carrier:

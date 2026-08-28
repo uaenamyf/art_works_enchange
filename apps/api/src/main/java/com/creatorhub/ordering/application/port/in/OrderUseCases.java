@@ -1,5 +1,6 @@
 package com.creatorhub.ordering.application.port.in;
 
+import com.creatorhub.ordering.domain.model.FulfillmentType;
 import com.creatorhub.ordering.domain.model.OrderStatus;
 import com.creatorhub.ordering.domain.model.ShippingAddress;
 import java.math.BigDecimal;
@@ -34,9 +35,43 @@ public interface OrderUseCases {
       BigDecimal subtotal,
       OrderStatus status,
       ShippingAddress shippingAddress,
+      FulfillmentType fulfillmentType,
       Instant createdAt,
       Instant updatedAt,
-      Instant expiresAt) {}
+      Instant expiresAt) {
+    public OrderView(
+        UUID id,
+        String orderNumber,
+        UUID buyerId,
+        UUID artworkId,
+        String title,
+        BigDecimal unitPrice,
+        String currency,
+        int quantity,
+        BigDecimal subtotal,
+        OrderStatus status,
+        ShippingAddress shippingAddress,
+        Instant createdAt,
+        Instant updatedAt,
+        Instant expiresAt) {
+      this(
+          id,
+          orderNumber,
+          buyerId,
+          artworkId,
+          title,
+          unitPrice,
+          currency,
+          quantity,
+          subtotal,
+          status,
+          shippingAddress,
+          FulfillmentType.PHYSICAL,
+          createdAt,
+          updatedAt,
+          expiresAt);
+    }
+  }
 
   record IdempotencyRecord(String requestHash, OrderView response) {}
 

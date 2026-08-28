@@ -17,9 +17,9 @@ interface OrderMapper extends BaseMapper<OrderPersistenceRow> {
   @Insert(
       """
       INSERT INTO orders (id, order_number, buyer_id, artwork_id, title, unit_price, currency,
-          quantity, subtotal, status, shipping_address, expires_at, created_at, updated_at)
+          quantity, subtotal, status, fulfillment_type, shipping_address, expires_at, created_at, updated_at)
       VALUES (#{id}, #{orderNumber}, #{buyerId}, #{artworkId}, #{title}, #{unitPrice}, #{currency},
-          #{quantity}, #{subtotal}, #{status}, CAST(#{shippingAddress} AS jsonb), #{expiresAt}, #{createdAt}, #{updatedAt})
+          #{quantity}, #{subtotal}, #{status}, #{fulfillmentType}, CAST(#{shippingAddress} AS jsonb), #{expiresAt}, #{createdAt}, #{updatedAt})
       """)
   int insertOrder(OrderPersistenceRow row);
 

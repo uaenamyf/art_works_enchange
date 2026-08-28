@@ -14,6 +14,7 @@ public final class Order extends AggregateRoot<OrderId> {
   private final String orderNumber;
   private final OrderLine line;
   private final ShippingAddress shippingAddress;
+  private final FulfillmentType fulfillmentType;
   private final Instant createdAt;
   private final Instant expiresAt;
   private OrderStatus status;
@@ -26,12 +27,20 @@ public final class Order extends AggregateRoot<OrderId> {
       OrderLine line,
       ShippingAddress shippingAddress,
       Instant createdAt,
-      Instant expiresAt) {
+      Instant expiresAt,
+      FulfillmentType fulfillmentType) {
     super(id);
     this.buyerId = Objects.requireNonNull(buyerId, "buyerId");
     this.orderNumber = required(orderNumber, "orderNumber");
     this.line = Objects.requireNonNull(line, "line");
-    this.shippingAddress = Objects.requireNonNull(shippingAddress, "shippingAddress");
+    this.fulfillmentType = Objects.requireNonNull(fulfillmentType, "fulfillmentType");
+    if (fulfillmentType == FulfillmentType.PHYSICAL && shippingAddress == null) {
+      throw new IllegalArgumentException("Physical order requires shippingAddress");
+    }
+    if (fulfillmentType == FulfillmentType.DIGITAL && shippingAddress != null) {
+      throw new IllegalArgumentException("Digital order cannot have shippingAddress");
+    }
+    this.shippingAddress = shippingAddress;
     this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
     this.expiresAt = Objects.requireNonNull(expiresAt, "expiresAt");
     if (!expiresAt.isAfter(createdAt)) {
@@ -49,7 +58,28 @@ public final class Order extends AggregateRoot<OrderId> {
       ShippingAddress shippingAddress,
       Instant createdAt,
       Instant expiresAt) {
-    return new Order(id, buyerId, orderNumber, line, shippingAddress, createdAt, expiresAt);
+    return create(
+        id,
+        buyerId,
+        orderNumber,
+        line,
+        shippingAddress,
+        createdAt,
+        expiresAt,
+        FulfillmentType.PHYSICAL);
+  }
+
+  public static Order create(
+      OrderId id,
+      UserId buyerId,
+      String orderNumber,
+      OrderLine line,
+      ShippingAddress shippingAddress,
+      Instant createdAt,
+      Instant expiresAt,
+      FulfillmentType fulfillmentType) {
+    return new Order(
+        id, buyerId, orderNumber, line, shippingAddress, createdAt, expiresAt, fulfillmentType);
   }
 
   /** 仅供 Ordering 仓储适配器恢复已持久化订单，仍复用构造器校验不可变字段。 */
@@ -63,7 +93,33 @@ public final class Order extends AggregateRoot<OrderId> {
       Instant expiresAt,
       OrderStatus status,
       Instant updatedAt) {
-    Order order = new Order(id, buyerId, orderNumber, line, shippingAddress, createdAt, expiresAt);
+    return reconstitute(
+        id,
+        buyerId,
+        orderNumber,
+        line,
+        shippingAddress,
+        createdAt,
+        expiresAt,
+        status,
+        updatedAt,
+        FulfillmentType.PHYSICAL);
+  }
+
+  public static Order reconstitute(
+      OrderId id,
+      UserId buyerId,
+      String orderNumber,
+      OrderLine line,
+      ShippingAddress shippingAddress,
+      Instant createdAt,
+      Instant expiresAt,
+      OrderStatus status,
+      Instant updatedAt,
+      FulfillmentType fulfillmentType) {
+    Order order =
+        new Order(
+            id, buyerId, orderNumber, line, shippingAddress, createdAt, expiresAt, fulfillmentType);
     order.status = Objects.requireNonNull(status, "status");
     order.updatedAt = Objects.requireNonNull(updatedAt, "updatedAt");
     return order;
@@ -114,6 +170,10 @@ public final class Order extends AggregateRoot<OrderId> {
 
   public ShippingAddress shippingAddress() {
     return shippingAddress;
+  }
+
+  public FulfillmentType fulfillmentType() {
+    return fulfillmentType;
   }
 
   public Money subtotal() {

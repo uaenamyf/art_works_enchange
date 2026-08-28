@@ -97,6 +97,56 @@ class OrderServiceTest {
   }
 
   @Test
+  void createsDigitalOrderWithoutAddressOrPhysicalStockReservation() {
+    var artworks = mock(ArtworkUseCases.class);
+    var stock = mock(StockAvailabilityPort.class);
+    var orders = mock(OrderRepository.class);
+    var idempotency = mock(OrderIdempotencyPort.class);
+    var reservationGate = mock(StockReservationGate.class);
+    var service = new OrderService(artworks, stock, orders, idempotency, reservationGate);
+    UUID buyerId = UUID.randomUUID();
+    UUID artworkId = UUID.randomUUID();
+    when(idempotency.claim(
+            org.mockito.ArgumentMatchers.eq(buyerId),
+            org.mockito.ArgumentMatchers.eq("createOrder"),
+            org.mockito.ArgumentMatchers.eq("digital-key"),
+            org.mockito.ArgumentMatchers.any()))
+        .thenReturn(new OrderIdempotencyClaim(true, "hash", null));
+    when(artworks.getPublished(artworkId))
+        .thenReturn(
+            new ArtworkUseCases.ArtworkView(
+                artworkId,
+                UUID.randomUUID(),
+                "Preset Pack",
+                "Digital preset description",
+                "DIGITAL",
+                BigDecimal.TEN,
+                "CNY",
+                0,
+                java.util.List.of(),
+                com.creatorhub.catalog.domain.model.ArtworkStatus.PUBLISHED,
+                com.creatorhub.catalog.domain.model.ProductType.DIGITAL,
+                0,
+                0,
+                false));
+    when(orders.save(org.mockito.ArgumentMatchers.any()))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    var result = service.create(buyerId, new CreateCommand(artworkId, 1, null), "digital-key");
+
+    assertThat(result.fulfillmentType())
+        .isEqualTo(com.creatorhub.ordering.domain.model.FulfillmentType.DIGITAL);
+    assertThat(result.shippingAddress()).isNull();
+    verify(reservationGate, never())
+        .reserve(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyInt());
+    verify(stock, never())
+        .reserve(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.anyInt(),
+            org.mockito.ArgumentMatchers.any());
+  }
+
+  @Test
   void rejectsWhenStockCannotBeReserved() {
     var stock = mock(StockAvailabilityPort.class);
     var artworks = mock(ArtworkUseCases.class);

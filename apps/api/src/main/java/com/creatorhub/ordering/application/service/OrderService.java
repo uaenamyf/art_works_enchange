@@ -7,6 +7,7 @@ import com.creatorhub.ordering.application.port.in.OrderUseCases;
 import com.creatorhub.ordering.application.port.out.OrderIdempotencyClaim;
 import com.creatorhub.ordering.application.port.out.OrderIdempotencyPort;
 import com.creatorhub.ordering.application.port.out.StockReservationGate;
+import com.creatorhub.ordering.domain.model.FulfillmentType;
 import com.creatorhub.ordering.domain.model.Order;
 import com.creatorhub.ordering.domain.model.OrderId;
 import com.creatorhub.ordering.domain.model.OrderLine;
@@ -78,14 +79,22 @@ public class OrderService implements OrderUseCases {
       throw new BusinessError("ORDER_QUANTITY_INVALID", "Order quantity is invalid");
     }
     var artwork = artworks.getPublished(command.artworkId());
-    StockReservationGate.Reservation reservation =
-        reservationGate.reserve(command.artworkId(), command.quantity());
-    if (!reservation.allowed()) {
-      throw new BusinessError("INSUFFICIENT_STOCK", "Artwork stock is insufficient");
+    FulfillmentType fulfillmentType = fulfillmentType(artwork.productType());
+    if (fulfillmentType == FulfillmentType.DIGITAL && command.quantity() != 1) {
+      throw new BusinessError(
+          "DIGITAL_ORDER_QUANTITY_INVALID", "Digital order quantity must be one");
+    }
+    StockReservationGate.Reservation reservation = null;
+    if (fulfillmentType == FulfillmentType.PHYSICAL) {
+      reservation = reservationGate.reserve(command.artworkId(), command.quantity());
+      if (!reservation.allowed()) {
+        throw new BusinessError("INSUFFICIENT_STOCK", "Artwork stock is insufficient");
+      }
     }
     try {
-      Order order = buildOrder(buyerId, command, artwork);
-      if (!stock.reserve(command.artworkId(), command.quantity(), order.id().value())) {
+      Order order = buildOrder(buyerId, command, artwork, fulfillmentType);
+      if (fulfillmentType == FulfillmentType.PHYSICAL
+          && !stock.reserve(command.artworkId(), command.quantity(), order.id().value())) {
         throw new BusinessError("INSUFFICIENT_STOCK", "Artwork stock is insufficient");
       }
       Order saved = orders.save(order);
@@ -93,7 +102,7 @@ public class OrderService implements OrderUseCases {
       idempotency.complete(buyerId, OPERATION, idempotencyKey, response);
       return response;
     } catch (RuntimeException exception) {
-      reservationGate.release(reservation);
+      if (reservation != null) reservationGate.release(reservation);
       throw exception;
     }
   }
@@ -117,10 +126,12 @@ public class OrderService implements OrderUseCases {
           .map(OrderService::view)
           .orElseThrow(() -> new BusinessError("ORDER_NOT_FOUND", "Order not found"));
     }
-    stock.release(
-        order.lines().get(0).artworkId().value(),
-        order.lines().get(0).quantity(),
-        order.id().value());
+    if (order.fulfillmentType() == FulfillmentType.PHYSICAL) {
+      stock.release(
+          order.lines().get(0).artworkId().value(),
+          order.lines().get(0).quantity(),
+          order.id().value());
+    }
     return view(order);
   }
 
@@ -131,10 +142,12 @@ public class OrderService implements OrderUseCases {
     for (Order order : orders.findExpiredPending(now, batchSize)) {
       order.cancel(now);
       if (orders.cancel(order)) {
-        stock.release(
-            order.lines().get(0).artworkId().value(),
-            order.lines().get(0).quantity(),
-            order.id().value());
+        if (order.fulfillmentType() == FulfillmentType.PHYSICAL) {
+          stock.release(
+              order.lines().get(0).artworkId().value(),
+              order.lines().get(0).quantity(),
+              order.id().value());
+        }
         expired++;
       }
     }
@@ -193,7 +206,10 @@ public class OrderService implements OrderUseCases {
   }
 
   private static Order buildOrder(
-      UUID buyerId, CreateCommand command, ArtworkUseCases.ArtworkView artwork) {
+      UUID buyerId,
+      CreateCommand command,
+      ArtworkUseCases.ArtworkView artwork,
+      FulfillmentType fulfillmentType) {
     Instant now = Instant.now();
     OrderLine line =
         new OrderLine(
@@ -208,7 +224,8 @@ public class OrderService implements OrderUseCases {
         line,
         command.shippingAddress(),
         now,
-        now.plusSeconds(1800));
+        now.plusSeconds(1800),
+        fulfillmentType);
   }
 
   private static OrderView view(Order order) {
@@ -225,6 +242,7 @@ public class OrderService implements OrderUseCases {
         line.subtotal().amount(),
         order.status(),
         order.shippingAddress(),
+        order.fulfillmentType(),
         order.createdAt(),
         order.updatedAt(),
         order.expiresAt());
@@ -238,5 +256,12 @@ public class OrderService implements OrderUseCases {
     } catch (java.security.NoSuchAlgorithmException exception) {
       throw new IllegalStateException("SHA-256 is unavailable", exception);
     }
+  }
+
+  private static FulfillmentType fulfillmentType(
+      com.creatorhub.catalog.domain.model.ProductType type) {
+    return type == com.creatorhub.catalog.domain.model.ProductType.DIGITAL
+        ? FulfillmentType.DIGITAL
+        : FulfillmentType.PHYSICAL;
   }
 }
