@@ -2015,7 +2015,7 @@ components:
           format: uuid
         type:
           type: string
-          enum: [ARTWORK_PUBLISHED, ORDER_STATUS_CHANGED, PAYMENT_SUCCEEDED, PAYMENT_FAILED]
+          enum: [ARTWORK_PUBLISHED, ORDER_STATUS_CHANGED, PAYMENT_SUCCEEDED, PAYMENT_FAILED, DIGITAL_ENTITLEMENT_GRANTED, DIGITAL_ASSET_RECALLED]
         title:
           type: string
         body:
