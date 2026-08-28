@@ -36,6 +36,10 @@ public class DigitalDownloadService {
   }
 
   public DownloadView createGrant(UUID buyerId, UUID orderId) {
+    return createGrant(buyerId, orderId, null, null);
+  }
+
+  public DownloadView createGrant(UUID buyerId, UUID orderId, String requestIp, String userAgent) {
     DigitalDownloadAsset asset =
         entitlements
             .findDownloadAsset(buyerId, orderId)
@@ -52,8 +56,8 @@ public class DigitalDownloadService {
             asset.entitlementId(),
             tokenDigest,
             expiresAt,
-            null,
-            null,
+            digestNullable(requestIp),
+            digestNullable(userAgent),
             createdAt);
     grants.save(grant);
     String url = storage.presignDownload(asset.objectKey(), asset.contentType(), expiresAt);
@@ -84,5 +88,9 @@ public class DigitalDownloadService {
     } catch (NoSuchAlgorithmException exception) {
       throw new IllegalStateException("SHA-256 is unavailable", exception);
     }
+  }
+
+  private static String digestNullable(String value) {
+    return value == null || value.isBlank() ? null : digest(value);
   }
 }

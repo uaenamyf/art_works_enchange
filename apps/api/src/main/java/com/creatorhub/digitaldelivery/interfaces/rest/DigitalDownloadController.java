@@ -2,6 +2,7 @@ package com.creatorhub.digitaldelivery.interfaces.rest;
 
 import com.creatorhub.digitaldelivery.application.service.DigitalDownloadService;
 import com.creatorhub.digitaldelivery.application.service.DigitalDownloadService.DownloadView;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,7 +26,11 @@ public class DigitalDownloadController {
   @PostMapping("/{orderId}/download-grants")
   @PreAuthorize("hasRole('USER') or hasRole('CREATOR')")
   ResponseEntity<DownloadView> createGrant(
-      @AuthenticationPrincipal UUID buyerId, @PathVariable UUID orderId) {
-    return ResponseEntity.ok(downloads.createGrant(buyerId, orderId));
+      @AuthenticationPrincipal UUID buyerId,
+      @PathVariable UUID orderId,
+      HttpServletRequest request) {
+    return ResponseEntity.ok(
+        downloads.createGrant(
+            buyerId, orderId, request.getRemoteAddr(), request.getHeader("User-Agent")));
   }
 }

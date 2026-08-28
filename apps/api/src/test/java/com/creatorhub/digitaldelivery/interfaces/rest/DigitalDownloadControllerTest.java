@@ -48,7 +48,7 @@ class DigitalDownloadControllerTest {
   void authenticatedBuyerReceivesShortLivedGrant() throws Exception {
     UUID buyerId = UUID.randomUUID();
     UUID orderId = UUID.randomUUID();
-    when(downloads.createGrant(buyerId, orderId))
+    when(downloads.createGrant(buyerId, orderId, "127.0.0.1", "MockMvc"))
         .thenReturn(
             new DownloadView(
                 UUID.randomUUID(),
@@ -62,13 +62,19 @@ class DigitalDownloadControllerTest {
     mvc.perform(
             post("/api/v1/orders/{orderId}/download-grants", orderId)
                 .with(authentication(user(buyerId)))
+                .with(
+                    request -> {
+                      request.setRemoteAddr("127.0.0.1");
+                      request.addHeader("User-Agent", "MockMvc");
+                      return request;
+                    })
                 .with(csrf()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.grantId").isNotEmpty())
         .andExpect(jsonPath("$.fileName").value("bundle.zip"))
         .andExpect(jsonPath("$.downloadUrl").value("https://private.example/download"));
 
-    verify(downloads).createGrant(buyerId, orderId);
+    verify(downloads).createGrant(buyerId, orderId, "127.0.0.1", "MockMvc");
   }
 
   @Test

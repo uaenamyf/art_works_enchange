@@ -2,7 +2,10 @@ package com.creatorhub.digitaldelivery.application.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.creatorhub.digitaldelivery.application.port.out.DigitalAssetPrivateStoragePort;
@@ -14,6 +17,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 /** 验证下载地址只能由买家有效授权触发，并且返回短期 URL。 */
 class DigitalDownloadServiceTest {
@@ -66,5 +70,36 @@ class DigitalDownloadServiceTest {
         .isInstanceOf(BusinessError.class)
         .extracting(error -> ((BusinessError) error).code())
         .isEqualTo("DIGITAL_DOWNLOAD_NOT_AVAILABLE");
+  }
+
+  @Test
+  void storesHashedRequestContextInDownloadGrant() {
+    EntitlementRepository entitlements = mock(EntitlementRepository.class);
+    DigitalAssetPrivateStoragePort storage = mock(DigitalAssetPrivateStoragePort.class);
+    DownloadGrantRepository grants = mock(DownloadGrantRepository.class);
+    UUID buyerId = UUID.randomUUID();
+    UUID orderId = UUID.randomUUID();
+    when(entitlements.findDownloadAsset(buyerId, orderId))
+        .thenReturn(
+            Optional.of(
+                new DigitalDownloadAsset(
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    "bundle.zip",
+                    "private/bundle",
+                    "application/zip",
+                    10,
+                    1)));
+    when(storage.presignDownload(anyString(), anyString(), any(Instant.class)))
+        .thenReturn("https://private.example/download");
+
+    new DigitalDownloadService(entitlements, storage, grants, 300)
+        .createGrant(buyerId, orderId, "203.0.113.10", "CreatorHubTest/1.0");
+
+    ArgumentCaptor<com.creatorhub.digitaldelivery.domain.model.DownloadGrant> grant =
+        ArgumentCaptor.forClass(com.creatorhub.digitaldelivery.domain.model.DownloadGrant.class);
+    verify(grants).save(grant.capture());
+    assertThat(grant.getValue().requestIpHash()).hasSize(64).doesNotContain("203.0.113.10");
+    assertThat(grant.getValue().userAgentHash()).hasSize(64).doesNotContain("CreatorHubTest");
   }
 }
