@@ -22,5 +22,6 @@ export const ROUTES = {
   favorites: "/me/favorites",
   follows: "/me/follows",
   orders: "/orders",
-  orderDetail: (id: string) => `/orders/${id}`
+  orderDetail: (id: string) => `/orders/${id}`,
+  notifications: "/notifications"
 } as const;
