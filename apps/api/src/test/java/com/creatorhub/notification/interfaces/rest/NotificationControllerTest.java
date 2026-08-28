@@ -3,7 +3,6 @@ package com.creatorhub.notification.interfaces.rest;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -76,8 +75,7 @@ class NotificationControllerTest {
 
     mvc.perform(
             post("/api/v1/notifications/{notificationId}/read", notificationId)
-                .with(authentication(user(userId)))
-                .with(csrf()))
+                .with(authentication(user(userId))))
         .andExpect(status().isNoContent());
 
     verify(notifications).markRead(userId, notificationId);
