@@ -298,7 +298,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - 相同幂等键同请求重放同一订单，不同请求摘要返回 `409 IDEMPOTENCY_KEY_REUSED`，并发请求只允许一个执行。
 - 订单超期返还库存幂等。
 - PostgreSQL Testcontainers 覆盖条件更新失败、并发预占、缓存降级、超时返还和事务回滚；Redis Testcontainers 覆盖 Lua 原子脚本。
-- 当前剩余：真实 Redis Testcontainers 验收、Outbox 其余业务事件接入，以及实体/数字双履约的完整业务验收。
+- 当前剩余：Outbox 其余业务事件接入、数字资产撤回事件，以及实体/数字双履约的完整业务验收。
 - 数字产品验收新增：地址不落库、数字订单不扣实体库存、授权幂等、下载越权和撤销授权测试。
 
 ---
