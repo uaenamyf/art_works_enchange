@@ -34,6 +34,8 @@ public class GlobalExceptionHandler {
           case "CREATOR_NOT_FOUND" -> HttpStatus.NOT_FOUND;
           case "ARTWORK_NOT_FOUND" -> HttpStatus.NOT_FOUND;
           case "MEDIA_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+          case "NOTIFICATION_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+          case "DOWNLOAD_RATE_LIMITER_UNAVAILABLE" -> HttpStatus.SERVICE_UNAVAILABLE;
           case "INVALID_CURSOR" -> HttpStatus.BAD_REQUEST;
           case "ARTWORK_VERSION_CONFLICT", "ORDER_CONFLICT" -> HttpStatus.CONFLICT;
           case "ORDER_FORBIDDEN" -> HttpStatus.FORBIDDEN;
