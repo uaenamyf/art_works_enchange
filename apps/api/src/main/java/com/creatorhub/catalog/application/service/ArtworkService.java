@@ -6,6 +6,8 @@ import com.creatorhub.catalog.domain.model.ArtworkId;
 import com.creatorhub.catalog.domain.repository.ArtworkRepository;
 import com.creatorhub.collection.application.port.in.FavoriteUseCases;
 import com.creatorhub.creator.application.port.in.CreatorUseCases;
+import com.creatorhub.outbox.domain.model.OutboxEvent;
+import com.creatorhub.outbox.domain.repository.OutboxRepository;
 import com.creatorhub.sharedkernel.UserId;
 import com.creatorhub.sharedkernel.domain.AppClock;
 import com.creatorhub.sharedkernel.domain.Money;
@@ -16,6 +18,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,14 +30,25 @@ public class ArtworkService implements ArtworkUseCases {
   private final ArtworkRepository artworks;
   private final CreatorUseCases creators;
   private final FavoriteUseCases.ReadPort favoriteStats;
+  private final OutboxRepository outbox;
 
   public ArtworkService(
       ArtworkRepository artworks,
       CreatorUseCases creators,
       FavoriteUseCases.ReadPort favoriteStats) {
+    this(artworks, creators, favoriteStats, null);
+  }
+
+  @Autowired
+  public ArtworkService(
+      ArtworkRepository artworks,
+      CreatorUseCases creators,
+      FavoriteUseCases.ReadPort favoriteStats,
+      OutboxRepository outbox) {
     this.artworks = artworks;
     this.creators = creators;
     this.favoriteStats = favoriteStats;
+    this.outbox = outbox;
   }
 
   @Override
@@ -105,7 +119,25 @@ public class ArtworkService implements ArtworkUseCases {
   public ArtworkView publish(UUID userId, UUID artworkId) {
     Artwork artwork = owned(userId, artworkId);
     artwork.publish(AppClock.now());
-    return view(artworks.save(artwork));
+    Artwork saved = artworks.save(artwork);
+    if (outbox != null) {
+      outbox.append(
+          OutboxEvent.pending(
+              UUID.randomUUID(),
+              "ArtworkPublished",
+              1,
+              "Artwork",
+              saved.id().value(),
+              saved.version(),
+              AppClock.now(),
+              UUID.randomUUID(),
+              java.util.Map.of(
+                  "recipientId", saved.ownerId().value().toString(),
+                  "artworkId", saved.id().value().toString(),
+                  "title", saved.title(),
+                  "body", "你的作品已发布。")));
+    }
+    return view(saved);
   }
 
   @Override

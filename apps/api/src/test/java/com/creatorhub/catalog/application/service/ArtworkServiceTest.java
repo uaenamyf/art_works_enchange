@@ -13,6 +13,8 @@ import com.creatorhub.catalog.domain.model.ArtworkStatus;
 import com.creatorhub.catalog.domain.repository.ArtworkRepository;
 import com.creatorhub.collection.application.port.in.FavoriteUseCases;
 import com.creatorhub.creator.application.port.in.CreatorUseCases;
+import com.creatorhub.outbox.domain.model.OutboxEvent;
+import com.creatorhub.outbox.domain.repository.OutboxRepository;
 import com.creatorhub.sharedkernel.UserId;
 import com.creatorhub.sharedkernel.domain.Money;
 import java.time.Instant;
@@ -52,6 +54,29 @@ class ArtworkServiceTest {
     assertThat(page.nextCursor()).isNotBlank();
   }
 
+  @Test
+  void publishesArtworkPublishedEventForOwnerWithoutSensitiveFields() {
+    ArtworkRepository repository = mock(ArtworkRepository.class);
+    CreatorUseCases creators = mock(CreatorUseCases.class);
+    OutboxRepository outbox = mock(OutboxRepository.class);
+    ArtworkService service = new ArtworkService(repository, creators, favoriteStats(), outbox);
+    UUID ownerId = UUID.randomUUID();
+    Artwork artwork = approvedArtwork(ownerId, "new work");
+    when(repository.findByOwnerId(UserId.of(ownerId), artwork.id()))
+        .thenReturn(java.util.Optional.of(artwork));
+    when(repository.save(artwork)).thenReturn(artwork);
+
+    service.publish(ownerId, artwork.id().value());
+
+    ArgumentCaptor<OutboxEvent> event = ArgumentCaptor.forClass(OutboxEvent.class);
+    verify(outbox).append(event.capture());
+    assertThat(event.getValue().eventType()).isEqualTo("ArtworkPublished");
+    assertThat(event.getValue().payload().get("recipientId")).isEqualTo(ownerId.toString());
+    assertThat(event.getValue().payload().get("artworkId"))
+        .isEqualTo(artwork.id().value().toString());
+    assertThat(event.getValue().payload()).doesNotContainKeys("price", "stock", "mediaObjectKey");
+  }
+
   private static FavoriteUseCases.ReadPort favoriteStats() {
     return new FavoriteUseCases.ReadPort() {
       public long countByArtworkId(UUID artworkId) {
@@ -65,10 +90,21 @@ class ArtworkServiceTest {
   }
 
   private static Artwork publishedArtwork(String title) {
+    Artwork artwork = approvedArtwork(title);
+    artwork.publish(CREATED_AT);
+    assertThat(artwork.status()).isEqualTo(ArtworkStatus.PUBLISHED);
+    return artwork;
+  }
+
+  private static Artwork approvedArtwork(String title) {
+    return approvedArtwork(UUID.randomUUID(), title);
+  }
+
+  private static Artwork approvedArtwork(UUID ownerId, String title) {
     Artwork artwork =
         Artwork.draft(
             ArtworkId.random(),
-            UserId.random(),
+            UserId.of(ownerId),
             UUID.randomUUID(),
             title,
             "A sufficiently long description for an artwork.",
@@ -79,8 +115,7 @@ class ArtworkServiceTest {
             CREATED_AT);
     artwork.submitForReview(CREATED_AT);
     artwork.approve(CREATED_AT);
-    artwork.publish(CREATED_AT);
-    assertThat(artwork.status()).isEqualTo(ArtworkStatus.PUBLISHED);
+    assertThat(artwork.status()).isEqualTo(ArtworkStatus.APPROVED);
     return artwork;
   }
 }
