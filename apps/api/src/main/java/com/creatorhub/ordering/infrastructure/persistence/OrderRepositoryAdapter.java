@@ -92,7 +92,9 @@ public class OrderRepositoryAdapter implements OrderRepository {
   private Order toDomain(OrderPersistenceRow row) {
     try {
       ShippingAddress address =
-          objectMapper.readValue(row.getShippingAddress(), ShippingAddress.class);
+          row.getShippingAddress() == null
+              ? null
+              : objectMapper.readValue(row.getShippingAddress(), ShippingAddress.class);
       return Order.reconstitute(
           com.creatorhub.ordering.domain.model.OrderId.of(row.getId()),
           UserId.of(row.getBuyerId()),
