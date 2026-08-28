@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/Button";
@@ -23,6 +23,7 @@ const categories = [
 ] as const;
 
 const schema = z.object({
+  productType: z.enum(["PHYSICAL", "DIGITAL"]),
   title: z.string().trim().min(2, "标题至少 2 个字符").max(160),
   description: z.string().trim().min(10, "描述至少 10 个字符").max(10000),
   category: z.enum(categories),
@@ -45,11 +46,13 @@ export function StudioArtworkForm() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting }
   } = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { category: "ART", currency: "USD", stock: 1 }
+    defaultValues: { productType: "PHYSICAL", category: "ART", currency: "USD", stock: 1 }
   });
+  const productType = useWatch({ control, name: "productType" });
 
   async function submit(values: Values) {
     setFormError(null);
@@ -64,6 +67,7 @@ export function StudioArtworkForm() {
         method: "POST",
         body: {
           title: values.title,
+          productType: values.productType,
           description: values.description,
           category: values.category,
           price: { amount: values.amount.toFixed(2), currency: values.currency },
@@ -102,6 +106,7 @@ export function StudioArtworkForm() {
         method: "PUT",
         body: {
           title: values.title,
+          productType: values.productType,
           description: values.description,
           category: values.category,
           price: { amount: values.amount.toFixed(2), currency: values.currency },
@@ -123,6 +128,19 @@ export function StudioArtworkForm() {
 
   return (
     <form className="flex max-w-2xl flex-col gap-5" onSubmit={handleSubmit(submit)} noValidate>
+      <fieldset className="grid gap-3 border-b border-ink-300 pb-5">
+        <legend className="text-sm text-ink-700">产品类型</legend>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="flex cursor-pointer items-start gap-3 rounded-token border border-ink-300 bg-white p-4 has-[:checked]:border-ink-900">
+            <input type="radio" value="PHYSICAL" {...register("productType")} />
+            <span><span className="block text-sm text-ink-900">实体产品</span><span className="mt-1 block text-xs text-ink-500">需要库存和收货地址</span></span>
+          </label>
+          <label className="flex cursor-pointer items-start gap-3 rounded-token border border-ink-300 bg-white p-4 has-[:checked]:border-ink-900">
+            <input type="radio" value="DIGITAL" {...register("productType")} />
+            <span><span className="block text-sm text-ink-900">数字产品</span><span className="mt-1 block text-xs text-ink-500">支付后通过授权下载</span></span>
+          </label>
+        </div>
+      </fieldset>
       <Input label="作品标题" error={errors.title?.message} {...register("title")} />
       <label className="flex flex-col gap-1.5 text-sm text-ink-700">
         作品描述
@@ -139,7 +157,7 @@ export function StudioArtworkForm() {
         <Input label="价格" type="number" min="0.01" step="0.01" error={errors.amount?.message} {...register("amount")} />
         <Input label="货币" maxLength={3} error={errors.currency?.message} {...register("currency")} />
       </div>
-      <Input label="库存" type="number" min="0" step="1" error={errors.stock?.message} {...register("stock")} />
+      {productType === "PHYSICAL" ? <Input label="库存" type="number" min="0" step="1" error={errors.stock?.message} {...register("stock")} /> : <p className="rounded-token border border-ink-300 bg-ink-50 p-3 text-sm text-ink-500">数字产品不扣实体库存。数字资产上传和版本发布将在后续步骤完成。</p>}
       <label className="flex flex-col gap-1.5 text-sm text-ink-700">
         作品图片（最多 12 张）
         <input

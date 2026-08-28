@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.creatorhub.catalog.domain.model.ArtworkStatus;
+import com.creatorhub.catalog.domain.model.ProductType;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
@@ -23,6 +24,7 @@ class ArtworkPersistenceRow {
   private BigDecimal priceAmount;
   private String priceCurrency;
   private int stock;
+  private ProductType productType;
   private ArtworkStatus status;
   private long version;
   private String reviewReason;
@@ -96,6 +98,14 @@ class ArtworkPersistenceRow {
 
   public int getStock() {
     return stock;
+  }
+
+  public ProductType getProductType() {
+    return productType;
+  }
+
+  public void setProductType(ProductType productType) {
+    this.productType = productType;
   }
 
   public void setStock(int stock) {

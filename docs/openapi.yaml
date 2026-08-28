@@ -1409,6 +1409,8 @@ components:
         stock:
           type: integer
           minimum: 0
+        productType:
+          $ref: '#/components/schemas/ProductType'
         creator:
           $ref: '#/components/schemas/CreatorSummary'
         cover:
@@ -1470,6 +1472,8 @@ components:
           type: integer
           minimum: 0
           maximum: 100000
+        productType:
+          $ref: '#/components/schemas/ProductType'
         editionSize:
           type: [integer, 'null']
           minimum: 1
@@ -1536,6 +1540,9 @@ components:
           minimum: 0
         favoritedByMe:
           type: boolean
+    ProductType:
+      type: string
+      enum: [PHYSICAL, DIGITAL]
     FavoritePage:
       type: object
       required: [items, hasMore]

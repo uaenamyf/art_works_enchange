@@ -73,6 +73,7 @@ public class ArtworkReviewService implements ArtworkReviewUseCases {
         artwork.stock(),
         artwork.mediaIds(),
         artwork.status(),
+        artwork.productType(),
         artwork.version(),
         0,
         false);

@@ -4,6 +4,7 @@ import com.creatorhub.catalog.application.port.in.ArtworkReviewUseCases;
 import com.creatorhub.catalog.application.port.in.ArtworkUseCases;
 import com.creatorhub.catalog.application.port.in.ArtworkUseCases.ArtworkView;
 import com.creatorhub.catalog.application.port.in.ArtworkUseCases.WriteCommand;
+import com.creatorhub.catalog.domain.model.ProductType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -131,11 +132,31 @@ public class ArtworkController {
       @NotNull @Valid PriceRequest price,
       @PositiveOrZero int stock,
       @NotNull @Size(max = 12) List<UUID> mediaIds,
-      @PositiveOrZero long version) {
+      @PositiveOrZero long version,
+      ProductType productType) {
+
+    ArtworkWriteRequest(
+        String title,
+        String description,
+        String category,
+        PriceRequest price,
+        int stock,
+        List<UUID> mediaIds,
+        long version) {
+      this(title, description, category, price, stock, mediaIds, version, ProductType.PHYSICAL);
+    }
 
     WriteCommand command() {
       return new WriteCommand(
-          title, description, category, price.amount(), price.currency(), stock, mediaIds, version);
+          title,
+          description,
+          category,
+          price.amount(),
+          price.currency(),
+          stock,
+          mediaIds,
+          version,
+          productType == null ? ProductType.PHYSICAL : productType);
     }
   }
 

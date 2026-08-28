@@ -1,6 +1,7 @@
 package com.creatorhub.catalog.application.port.in;
 
 import com.creatorhub.catalog.domain.model.ArtworkStatus;
+import com.creatorhub.catalog.domain.model.ProductType;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -53,9 +54,41 @@ public interface ArtworkUseCases {
       int stock,
       List<UUID> mediaIds,
       ArtworkStatus status,
+      ProductType productType,
       long version,
       long favoriteCount,
-      boolean favoritedByMe) {}
+      boolean favoritedByMe) {
+    public ArtworkView(
+        UUID id,
+        UUID creatorId,
+        String title,
+        String description,
+        String category,
+        BigDecimal priceAmount,
+        String priceCurrency,
+        int stock,
+        List<UUID> mediaIds,
+        ArtworkStatus status,
+        long version,
+        long favoriteCount,
+        boolean favoritedByMe) {
+      this(
+          id,
+          creatorId,
+          title,
+          description,
+          category,
+          priceAmount,
+          priceCurrency,
+          stock,
+          mediaIds,
+          status,
+          ProductType.PHYSICAL,
+          version,
+          favoriteCount,
+          favoritedByMe);
+    }
+  }
 
   record WriteCommand(
       String title,
@@ -65,7 +98,29 @@ public interface ArtworkUseCases {
       String priceCurrency,
       int stock,
       List<UUID> mediaIds,
-      long version) {}
+      long version,
+      ProductType productType) {
+    public WriteCommand(
+        String title,
+        String description,
+        String category,
+        BigDecimal priceAmount,
+        String priceCurrency,
+        int stock,
+        List<UUID> mediaIds,
+        long version) {
+      this(
+          title,
+          description,
+          category,
+          priceAmount,
+          priceCurrency,
+          stock,
+          mediaIds,
+          version,
+          ProductType.PHYSICAL);
+    }
+  }
 
   record ArtworkPage(List<ArtworkListView> items, String nextCursor, boolean hasMore) {}
 
@@ -79,6 +134,7 @@ public interface ArtworkUseCases {
       UUID creatorId,
       UUID coverMediaId,
       ArtworkStatus status,
+      ProductType productType,
       Instant publishedAt,
       long favoriteCount,
       boolean favoritedByMe) {}

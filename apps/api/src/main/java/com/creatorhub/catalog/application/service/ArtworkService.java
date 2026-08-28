@@ -51,7 +51,8 @@ public class ArtworkService implements ArtworkUseCases {
             money(command),
             command.stock(),
             command.mediaIds(),
-            AppClock.now());
+            AppClock.now(),
+            command.productType());
     return view(artworks.save(artwork));
   }
 
@@ -159,6 +160,7 @@ public class ArtworkService implements ArtworkUseCases {
                         artwork.creatorId(),
                         artwork.mediaIds().get(0),
                         artwork.status(),
+                        artwork.productType(),
                         artwork.createdAt(),
                         favoriteStats.countByArtworkId(artwork.id().value()),
                         userId != null && favoriteStats.isFavorited(userId, artwork.id().value())))
@@ -219,6 +221,7 @@ public class ArtworkService implements ArtworkUseCases {
         artwork.stock(),
         artwork.mediaIds(),
         artwork.status(),
+        artwork.productType(),
         artwork.version(),
         favoriteStats.countByArtworkId(artwork.id().value()),
         userId != null && favoriteStats.isFavorited(userId, artwork.id().value()));

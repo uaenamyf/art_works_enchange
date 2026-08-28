@@ -80,6 +80,7 @@ public class ArtworkRepositoryAdapter implements ArtworkRepository, StockAvailab
     row.setPriceAmount(artwork.price().amount());
     row.setPriceCurrency(artwork.price().currency().getCurrencyCode());
     row.setStock(artwork.stock());
+    row.setProductType(artwork.productType());
     row.setStatus(artwork.status());
     row.setVersion(artwork.version());
     row.setCreatedAt(artwork.createdAt());
@@ -149,6 +150,9 @@ public class ArtworkRepositoryAdapter implements ArtworkRepository, StockAvailab
         row.getStatus(),
         row.getVersion(),
         row.getCreatedAt(),
-        row.getUpdatedAt());
+        row.getUpdatedAt(),
+        row.getProductType() == null
+            ? com.creatorhub.catalog.domain.model.ProductType.PHYSICAL
+            : row.getProductType());
   }
 }

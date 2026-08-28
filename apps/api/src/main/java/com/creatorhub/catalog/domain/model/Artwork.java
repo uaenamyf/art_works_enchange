@@ -22,6 +22,7 @@ public final class Artwork extends AggregateRoot<ArtworkId> {
   private String category;
   private Money price;
   private int stock;
+  private ProductType productType;
   private List<UUID> mediaIds;
   private ArtworkStatus status;
   private long version;
@@ -38,12 +39,14 @@ public final class Artwork extends AggregateRoot<ArtworkId> {
       Money price,
       int stock,
       List<UUID> mediaIds,
-      Instant now) {
+      Instant now,
+      ProductType productType) {
     super(id);
     this.ownerId = Objects.requireNonNull(ownerId, "ownerId");
     this.creatorId = Objects.requireNonNull(creatorId, "creatorId");
     this.createdAt = Objects.requireNonNull(now, "now");
     this.status = ArtworkStatus.DRAFT;
+    this.productType = Objects.requireNonNull(productType, "productType");
     update(title, description, category, price, stock, mediaIds, now);
   }
 
@@ -59,8 +62,44 @@ public final class Artwork extends AggregateRoot<ArtworkId> {
       int stock,
       List<UUID> mediaIds,
       Instant now) {
+    return draft(
+        id,
+        ownerId,
+        creatorId,
+        title,
+        description,
+        category,
+        price,
+        stock,
+        mediaIds,
+        now,
+        ProductType.PHYSICAL);
+  }
+
+  public static Artwork draft(
+      ArtworkId id,
+      UserId ownerId,
+      UUID creatorId,
+      String title,
+      String description,
+      String category,
+      Money price,
+      int stock,
+      List<UUID> mediaIds,
+      Instant now,
+      ProductType productType) {
     return new Artwork(
-        id, ownerId, creatorId, title, description, category, price, stock, mediaIds, now);
+        id,
+        ownerId,
+        creatorId,
+        title,
+        description,
+        category,
+        price,
+        stock,
+        mediaIds,
+        now,
+        productType);
   }
 
   /** 仅供仓储适配器恢复完整作品状态；恢复不会触发新的业务版本递增。 */
@@ -78,6 +117,38 @@ public final class Artwork extends AggregateRoot<ArtworkId> {
       long version,
       Instant createdAt,
       Instant updatedAt) {
+    return reconstitute(
+        id,
+        ownerId,
+        creatorId,
+        title,
+        description,
+        category,
+        price,
+        stock,
+        mediaIds,
+        status,
+        version,
+        createdAt,
+        updatedAt,
+        ProductType.PHYSICAL);
+  }
+
+  public static Artwork reconstitute(
+      ArtworkId id,
+      UserId ownerId,
+      UUID creatorId,
+      String title,
+      String description,
+      String category,
+      Money price,
+      int stock,
+      List<UUID> mediaIds,
+      ArtworkStatus status,
+      long version,
+      Instant createdAt,
+      Instant updatedAt,
+      ProductType productType) {
     Artwork artwork =
         new Artwork(
             id,
@@ -89,7 +160,8 @@ public final class Artwork extends AggregateRoot<ArtworkId> {
             price,
             stock,
             mediaIds,
-            createdAt);
+            createdAt,
+            productType);
     artwork.status = Objects.requireNonNull(status, "status");
     artwork.version = version;
     artwork.updatedAt = Objects.requireNonNull(updatedAt, "updatedAt");
@@ -164,7 +236,9 @@ public final class Artwork extends AggregateRoot<ArtworkId> {
   /** 仅审核通过的作品可公开发布，防止 Controller 或客户端跳过审核。 */
   public void publish(Instant now) {
     requireStatus(ArtworkStatus.APPROVED);
-    if (mediaIds.isEmpty() || !price.isPositive() || stock <= 0) {
+    if (mediaIds.isEmpty()
+        || !price.isPositive()
+        || (productType == ProductType.PHYSICAL && stock <= 0)) {
       throw new IllegalStateException("Artwork is not ready to publish");
     }
     status = ArtworkStatus.PUBLISHED;
@@ -233,6 +307,10 @@ public final class Artwork extends AggregateRoot<ArtworkId> {
 
   public int stock() {
     return stock;
+  }
+
+  public ProductType productType() {
+    return productType;
   }
 
   public List<UUID> mediaIds() {
