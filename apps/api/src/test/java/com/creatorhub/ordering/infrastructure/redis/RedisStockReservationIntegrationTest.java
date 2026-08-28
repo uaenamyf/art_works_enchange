@@ -79,6 +79,18 @@ class RedisStockReservationIntegrationTest {
     assertThat(redis.opsForValue().get(key(artworkId))).isEqualTo("7");
   }
 
+  @Test
+  void removesStaleCacheWhenArtworkIsNoLongerPublished() {
+    UUID artworkId = UUID.randomUUID();
+    redis.opsForValue().set(key(artworkId), "5");
+    InventoryStockReadPort stockReader = mock(InventoryStockReadPort.class);
+    when(stockReader.findPublishedStock(artworkId)).thenReturn(OptionalInt.empty());
+    reservations = new RedisStockReservationAdapter(redis, stockReader);
+
+    assertThat(reservations.rebuild(artworkId)).isFalse();
+    assertThat(redis.hasKey(key(artworkId))).isFalse();
+  }
+
   private static String key(UUID artworkId) {
     return "creatorhub:inventory:available:" + artworkId;
   }

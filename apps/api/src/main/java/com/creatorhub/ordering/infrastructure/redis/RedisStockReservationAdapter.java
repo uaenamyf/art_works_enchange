@@ -71,11 +71,14 @@ public class RedisStockReservationAdapter implements StockReservationGate {
     }
   }
 
-  /** 从 PostgreSQL 事实库存重建单个缓存键；不存在或非公开作品不会写入缓存。 */
+  /** 从 PostgreSQL 事实库存重建单个缓存键；不存在或非公开作品会清理陈旧缓存。 */
   public boolean rebuild(UUID artworkId) {
     if (stockReader == null) return false;
     java.util.OptionalInt stock = stockReader.findPublishedStock(artworkId);
-    if (stock.isEmpty()) return false;
+    if (stock.isEmpty()) {
+      redis.delete(key(artworkId));
+      return false;
+    }
     redis.opsForValue().set(key(artworkId), String.valueOf(stock.getAsInt()));
     return true;
   }
