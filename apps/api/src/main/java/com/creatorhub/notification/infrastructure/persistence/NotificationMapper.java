@@ -15,6 +15,12 @@ import org.apache.ibatis.annotations.Update;
 interface NotificationMapper extends BaseMapper<NotificationPersistenceRow> {
 
   @Insert(
+      "INSERT INTO notifications (id, user_id, event_id, type, title, body, link, read_at, created_at) "
+          + "VALUES (#{id}, #{userId}, #{eventId}, #{type}, #{title}, #{body}, #{link}, #{readAt}, #{createdAt}) "
+          + "ON CONFLICT (user_id, event_id) DO NOTHING")
+  int insertNotification(NotificationPersistenceRow row);
+
+  @Insert(
       "INSERT INTO notification_events (event_id, event_type, event_version, consumed_at) "
           + "VALUES (#{eventId}, #{eventType}, #{eventVersion}, #{consumedAt}) "
           + "ON CONFLICT (event_id) DO NOTHING")

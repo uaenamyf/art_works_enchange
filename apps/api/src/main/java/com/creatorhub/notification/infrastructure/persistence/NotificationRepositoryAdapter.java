@@ -24,7 +24,7 @@ public class NotificationRepositoryAdapter implements NotificationRepository {
 
   @Override
   public boolean save(Notification notification) {
-    return mapper.insert(toRow(notification)) == 1;
+    return mapper.insertNotification(toRow(notification)) == 1;
   }
 
   @Override
