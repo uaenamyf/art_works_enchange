@@ -13,6 +13,8 @@ import com.creatorhub.ordering.domain.model.OrderId;
 import com.creatorhub.ordering.domain.model.OrderLine;
 import com.creatorhub.ordering.domain.model.OrderStatus;
 import com.creatorhub.ordering.domain.repository.OrderRepository;
+import com.creatorhub.outbox.domain.model.OutboxEvent;
+import com.creatorhub.outbox.domain.repository.OutboxRepository;
 import com.creatorhub.sharedkernel.UserId;
 import com.creatorhub.sharedkernel.domain.Money;
 import com.creatorhub.sharedkernel.error.BusinessError;
@@ -21,6 +23,7 @@ import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,18 +38,31 @@ public class OrderService implements OrderUseCases {
   private final OrderRepository orders;
   private final OrderIdempotencyPort idempotency;
   private final StockReservationGate reservationGate;
+  private final OutboxRepository outbox;
 
+  @Autowired
   public OrderService(
       ArtworkUseCases artworks,
       StockAvailabilityPort stock,
       OrderRepository orders,
       OrderIdempotencyPort idempotency,
       StockReservationGate reservationGate) {
+    this(artworks, stock, orders, idempotency, reservationGate, null);
+  }
+
+  public OrderService(
+      ArtworkUseCases artworks,
+      StockAvailabilityPort stock,
+      OrderRepository orders,
+      OrderIdempotencyPort idempotency,
+      StockReservationGate reservationGate,
+      OutboxRepository outbox) {
     this.artworks = artworks;
     this.stock = stock;
     this.orders = orders;
     this.idempotency = idempotency;
     this.reservationGate = reservationGate;
+    this.outbox = outbox;
   }
 
   @Override
@@ -99,6 +115,7 @@ public class OrderService implements OrderUseCases {
       }
       Order saved = orders.save(order);
       OrderView response = view(saved);
+      appendOrderCreated(saved);
       idempotency.complete(buyerId, OPERATION, idempotencyKey, response);
       return response;
     } catch (RuntimeException exception) {
@@ -263,5 +280,27 @@ public class OrderService implements OrderUseCases {
     return type == com.creatorhub.catalog.domain.model.ProductType.DIGITAL
         ? FulfillmentType.DIGITAL
         : FulfillmentType.PHYSICAL;
+  }
+
+  private void appendOrderCreated(Order order) {
+    if (outbox == null) return;
+    OrderLine line = order.lines().get(0);
+    outbox.append(
+        OutboxEvent.pending(
+            UUID.randomUUID(),
+            "OrderCreated",
+            1,
+            "Order",
+            order.id().value(),
+            0,
+            order.createdAt(),
+            UUID.randomUUID(),
+            java.util.Map.of(
+                "recipientId", order.buyerId().value().toString(),
+                "orderId", order.id().value().toString(),
+                "total", order.subtotal().amount().toPlainString(),
+                "currency", line.unitPrice().currency().getCurrencyCode(),
+                "title", "订单已创建",
+                "body", "你的订单已创建，等待支付。")));
   }
 }

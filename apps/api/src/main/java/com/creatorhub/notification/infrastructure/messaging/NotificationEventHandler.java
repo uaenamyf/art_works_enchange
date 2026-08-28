@@ -25,6 +25,7 @@ public class NotificationEventHandler implements OutboxEventHandler {
     return eventVersion == 1
         && switch (eventType) {
           case "ArtworkPublished",
+                  "OrderCreated",
                   "OrderStatusChanged",
                   "PaymentSucceeded",
                   "PaymentFailed",
@@ -64,6 +65,7 @@ public class NotificationEventHandler implements OutboxEventHandler {
   private static String toNotificationType(String eventType) {
     return switch (eventType) {
       case "ArtworkPublished" -> "ARTWORK_PUBLISHED";
+      case "OrderCreated" -> "ORDER_CREATED";
       case "OrderStatusChanged" -> "ORDER_STATUS_CHANGED";
       case "PaymentSucceeded" -> "PAYMENT_SUCCEEDED";
       case "PaymentFailed" -> "PAYMENT_FAILED";
@@ -83,7 +85,11 @@ public class NotificationEventHandler implements OutboxEventHandler {
 
   private static String relativeLink(OutboxEvent event) {
     return switch (event.eventType()) {
-      case "OrderStatusChanged", "PaymentSucceeded", "PaymentFailed", "DigitalEntitlementGranted" ->
+      case "OrderCreated",
+              "OrderStatusChanged",
+              "PaymentSucceeded",
+              "PaymentFailed",
+              "DigitalEntitlementGranted" ->
           "/orders/" + text(event, "orderId");
       case "ArtworkPublished", "DigitalAssetRecalled" -> "/artworks/" + text(event, "artworkId");
       default -> throw new IllegalArgumentException("Unsupported notification event");

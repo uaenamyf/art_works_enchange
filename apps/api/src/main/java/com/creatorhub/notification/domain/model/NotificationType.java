@@ -3,6 +3,7 @@ package com.creatorhub.notification.domain.model;
 /** 站内通知类型；通知载荷只保留必要文案和相对链接，不包含敏感业务数据。 */
 public enum NotificationType {
   ARTWORK_PUBLISHED,
+  ORDER_CREATED,
   ORDER_STATUS_CHANGED,
   PAYMENT_SUCCEEDED,
   PAYMENT_FAILED,

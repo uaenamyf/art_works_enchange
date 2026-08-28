@@ -50,6 +50,31 @@ class NotificationEventHandlerTest {
   }
 
   @Test
+  void consumesOrderCreatedForBuyer() {
+    UUID buyerId = UUID.randomUUID();
+    when(notifications.recordEvent(any(), any(), any(Integer.class), any())).thenReturn(true);
+
+    handler.handle(
+        event(
+            UUID.randomUUID(),
+            "OrderCreated",
+            Map.of(
+                "recipientId",
+                buyerId.toString(),
+                "orderId",
+                UUID.randomUUID().toString(),
+                "title",
+                "订单已创建",
+                "body",
+                "你的订单已创建，等待支付。")));
+
+    ArgumentCaptor<Notification> saved = ArgumentCaptor.forClass(Notification.class);
+    verify(notifications).save(saved.capture());
+    assertThat(saved.getValue().type().name()).isEqualTo("ORDER_CREATED");
+    assertThat(saved.getValue().userId()).isEqualTo(buyerId);
+  }
+
+  @Test
   void skipsDuplicateEventAfterReceipt() {
     when(notifications.recordEvent(any(), any(), any(Integer.class), any())).thenReturn(false);
 

@@ -20,6 +20,8 @@ import com.creatorhub.ordering.domain.model.OrderLine;
 import com.creatorhub.ordering.domain.model.OrderStatus;
 import com.creatorhub.ordering.domain.model.ShippingAddress;
 import com.creatorhub.ordering.domain.repository.OrderRepository;
+import com.creatorhub.outbox.domain.model.OutboxEvent;
+import com.creatorhub.outbox.domain.repository.OutboxRepository;
 import com.creatorhub.sharedkernel.UserId;
 import com.creatorhub.sharedkernel.domain.Money;
 import com.creatorhub.sharedkernel.error.BusinessError;
@@ -94,6 +96,53 @@ class OrderServiceTest {
             org.mockito.ArgumentMatchers.eq("createOrder"),
             org.mockito.ArgumentMatchers.eq("key"),
             org.mockito.ArgumentMatchers.any());
+  }
+
+  @Test
+  void appendsOrderCreatedEventWithoutShippingAddress() {
+    var artworks = mock(ArtworkUseCases.class);
+    var stock = mock(StockAvailabilityPort.class);
+    var orders = mock(OrderRepository.class);
+    var idempotency = mock(OrderIdempotencyPort.class);
+    var reservationGate = mock(StockReservationGate.class);
+    var outbox = mock(OutboxRepository.class);
+    var service = new OrderService(artworks, stock, orders, idempotency, reservationGate, outbox);
+    UUID buyerId = UUID.randomUUID();
+    UUID artworkId = UUID.randomUUID();
+    when(idempotency.claim(
+            org.mockito.ArgumentMatchers.eq(buyerId),
+            org.mockito.ArgumentMatchers.eq("createOrder"),
+            org.mockito.ArgumentMatchers.eq("key"),
+            org.mockito.ArgumentMatchers.any()))
+        .thenReturn(new OrderIdempotencyClaim(true, "hash", null));
+    when(artworks.getPublished(artworkId))
+        .thenReturn(
+            new ArtworkUseCases.ArtworkView(
+                artworkId,
+                UUID.randomUUID(),
+                "Digital Pack",
+                "Description",
+                "DIGITAL",
+                BigDecimal.TEN,
+                "CNY",
+                1,
+                java.util.List.of(),
+                com.creatorhub.catalog.domain.model.ArtworkStatus.PUBLISHED,
+                com.creatorhub.catalog.domain.model.ProductType.DIGITAL,
+                0,
+                0,
+                false));
+    when(orders.save(org.mockito.ArgumentMatchers.any()))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    service.create(buyerId, new CreateCommand(artworkId, 1, null), "key");
+
+    org.mockito.ArgumentCaptor<OutboxEvent> event =
+        org.mockito.ArgumentCaptor.forClass(OutboxEvent.class);
+    verify(outbox).append(event.capture());
+    assertThat(event.getValue().eventType()).isEqualTo("OrderCreated");
+    assertThat(event.getValue().payload()).doesNotContainKey("shippingAddress");
+    assertThat(event.getValue().payload().get("recipientId")).isEqualTo(buyerId.toString());
   }
 
   @Test
