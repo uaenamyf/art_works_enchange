@@ -3,6 +3,7 @@ package com.creatorhub.digitaldelivery.application.service;
 import com.creatorhub.digitaldelivery.application.port.out.DigitalAssetPrivateStoragePort;
 import com.creatorhub.digitaldelivery.application.port.out.DigitalDownloadAsset;
 import com.creatorhub.digitaldelivery.application.port.out.DownloadGrantRepository;
+import com.creatorhub.digitaldelivery.application.port.out.DownloadRateLimiter;
 import com.creatorhub.digitaldelivery.domain.model.DownloadGrant;
 import com.creatorhub.digitaldelivery.domain.repository.EntitlementRepository;
 import com.creatorhub.sharedkernel.error.BusinessError;
@@ -23,16 +24,27 @@ public class DigitalDownloadService {
   private final DigitalAssetPrivateStoragePort storage;
   private final DownloadGrantRepository grants;
   private final long downloadTtlSeconds;
+  private final DownloadRateLimiter rateLimiter;
 
   public DigitalDownloadService(
       EntitlementRepository entitlements,
       DigitalAssetPrivateStoragePort storage,
       DownloadGrantRepository grants,
       @Value("${creatorhub.storage.download-url-ttl-seconds:300}") long downloadTtlSeconds) {
+    this(entitlements, storage, grants, downloadTtlSeconds, null);
+  }
+
+  public DigitalDownloadService(
+      EntitlementRepository entitlements,
+      DigitalAssetPrivateStoragePort storage,
+      DownloadGrantRepository grants,
+      long downloadTtlSeconds,
+      DownloadRateLimiter rateLimiter) {
     this.entitlements = entitlements;
     this.storage = storage;
     this.grants = grants;
     this.downloadTtlSeconds = downloadTtlSeconds;
+    this.rateLimiter = rateLimiter;
   }
 
   public DownloadView createGrant(UUID buyerId, UUID orderId) {
@@ -47,6 +59,7 @@ public class DigitalDownloadService {
                 () ->
                     new BusinessError(
                         "DIGITAL_DOWNLOAD_NOT_AVAILABLE", "Digital download is not available"));
+    if (rateLimiter != null) rateLimiter.check(buyerId, requestIp);
     Instant expiresAt = Instant.now().plus(Duration.ofSeconds(downloadTtlSeconds));
     Instant createdAt = Instant.now();
     String tokenDigest = digest(UUID.randomUUID().toString());
