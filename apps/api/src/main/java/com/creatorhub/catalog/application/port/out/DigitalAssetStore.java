@@ -16,6 +16,8 @@ public interface DigitalAssetStore {
 
   DigitalAssetVersion findVersion(UUID ownerId, UUID versionId);
 
+  DigitalAssetVersion findVersion(UUID versionId);
+
   DigitalAssetVersion markScanStarted(UUID versionId);
 
   DigitalAssetVersion confirmUpload(UUID ownerId, UUID versionId);

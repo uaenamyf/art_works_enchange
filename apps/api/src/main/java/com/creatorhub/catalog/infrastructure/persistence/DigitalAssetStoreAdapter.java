@@ -74,6 +74,11 @@ public class DigitalAssetStoreAdapter implements DigitalAssetStore {
   }
 
   @Override
+  public DigitalAssetVersion findVersion(UUID versionId) {
+    return current(versionId);
+  }
+
+  @Override
   @Transactional
   public DigitalAssetVersion confirmUpload(UUID ownerId, UUID versionId) {
     if (mapper.markScanningForOwner(ownerId, versionId) != 1) {
