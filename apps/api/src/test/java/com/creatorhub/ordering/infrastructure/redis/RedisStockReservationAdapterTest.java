@@ -5,6 +5,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.creatorhub.catalog.application.port.in.InventoryStockReadPort;
+import java.util.OptionalInt;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -43,5 +45,20 @@ class RedisStockReservationAdapterTest {
 
     assertThat(result.allowed()).isTrue();
     assertThat(result.cached()).isFalse();
+  }
+
+  @Test
+  void rebuildsCacheFromPublishedDatabaseStock() {
+    StringRedisTemplate redis = mock(StringRedisTemplate.class);
+    InventoryStockReadPort stockReader = mock(InventoryStockReadPort.class);
+    var values = mock(org.springframework.data.redis.core.ValueOperations.class);
+    when(stockReader.findPublishedStock(any())).thenReturn(OptionalInt.of(7));
+    when(redis.opsForValue()).thenReturn(values);
+    UUID artworkId = UUID.randomUUID();
+
+    boolean rebuilt = new RedisStockReservationAdapter(redis, stockReader).rebuild(artworkId);
+
+    assertThat(rebuilt).isTrue();
+    org.mockito.Mockito.verify(values).set("creatorhub:inventory:available:" + artworkId, "7");
   }
 }

@@ -31,6 +31,9 @@ interface ArtworkMapper extends BaseMapper<ArtworkPersistenceRow> {
             """)
   int releaseStock(@Param("artworkId") UUID artworkId, @Param("quantity") int quantity);
 
+  @Select("SELECT stock FROM artworks WHERE id = #{artworkId} AND status = 'PUBLISHED'")
+  Integer findPublishedStock(@Param("artworkId") UUID artworkId);
+
   /** 按 created_at/id 的稳定倒序游标查询公开作品；关键词和分类均在数据库过滤。 */
   @Select(
       """

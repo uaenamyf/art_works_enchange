@@ -1,5 +1,6 @@
 package com.creatorhub.catalog.infrastructure.persistence;
 
+import com.creatorhub.catalog.application.port.in.InventoryStockReadPort;
 import com.creatorhub.catalog.application.port.in.StockAvailabilityPort;
 import com.creatorhub.catalog.domain.model.Artwork;
 import com.creatorhub.catalog.domain.model.ArtworkId;
@@ -16,7 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Artwork 聚合仓储适配器，显式转换领域模型和 MyBatis 持久化行。 */
 @Repository
-public class ArtworkRepositoryAdapter implements ArtworkRepository, StockAvailabilityPort {
+public class ArtworkRepositoryAdapter
+    implements ArtworkRepository, StockAvailabilityPort, InventoryStockReadPort {
 
   private final ArtworkMapper mapper;
   private final ArtworkMediaMapper mediaMapper;
@@ -99,6 +101,12 @@ public class ArtworkRepositoryAdapter implements ArtworkRepository, StockAvailab
       }
     }
     return toDomain(mapper.findByIdValue(row.getId()), mediaMapper.findIdsByArtworkId(row.getId()));
+  }
+
+  @Override
+  public java.util.OptionalInt findPublishedStock(UUID artworkId) {
+    Integer stock = mapper.findPublishedStock(artworkId);
+    return stock == null ? java.util.OptionalInt.empty() : java.util.OptionalInt.of(stock);
   }
 
   @Override
