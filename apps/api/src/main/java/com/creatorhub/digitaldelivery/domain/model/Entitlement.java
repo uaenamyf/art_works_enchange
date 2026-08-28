@@ -36,6 +36,14 @@ public final class Entitlement {
     return new Entitlement(id, orderId, buyerId, artworkId, assetVersionId, createdAt);
   }
 
+  /** 仅供支付成功事件消费者创建已授予授权，调用方必须先完成支付验签。 */
+  public static Entitlement available(
+      UUID id, UUID orderId, UUID buyerId, UUID artworkId, UUID assetVersionId, Instant at) {
+    Entitlement entitlement = pending(id, orderId, buyerId, artworkId, assetVersionId, at);
+    entitlement.makeAvailable(at);
+    return entitlement;
+  }
+
   public static Entitlement reconstitute(
       UUID id,
       UUID orderId,

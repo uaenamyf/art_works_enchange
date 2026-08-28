@@ -10,6 +10,9 @@ public interface EntitlementRepository {
 
   Entitlement save(Entitlement entitlement);
 
+  /** 以订单唯一约束幂等创建支付成功后的可用授权。 */
+  Entitlement grant(Entitlement entitlement);
+
   Optional<Entitlement> findByOrderId(UUID orderId);
 
   Optional<Entitlement> findAvailableByBuyer(UUID buyerId, UUID orderId);

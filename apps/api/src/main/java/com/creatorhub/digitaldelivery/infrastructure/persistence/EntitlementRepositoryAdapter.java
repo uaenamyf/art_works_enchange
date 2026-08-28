@@ -34,6 +34,18 @@ public class EntitlementRepositoryAdapter implements EntitlementRepository {
   }
 
   @Override
+  @Transactional
+  public Entitlement grant(Entitlement entitlement) {
+    if (mapper.isReadyAssetVersion(entitlement.assetVersionId()) == null) {
+      throw new BusinessError("DIGITAL_ASSET_NOT_READY", "Digital asset is not ready");
+    }
+    EntitlementPersistenceRow row = toRow(entitlement);
+    if (mapper.insert(row) == 1) return entitlement;
+    return findByOrderId(entitlement.orderId())
+        .orElseThrow(() -> new IllegalStateException("Entitlement insert conflict"));
+  }
+
+  @Override
   public Optional<Entitlement> findByOrderId(UUID orderId) {
     return Optional.ofNullable(mapper.findByOrderId(orderId))
         .map(EntitlementRepositoryAdapter::toDomain);
