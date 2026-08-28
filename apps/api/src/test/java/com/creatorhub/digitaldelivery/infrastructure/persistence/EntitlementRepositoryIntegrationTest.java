@@ -93,6 +93,18 @@ class EntitlementRepositoryIntegrationTest {
         .isOne();
   }
 
+  @Test
+  void recalledAssetCannotProvideDownloadAsset() {
+    createFixture("READY");
+    Entitlement entitlement =
+        Entitlement.available(
+            UUID.randomUUID(), orderId, buyerId, artworkId, versionId, Instant.now());
+    entitlements.grant(entitlement);
+    jdbc.update("UPDATE digital_assets SET status = 'RECALLED' WHERE id = ?", assetId);
+
+    assertThat(entitlements.findDownloadAsset(buyerId, orderId)).isEmpty();
+  }
+
   private Entitlement pendingEntitlement() {
     return Entitlement.pending(
         UUID.randomUUID(), orderId, buyerId, artworkId, versionId, Instant.now());

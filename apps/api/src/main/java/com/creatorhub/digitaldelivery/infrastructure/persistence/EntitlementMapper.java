@@ -22,7 +22,7 @@ interface EntitlementMapper {
   EntitlementPersistenceRow findAvailableByBuyer(UUID buyerId, UUID orderId);
 
   @Select(
-      "SELECT de.id AS entitlement_id, dav.id AS asset_version_id, dav.file_name, dav.object_key, dav.content_type, dav.size_bytes, dav.version FROM digital_entitlements de JOIN digital_asset_versions dav ON dav.id = de.asset_version_id WHERE de.buyer_id = #{buyerId} AND de.order_id = #{orderId} AND de.status = 'AVAILABLE' AND dav.scan_status = 'READY'")
+      "SELECT de.id AS entitlement_id, dav.id AS asset_version_id, dav.file_name, dav.object_key, dav.content_type, dav.size_bytes, dav.version FROM digital_entitlements de JOIN digital_asset_versions dav ON dav.id = de.asset_version_id JOIN digital_assets da ON da.id = dav.digital_asset_id WHERE de.buyer_id = #{buyerId} AND de.order_id = #{orderId} AND de.status = 'AVAILABLE' AND dav.scan_status = 'READY' AND da.status = 'READY'")
   DigitalDownloadAsset findDownloadAsset(UUID buyerId, UUID orderId);
 
   @Select(
