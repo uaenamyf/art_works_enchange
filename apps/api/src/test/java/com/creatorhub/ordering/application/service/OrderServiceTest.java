@@ -298,6 +298,32 @@ class OrderServiceTest {
   }
 
   @Test
+  void appendsOrderStatusChangedEventAfterCancellation() {
+    var orders = mock(OrderRepository.class);
+    var outbox = mock(OutboxRepository.class);
+    var order = pendingOrder(UUID.randomUUID(), UUID.randomUUID());
+    var service =
+        new OrderService(
+            mock(ArtworkUseCases.class),
+            mock(StockAvailabilityPort.class),
+            orders,
+            mock(OrderIdempotencyPort.class),
+            mock(StockReservationGate.class),
+            outbox);
+    when(orders.findById(order.id().value())).thenReturn(Optional.of(order));
+    when(orders.cancel(order)).thenReturn(true);
+
+    service.cancel(order.buyerId().value(), order.id().value());
+
+    var event = org.mockito.ArgumentCaptor.forClass(OutboxEvent.class);
+    verify(outbox).append(event.capture());
+    assertThat(event.getValue().eventType()).isEqualTo("OrderStatusChanged");
+    assertThat(event.getValue().payload().get("fromStatus")).isEqualTo("PENDING_PAYMENT");
+    assertThat(event.getValue().payload().get("toStatus")).isEqualTo("CANCELLED");
+    assertThat(event.getValue().payload()).doesNotContainKey("shippingAddress");
+  }
+
+  @Test
   void doesNotReleaseStockWhenConcurrentCancelAlreadyWon() {
     var orders = mock(OrderRepository.class);
     var stock = mock(StockAvailabilityPort.class);
@@ -349,6 +375,33 @@ class OrderServiceTest {
             org.mockito.ArgumentMatchers.eq(artworkId),
             org.mockito.ArgumentMatchers.eq(2),
             org.mockito.ArgumentMatchers.any());
+  }
+
+  @Test
+  void appendsStatusEventWhenPendingOrderExpires() {
+    var orders = mock(OrderRepository.class);
+    var outbox = mock(OutboxRepository.class);
+    var order = pendingOrder(UUID.randomUUID(), UUID.randomUUID());
+    var service =
+        new OrderService(
+            mock(ArtworkUseCases.class),
+            mock(StockAvailabilityPort.class),
+            orders,
+            mock(OrderIdempotencyPort.class),
+            mock(StockReservationGate.class),
+            outbox);
+    when(orders.findExpiredPending(
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(100)))
+        .thenReturn(java.util.List.of(order));
+    when(orders.cancel(order)).thenReturn(true);
+
+    int expired = service.expirePendingOrders(Instant.parse("2026-08-27T01:00:00Z"), 100);
+
+    assertThat(expired).isEqualTo(1);
+    var event = org.mockito.ArgumentCaptor.forClass(OutboxEvent.class);
+    verify(outbox).append(event.capture());
+    assertThat(event.getValue().eventType()).isEqualTo("OrderStatusChanged");
+    assertThat(event.getValue().payload().get("toStatus")).isEqualTo("CANCELLED");
   }
 
   @Test

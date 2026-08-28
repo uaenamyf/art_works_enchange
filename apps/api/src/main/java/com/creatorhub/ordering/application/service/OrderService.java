@@ -143,6 +143,7 @@ public class OrderService implements OrderUseCases {
           .map(OrderService::view)
           .orElseThrow(() -> new BusinessError("ORDER_NOT_FOUND", "Order not found"));
     }
+    appendOrderStatusChanged(order, OrderStatus.PENDING_PAYMENT);
     if (order.fulfillmentType() == FulfillmentType.PHYSICAL) {
       stock.release(
           order.lines().get(0).artworkId().value(),
@@ -159,6 +160,7 @@ public class OrderService implements OrderUseCases {
     for (Order order : orders.findExpiredPending(now, batchSize)) {
       order.cancel(now);
       if (orders.cancel(order)) {
+        appendOrderStatusChanged(order, OrderStatus.PENDING_PAYMENT);
         if (order.fulfillmentType() == FulfillmentType.PHYSICAL) {
           stock.release(
               order.lines().get(0).artworkId().value(),
@@ -302,5 +304,26 @@ public class OrderService implements OrderUseCases {
                 "currency", line.unitPrice().currency().getCurrencyCode(),
                 "title", "订单已创建",
                 "body", "你的订单已创建，等待支付。")));
+  }
+
+  private void appendOrderStatusChanged(Order order, OrderStatus previousStatus) {
+    if (outbox == null) return;
+    outbox.append(
+        OutboxEvent.pending(
+            UUID.randomUUID(),
+            "OrderStatusChanged",
+            1,
+            "Order",
+            order.id().value(),
+            order.version(),
+            order.updatedAt(),
+            UUID.randomUUID(),
+            java.util.Map.of(
+                "recipientId", order.buyerId().value().toString(),
+                "orderId", order.id().value().toString(),
+                "fromStatus", previousStatus.name(),
+                "toStatus", order.status().name(),
+                "title", "订单状态已更新",
+                "body", "你的订单已取消。")));
   }
 }
