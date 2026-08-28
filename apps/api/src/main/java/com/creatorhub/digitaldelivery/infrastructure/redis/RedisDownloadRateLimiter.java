@@ -63,14 +63,20 @@ public class RedisDownloadRateLimiter implements DownloadRateLimiter {
   @Override
   public void check(UUID buyerId, String requestIp) {
     long now = clock.millis();
-    Long retryAfter =
-        redis.execute(
-            SCRIPT,
-            List.of("digital-download:grant:" + digest(buyerId + ":" + requestIp)),
-            Long.toString(now),
-            Long.toString(windowSeconds * 1000),
-            Integer.toString(limit),
-            now + ":" + UUID.randomUUID());
+    Long retryAfter;
+    try {
+      retryAfter =
+          redis.execute(
+              SCRIPT,
+              List.of("digital-download:grant:" + digest(buyerId + ":" + requestIp)),
+              Long.toString(now),
+              Long.toString(windowSeconds * 1000),
+              Integer.toString(limit),
+              now + ":" + UUID.randomUUID());
+    } catch (RuntimeException exception) {
+      throw new BusinessError(
+          "DOWNLOAD_RATE_LIMITER_UNAVAILABLE", "Download rate limiter is unavailable");
+    }
     if (retryAfter != null && retryAfter > 0) {
       throw new BusinessError("DOWNLOAD_RATE_LIMITED", "Too many download requests");
     }

@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.creatorhub.digitaldelivery.application.port.out.DigitalAssetPrivateStoragePort;
 import com.creatorhub.digitaldelivery.application.port.out.DigitalDownloadAsset;
 import com.creatorhub.digitaldelivery.application.port.out.DownloadGrantRepository;
+import com.creatorhub.digitaldelivery.application.port.out.DownloadRateLimiter;
 import com.creatorhub.digitaldelivery.domain.repository.EntitlementRepository;
 import com.creatorhub.sharedkernel.error.BusinessError;
 import java.time.Instant;
@@ -101,5 +102,40 @@ class DigitalDownloadServiceTest {
     verify(grants).save(grant.capture());
     assertThat(grant.getValue().requestIpHash()).hasSize(64).doesNotContain("203.0.113.10");
     assertThat(grant.getValue().userAgentHash()).hasSize(64).doesNotContain("CreatorHubTest");
+  }
+
+  @Test
+  void doesNotIssueGrantWhenRateLimiterFailsClosed() {
+    EntitlementRepository entitlements = mock(EntitlementRepository.class);
+    DigitalAssetPrivateStoragePort storage = mock(DigitalAssetPrivateStoragePort.class);
+    DownloadGrantRepository grants = mock(DownloadGrantRepository.class);
+    DownloadRateLimiter rateLimiter = mock(DownloadRateLimiter.class);
+    UUID buyerId = UUID.randomUUID();
+    UUID orderId = UUID.randomUUID();
+    when(entitlements.findDownloadAsset(buyerId, orderId))
+        .thenReturn(
+            Optional.of(
+                new DigitalDownloadAsset(
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    "bundle.zip",
+                    "private/bundle",
+                    "application/zip",
+                    10,
+                    1)));
+    org.mockito.Mockito.doThrow(
+            new BusinessError(
+                "DOWNLOAD_RATE_LIMITER_UNAVAILABLE", "Download rate limiter is unavailable"))
+        .when(rateLimiter)
+        .check(buyerId, "203.0.113.10");
+
+    assertThatThrownBy(
+            () ->
+                new DigitalDownloadService(entitlements, storage, grants, 300, rateLimiter)
+                    .createGrant(buyerId, orderId, "203.0.113.10", "CreatorHubTest/1.0"))
+        .isInstanceOf(BusinessError.class)
+        .extracting(error -> ((BusinessError) error).code())
+        .isEqualTo("DOWNLOAD_RATE_LIMITER_UNAVAILABLE");
+    org.mockito.Mockito.verify(grants, org.mockito.Mockito.never()).save(any());
   }
 }
