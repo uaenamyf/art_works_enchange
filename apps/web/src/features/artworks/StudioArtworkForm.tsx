@@ -35,12 +35,20 @@ const schema = z.object({
 type Values = z.infer<typeof schema>;
 type ArtworkDetail = { id: string; version: number };
 type UploadTarget = { mediaId: string; uploadUrl: string; method: "PUT"; contentType: string };
+type DigitalUploadTarget = {
+  versionId: string;
+  version: number;
+  uploadUrl: string;
+  method: "PUT";
+  contentType: string;
+};
 
 /** Studio 作品创建表单：先上传并确认媒体，再绑定媒体并提交审核。 */
 export function StudioArtworkForm() {
   const router = useRouter();
   const { session, loading, authenticatedFetch } = useAuth();
   const [files, setFiles] = useState<File[]>([]);
+  const [digitalFile, setDigitalFile] = useState<File | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
   const {
@@ -58,6 +66,10 @@ export function StudioArtworkForm() {
     setFormError(null);
     if (files.length === 0) {
       setFormError("请至少选择一张作品图片");
+      return;
+    }
+    if (values.productType === "DIGITAL" && !digitalFile) {
+      setFormError("请选择数字资产文件");
       return;
     }
 
@@ -99,6 +111,38 @@ export function StudioArtworkForm() {
         }
         await authenticatedFetch<void>(`/api/v1/media/${target.mediaId}/confirm`, { method: "POST" });
         mediaIds.push(target.mediaId);
+      }
+
+      if (values.productType === "DIGITAL" && digitalFile) {
+        setProgress("正在校验并上传数字资产…");
+        const digest = await crypto.subtle.digest("SHA-256", await digitalFile.arrayBuffer());
+        const sha256 = Array.from(new Uint8Array(digest))
+          .map((byte) => byte.toString(16).padStart(2, "0"))
+          .join("");
+        const target = await authenticatedFetch<DigitalUploadTarget>(
+          "/api/v1/digital-assets/upload-requests",
+          {
+            method: "POST",
+            body: {
+              artworkId: artwork.id,
+              fileName: digitalFile.name,
+              contentType: digitalFile.type || "application/octet-stream",
+              sizeBytes: digitalFile.size,
+              sha256
+            }
+          }
+        );
+        const upload = await fetch(target.uploadUrl, {
+          method: target.method,
+          headers: { "Content-Type": target.contentType },
+          body: digitalFile
+        });
+        if (!upload.ok) {
+          throw new Error("数字资产上传失败");
+        }
+        await authenticatedFetch<void>(`/api/v1/digital-assets/${target.versionId}/confirm`, {
+          method: "POST"
+        });
       }
 
       setProgress("正在保存作品并提交审核…");
@@ -157,12 +201,26 @@ export function StudioArtworkForm() {
         <Input label="价格" type="number" min="0.01" step="0.01" error={errors.amount?.message} {...register("amount")} />
         <Input label="货币" maxLength={3} error={errors.currency?.message} {...register("currency")} />
       </div>
-      {productType === "PHYSICAL" ? <Input label="库存" type="number" min="0" step="1" error={errors.stock?.message} {...register("stock")} /> : <p className="rounded-token border border-ink-300 bg-ink-50 p-3 text-sm text-ink-500">数字产品不扣实体库存。数字资产上传和版本发布将在后续步骤完成。</p>}
+      {productType === "PHYSICAL" ? <Input label="库存" type="number" min="0" step="1" error={errors.stock?.message} {...register("stock")} /> : <>
+        <p className="rounded-token border border-ink-300 bg-ink-50 p-3 text-sm text-ink-500">数字产品不扣实体库存。上传后文件会进入扫描队列。</p>
+        <label className="flex flex-col gap-1.5 text-sm text-ink-700">
+          数字资产文件
+          <input
+            className="rounded-token border border-dashed border-ink-300 bg-white p-3 text-sm"
+            type="file"
+            aria-label="数字资产文件"
+            accept="application/pdf,application/zip,application/epub+zip,audio/mpeg,audio/wav,video/mp4,font/ttf,font/otf,application/octet-stream"
+            onChange={(event) => setDigitalFile(event.target.files?.[0] ?? null)}
+          />
+          <span className="text-ink-500">{digitalFile ? `${digitalFile.name} · ${digitalFile.size} bytes` : "尚未选择数字文件"}</span>
+        </label>
+      </>}
       <label className="flex flex-col gap-1.5 text-sm text-ink-700">
         作品图片（最多 12 张）
         <input
           className="rounded-token border border-dashed border-ink-300 bg-white p-3 text-sm"
           type="file"
+          aria-label="作品图片（最多 12 张）"
           accept="image/*"
           multiple
           onChange={(event) => setFiles(Array.from(event.target.files ?? []).slice(0, 12))}

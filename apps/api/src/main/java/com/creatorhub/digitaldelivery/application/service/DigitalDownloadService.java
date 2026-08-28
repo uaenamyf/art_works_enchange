@@ -13,6 +13,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +27,7 @@ public class DigitalDownloadService {
   private final long downloadTtlSeconds;
   private final DownloadRateLimiter rateLimiter;
 
+  @Autowired
   public DigitalDownloadService(
       EntitlementRepository entitlements,
       DigitalAssetPrivateStoragePort storage,

@@ -32,4 +32,47 @@ describe("StudioArtworkForm", () => {
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("至少选择一张"));
     expect(authenticatedFetch).not.toHaveBeenCalled();
   });
+
+  it("uploads and confirms a digital asset for digital products", async () => {
+    vi.stubGlobal("crypto", {
+      subtle: { digest: vi.fn().mockResolvedValue(new ArrayBuffer(32)) }
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
+    authenticatedFetch.mockResolvedValue({
+      id: "artwork-id",
+      version: 0,
+      mediaId: "media-id",
+      uploadUrl: "https://upload.example/asset",
+      method: "PUT",
+      contentType: "application/octet-stream",
+      versionId: "asset-version-id"
+    });
+    render(<StudioArtworkForm />);
+
+    fireEvent.click(screen.getByDisplayValue("DIGITAL"));
+    fireEvent.change(screen.getByLabelText("作品标题"), {
+      target: { value: "A digital artwork" }
+    });
+    fireEvent.change(screen.getByLabelText("作品描述"), {
+      target: { value: "A sufficiently long digital artwork description" }
+    });
+    fireEvent.change(screen.getByLabelText("价格"), { target: { value: "89" } });
+    fireEvent.change(screen.getByLabelText("作品图片（最多 12 张）"), {
+      target: { files: [new File(["cover"], "cover.png", { type: "image/png" })] }
+    });
+    fireEvent.change(screen.getByLabelText("数字资产文件"), {
+      target: { files: [new File(["asset"], "bundle.zip", { type: "application/zip" })] }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "保存并提交审核" }));
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/studio/artworks/artwork-id"));
+    expect(authenticatedFetch).toHaveBeenCalledWith(
+      "/api/v1/digital-assets/upload-requests",
+      expect.objectContaining({ method: "POST" })
+    );
+    expect(authenticatedFetch).toHaveBeenCalledWith(
+      "/api/v1/digital-assets/asset-version-id/confirm",
+      { method: "POST" }
+    );
+  });
 });
