@@ -298,25 +298,27 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - 相同幂等键同请求重放同一订单，不同请求摘要返回 `409 IDEMPOTENCY_KEY_REUSED`，并发请求只允许一个执行。
 - 订单超期返还库存幂等。
 - PostgreSQL Testcontainers 覆盖条件更新失败、并发预占、缓存降级、超时返还和事务回滚；Redis Testcontainers 覆盖 Lua 原子脚本。
-- 当前剩余：Redis 缓存重建、真实 Redis Testcontainers 验收、Outbox 业务事件接入，以及实体/数字双履约实现。
+- 当前剩余：Redis 缓存重建、真实 Redis Testcontainers 验收、Outbox 业务事件接入，以及实体/数字双履约的完整业务验收。
 - 数字产品验收新增：地址不落库、数字订单不扣实体库存、授权幂等、下载越权和撤销授权测试。
 
 ---
 
 ### Week 8：Payment Providers
 
-**目标**：在统一支付端口下完成 Stripe、微信支付和支付宝的可插拔支付闭环，并保证异步通知幂等。
+**目标**：保留统一支付端口和订单支付确认边界；微信支付、支付宝接入暂停，优先完成不依赖具体 Provider 的业务闭环。
+
+> **范围调整（2026-08-28）**：微信支付 API v3 和支付宝 RSA2 暂停到后续迭代。本阶段不接入商户证书、私钥、沙箱联调或 Provider-specific 回调；数字产品使用受信任的支付成功事件测试替身推进授权、下载和 E2E。Stripe 也只保留接口边界，不阻塞实体/数字履约、Outbox、Studio 和安全工作。
 
 **Payment 上下文**
 
 - 领域端口不暴露第三方 SDK：`PaymentProviderPort` 统一抽象 `createPayment`、`queryPayment`、`closePayment`、`refundPayment` 和 `verifyNotification`，返回领域 `PaymentSession`/`PaymentNotification`。
-- Stripe 适配器：PaymentIntent、`Idempotency-Key`、原始请求体验签 Webhook、退款。
-- 微信支付适配器：API v3 商户请求签名、JSAPI/Native/H5 支付会话（MVP 先落地一种渠道）、回调平台证书验签与 AES-GCM 解密、查单/关单/退款。
-- 支付宝适配器：RSA2 请求签名、交易创建/查询/关闭/退款、异步通知验签与金额、商户号、应用号校验。
+- Stripe 适配器：暂不实现，仅保留 `PaymentProviderPort` 和支付成功事件输入边界。
+- 微信支付适配器：**暂停**。API v3 请求签名、平台证书验签、AES-GCM 解密、查单、关单和退款进入暂停队列。
+- 支付宝适配器：**暂停**。RSA2 签名、交易查询/关闭/退款和异步通知验签进入暂停队列。
 - Provider 配置、证书和密钥只从环境变量或 Secret 注入；第三方 SDK 类型只存在 infrastructure 适配器。
-- 应用服务：`CreatePaymentSession`、`MarkPaymentSucceeded`、`MarkPaymentFailed`。
-- 集成事件：`PaymentSucceeded`、`PaymentFailed` → Outbox。
-- API：`POST /orders/{id}/payment-session`（`provider` + `Idempotency-Key`）；各 Provider 使用独立回调入口和验签协议。
+- 应用服务：保留 `MarkPaymentSucceeded`/`MarkPaymentFailed` 的事件边界，具体 Provider 会话创建延后。
+- 集成事件：`PaymentSucceeded`、`PaymentFailed` → Outbox；当前使用测试事件适配器验证下游，不伪造真实支付成功。
+- API：保留 `POST /orders/{id}/payment-session` 契约，但在 Provider 未接入前不作为本阶段验收入口。
 - 统一返回 `PaymentSession`，允许 Provider-specific `clientPayload`：Stripe `clientSecret`、微信 `prepayId`/调起参数、支付宝支付表单或交易号，不强行把三者建模成同一字段。
 - **强约束**：前端不得直接修改订单状态为 `PAID`；只能由验签后的 Webhook 推进。
 - 回调先验签/解密，再校验订单号、金额、币种、商户/应用标识和支付状态；按 `provider + providerEventId` 唯一去重，重复通知返回 2xx 且不重复推进订单。
@@ -328,15 +330,19 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 
 **前端**
 
-- 根据服务端返回的 `PaymentSession` 选择 Stripe、微信或支付宝支付组件/跳转方式；前端不保存商户密钥、不直接修改订单状态。
-- 支付结果页、成功/失败/处理中状态和重复提交保护。
+- 前端暂不实现 Stripe、微信或支付宝支付组件；只完成支付结果状态模型和重复提交保护，支付渠道接入不阻塞其他工作。
 
 **Week 8 验收**
 
-- Stripe 测试模式：成功、失败、3DS、重复 Webhook 全部通过；相同 `Idempotency-Key` 重放返回同一结果。
-- 微信支付和支付宝沙箱/模拟适配器：下单、查单、关单/退款、成功通知、失败通知、重复通知和验签失败均有集成测试；真实商户联调列为上线前门槛。
-- 三种 Provider 的通知均验证原始载荷/签名，验签失败、金额不匹配、商户标识不匹配全部拒绝。
-- 统一 Payment Port 的契约测试覆盖超时、5xx、重复请求、查单补偿和退款状态。
+- 统一 Payment Port 的契约和事件边界通过测试；具体 Provider 的超时、5xx、查单补偿和退款测试延后。
+- 微信支付和支付宝的全部接入、验签、沙箱和商户联调进入暂停队列，不作为当前版本完成条件。
+- 当前支付替身只允许驱动受信任的 `PaymentSucceeded` 测试事件，不能由前端或普通 Controller 直接把订单置为 `PAID`。
+
+**本阶段转移的工作量**
+
+- 优先完成数字产品 `Entitlement`、`DownloadGrant`、私有对象存储、下载审计和授权撤销。
+- 完成 Outbox Poller、失败重试、退避、死信和 Notification 基础通道。
+- 完成实体/数字双履约的 Studio 页面、订单状态和关键 E2E。
 
 ---
 
@@ -347,8 +353,8 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 **Outbox**
 
 - `outbox_events` 表：事件 ID、类型、版本、聚合信息、payload、attempts、next_attempt_at、locked_until、status、last_error、occurred_at、trace_id。
-- `OutboxPoller`（Spring `@Scheduled` 每秒），`FOR UPDATE SKIP LOCKED` 并发领取。
-- 退避：指数 + 抖动；超过 N 次进 `DEAD` 并告警。
+- `OutboxPoller`（当前实现为 Spring `@Scheduled` Worker 每秒执行），`FOR UPDATE SKIP LOCKED` 并发领取已完成。
+- 退避：指数退避，超过最大尝试次数进入 `DEAD`；发布端口可替换，当前本地适配器只记录脱敏事件元数据。
 - 消费者幂等：状态机守卫 + 事件去重表。
 
 **Notification 上下文**
@@ -384,6 +390,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - 订单列表/详情/履约：状态推进按钮。
 - 数字产品工作流：创建数字产品 → 上传私有资产 → 病毒扫描/哈希校验 → 发布不可变资产版本 → 查看数字订单与下载统计；Studio 不读取买家下载 Token。
 - 新增数据模型：`digital_assets`、`digital_asset_versions`、`entitlements`、`download_grants`。替换文件必须创建新版本，保留旧版本审计记录。
+- 当前优先级：完善数字资产版本管理、扫描结果处理、资产撤回、授权撤销和下载审计；不等待微信/支付宝接入。
 
 **Week 10 验收**
 
@@ -411,6 +418,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - Order 详情返回最新状态和支付信息。
 - 幂等与错误响应在所有写接口完整。
 - 数字交付接口：`GET /orders/{id}/entitlement`、`POST /orders/{id}/download-grants`；仅已支付且授权有效的买家可调用，长期权限与短期下载凭证分离。
+- 数字订单验收可使用受信任支付事件测试替身；不得把测试替身暴露为生产支付入口。
 
 **Week 11 验收**
 
@@ -433,7 +441,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - Input Validation：Bean Validation + 自定义业务校验。
 - Object-level Authorization：每个 Controller 校验资源 owner。
 - 数字资产安全：私有 bucket、短期签名 URL、对象级授权、下载审计、撤销授权和防枚举；禁止通过公开媒体 URL 访问原始文件。
-- Stripe Webhook Signature：所有路径强制验签。
+- Provider Webhook Signature：具体 Provider 接入前不实现；通用 Webhook 原始载荷、签名失败和幂等边界先以契约测试固定。
 - 依赖扫描：GitHub Dependabot + OWASP dependency-check。
 - 日志：禁记密码、Token、Cookie、支付信息、完整地址与邮箱。
 
@@ -520,6 +528,12 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - Consumer Beta：至少 5 笔真实 Stripe 测试或小额真实支付完成。
 - 关键指标可观测。
 - 任何 P0 必须在切换生产前修复。
+
+**暂停队列（不阻塞当前版本）**
+
+- 微信支付 API v3：商户签名、平台证书验签、AES-GCM 回调解密、查单、关单、退款和商户联调。
+- 支付宝 RSA2：请求签名、异步通知验签、交易查询、关闭、退款和沙箱联调。
+- Stripe 具体 SDK、3DS 和真实 Webhook 联调；当前只保留统一端口和受信任事件测试边界。
 
 ---
 

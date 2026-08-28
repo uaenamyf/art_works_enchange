@@ -40,7 +40,7 @@ public class OutboxRepositoryAdapter implements OutboxRepository {
     Instant lockedUntil = now.plus(Objects.requireNonNull(lockDuration, "lockDuration"));
     return mapper.findClaimable(now, batchSize).stream()
         .filter(row -> mapper.markProcessing(row.getEventId(), lockedUntil) == 1)
-        .map(this::toDomain)
+        .map(row -> toDomain(row, lockedUntil))
         .toList();
   }
 
@@ -77,7 +77,7 @@ public class OutboxRepositoryAdapter implements OutboxRepository {
     return row;
   }
 
-  private OutboxEvent toDomain(OutboxPersistenceRow row) {
+  private OutboxEvent toDomain(OutboxPersistenceRow row, Instant processingLockedUntil) {
     return new OutboxEvent(
         row.getEventId(),
         row.getEventType(),
@@ -89,9 +89,9 @@ public class OutboxRepositoryAdapter implements OutboxRepository {
         row.getTraceId(),
         readPayload(row.getPayload()),
         OutboxStatus.PROCESSING,
-        row.getAttempts(),
+        row.getAttempts() + 1,
         row.getNextAttemptAt(),
-        row.getLockedUntil(),
+        processingLockedUntil,
         row.getLastError(),
         row.getCreatedAt(),
         row.getDeliveredAt());
