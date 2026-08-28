@@ -3,6 +3,9 @@ package com.creatorhub.digitaldelivery.application.service;
 import com.creatorhub.digitaldelivery.application.port.in.DigitalEntitlementUseCases;
 import com.creatorhub.digitaldelivery.domain.model.Entitlement;
 import com.creatorhub.digitaldelivery.domain.repository.EntitlementRepository;
+import com.creatorhub.outbox.domain.model.OutboxEvent;
+import com.creatorhub.outbox.domain.repository.OutboxRepository;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
@@ -14,9 +17,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class DigitalEntitlementService implements DigitalEntitlementUseCases {
 
   private final EntitlementRepository entitlements;
+  private final OutboxRepository outbox;
 
   public DigitalEntitlementService(EntitlementRepository entitlements) {
+    this(entitlements, null);
+  }
+
+  public DigitalEntitlementService(EntitlementRepository entitlements, OutboxRepository outbox) {
     this.entitlements = entitlements;
+    this.outbox = outbox;
   }
 
   @Override
@@ -30,8 +39,30 @@ public class DigitalEntitlementService implements DigitalEntitlementUseCases {
       Instant paidAt) {
     Objects.requireNonNull(paymentEventId, "paymentEventId");
     Objects.requireNonNull(paidAt, "paidAt");
-    return entitlements.grant(
-        Entitlement.available(
-            UUID.randomUUID(), orderId, buyerId, artworkId, assetVersionId, paidAt));
+    Entitlement granted =
+        entitlements.grant(
+            Entitlement.available(
+                UUID.randomUUID(), orderId, buyerId, artworkId, assetVersionId, paidAt));
+    if (outbox != null) {
+      outbox.append(
+          OutboxEvent.pending(
+              UUID.nameUUIDFromBytes(
+                  ("DigitalEntitlementGranted:" + paymentEventId).getBytes(StandardCharsets.UTF_8)),
+              "DigitalEntitlementGranted",
+              1,
+              "Entitlement",
+              granted.id(),
+              0,
+              granted.grantedAt(),
+              paymentEventId,
+              java.util.Map.of(
+                  "recipientId", granted.buyerId().toString(),
+                  "orderId", granted.orderId().toString(),
+                  "assetVersionId", granted.assetVersionId().toString(),
+                  "entitlementId", granted.id().toString(),
+                  "title", "数字资产已可下载",
+                  "body", "你的数字资产已准备好，可以查看订单并下载。")));
+    }
+    return granted;
   }
 }

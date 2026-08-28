@@ -20,6 +20,7 @@ interface OutboxMapper {
       VALUES (#{eventId}, #{eventType}, #{eventVersion}, #{aggregateType}, #{aggregateId},
           #{aggregateVersion}, #{occurredAt}, #{traceId}, CAST(#{payload} AS jsonb), #{status},
           #{attempts}, #{nextAttemptAt}, #{createdAt})
+      ON CONFLICT (event_id) DO NOTHING
       """)
   int insert(OutboxPersistenceRow row);
 

@@ -374,7 +374,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - 已完成 Notification 表、事件去重表、游标列表、未读筛选和标记已读接口。
 - 已完成本地 Outbox Publisher 到 Notification handler 的可替换消费骨架；重复事件通过事件 ID 幂等。
 - 已完成可替换的邮件投递端口和脱敏 Console stub；当前不接入真实 SMTP。
-- 已接入订单创建 `OrderCreated`、作品发布 `ArtworkPublished`，以及主动/超时取消产生的 `OrderStatusChanged` 事件；数字交付事件仍待接入业务事务。
+- 已接入订单创建 `OrderCreated`、作品发布 `ArtworkPublished`、主动/超时取消产生的 `OrderStatusChanged`，以及可信支付成功后的 `DigitalEntitlementGranted` 事件；数字资产撤回事件仍待接入业务事务。
 - 业务上下文尚未统一补齐各事件的通知收件人和脱敏文案载荷，真实业务事件接入与邮件触发保持待办，不将日志记录视为通知发送成功。
 
 ---

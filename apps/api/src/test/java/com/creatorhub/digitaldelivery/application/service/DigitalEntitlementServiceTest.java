@@ -7,6 +7,8 @@ import static org.mockito.Mockito.when;
 
 import com.creatorhub.digitaldelivery.domain.model.Entitlement;
 import com.creatorhub.digitaldelivery.domain.repository.EntitlementRepository;
+import com.creatorhub.outbox.domain.model.OutboxEvent;
+import com.creatorhub.outbox.domain.repository.OutboxRepository;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -51,6 +53,63 @@ class DigitalEntitlementServiceTest {
                 Instant.now());
 
     assertThat(result.id()).isEqualTo(existing.id());
+  }
+
+  @Test
+  void appendsGrantedEventWithoutDownloadSecrets() {
+    EntitlementRepository repository = mock(EntitlementRepository.class);
+    OutboxRepository outbox = mock(OutboxRepository.class);
+    Entitlement stored = entitlement();
+    UUID paymentEventId = UUID.randomUUID();
+    when(repository.grant(any(Entitlement.class))).thenReturn(stored);
+
+    new DigitalEntitlementService(repository, outbox)
+        .grantAfterPayment(
+            paymentEventId,
+            stored.orderId(),
+            stored.buyerId(),
+            stored.artworkId(),
+            stored.assetVersionId(),
+            Instant.parse("2026-08-28T01:00:00Z"));
+
+    var event = org.mockito.ArgumentCaptor.forClass(OutboxEvent.class);
+    org.mockito.Mockito.verify(outbox).append(event.capture());
+    assertThat(event.getValue().eventType()).isEqualTo("DigitalEntitlementGranted");
+    assertThat(event.getValue().traceId()).isEqualTo(paymentEventId);
+    assertThat(event.getValue().payload())
+        .doesNotContainKeys("objectKey", "downloadUrl", "downloadToken");
+  }
+
+  @Test
+  void replaysTrustedPaymentWithSameOutboxEventId() {
+    EntitlementRepository repository = mock(EntitlementRepository.class);
+    OutboxRepository outbox = mock(OutboxRepository.class);
+    Entitlement stored = entitlement();
+    UUID paymentEventId = UUID.randomUUID();
+    when(repository.grant(any(Entitlement.class))).thenReturn(stored);
+    DigitalEntitlementService service = new DigitalEntitlementService(repository, outbox);
+
+    service.grantAfterPayment(
+        paymentEventId,
+        stored.orderId(),
+        stored.buyerId(),
+        stored.artworkId(),
+        stored.assetVersionId(),
+        Instant.parse("2026-08-28T01:00:00Z"));
+    service.grantAfterPayment(
+        paymentEventId,
+        stored.orderId(),
+        stored.buyerId(),
+        stored.artworkId(),
+        stored.assetVersionId(),
+        Instant.parse("2026-08-28T01:00:00Z"));
+
+    var events =
+        org.mockito.Mockito.mockingDetails(outbox).getInvocations().stream()
+            .map(invocation -> (OutboxEvent) invocation.getArguments()[0])
+            .toList();
+    assertThat(events).hasSize(2);
+    assertThat(events.get(0).eventId()).isEqualTo(events.get(1).eventId());
   }
 
   private static Entitlement entitlement() {

@@ -30,7 +30,7 @@ public class OutboxRepositoryAdapter implements OutboxRepository {
   @Override
   public void append(OutboxEvent event) {
     OutboxPersistenceRow row = toRow(event);
-    if (mapper.insert(row) != 1) throw new IllegalStateException("Outbox event insert failed");
+    mapper.insert(row);
   }
 
   @Override
