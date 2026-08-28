@@ -651,6 +651,60 @@ paths:
                   expiresAt: { type: string, format: date-time }
         '404':
           $ref: '#/components/responses/NotFound'
+  /digital-assets/upload-requests:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      tags: [Studio]
+      operationId: createDigitalAssetUploadRequest
+      summary: 创建数字资产私有上传请求（Week 10）
+      description: 数字文件进入私有对象存储并等待扫描；响应不得包含 object key。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DigitalAssetUploadRequest'
+      responses:
+        '201':
+          description: 数字资产版本上传信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DigitalAssetUploadTarget'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /digital-assets/{versionId}/confirm:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      tags: [Studio]
+      operationId: confirmDigitalAssetUpload
+      summary: 确认数字资产上传并进入扫描（Week 10）
+      parameters:
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: 数字资产已进入扫描队列
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /favorites/{artworkId}:
     parameters:
       - $ref: '#/components/parameters/RequestId'
@@ -1664,6 +1718,47 @@ components:
           type: object
           additionalProperties:
             type: string
+        expiresAt:
+          type: string
+          format: date-time
+    DigitalAssetUploadRequest:
+      type: object
+      required: [artworkId, fileName, contentType, sizeBytes, sha256]
+      properties:
+        artworkId:
+          type: string
+          format: uuid
+        fileName:
+          type: string
+          maxLength: 255
+        contentType:
+          type: string
+          enum: [application/pdf, application/zip, application/epub+zip, audio/mpeg, audio/wav, video/mp4, font/ttf, font/otf, application/octet-stream]
+        sizeBytes:
+          type: integer
+          minimum: 1
+          maximum: 536870912
+        sha256:
+          type: string
+          pattern: '^[0-9a-fA-F]{64}$'
+    DigitalAssetUploadTarget:
+      type: object
+      required: [versionId, version, uploadUrl, method, contentType, expiresAt]
+      properties:
+        versionId:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          minimum: 1
+        uploadUrl:
+          type: string
+          format: uri
+        method:
+          type: string
+          const: PUT
+        contentType:
+          type: string
         expiresAt:
           type: string
           format: date-time

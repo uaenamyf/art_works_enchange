@@ -29,9 +29,17 @@ interface DigitalAssetMapper {
   @Select("SELECT * FROM digital_asset_versions WHERE id = #{versionId}")
   DigitalAssetPersistenceRow findVersion(UUID versionId);
 
+  @Select(
+      "SELECT dav.* FROM digital_asset_versions dav JOIN digital_assets da ON da.id = dav.digital_asset_id WHERE dav.id = #{versionId} AND da.owner_id = #{ownerId}")
+  DigitalAssetPersistenceRow findVersionForOwner(UUID ownerId, UUID versionId);
+
   @Update(
       "UPDATE digital_asset_versions SET scan_status = 'SCANNING' WHERE id = #{versionId} AND scan_status = 'PENDING_SCAN'")
   int markScanning(UUID versionId);
+
+  @Update(
+      "UPDATE digital_asset_versions SET scan_status = 'SCANNING' WHERE id = #{versionId} AND scan_status = 'PENDING_SCAN' AND EXISTS (SELECT 1 FROM digital_assets WHERE id = digital_asset_id AND owner_id = #{ownerId})")
+  int markScanningForOwner(UUID ownerId, UUID versionId);
 
   @Update(
       "UPDATE digital_asset_versions SET scan_status = 'READY', scanned_at = #{scannedAt}, scan_error = NULL WHERE id = #{versionId} AND scan_status = 'SCANNING'")

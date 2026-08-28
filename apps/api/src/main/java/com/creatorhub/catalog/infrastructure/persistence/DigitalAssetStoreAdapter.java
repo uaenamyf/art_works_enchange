@@ -64,6 +64,26 @@ public class DigitalAssetStoreAdapter implements DigitalAssetStore {
   }
 
   @Override
+  public DigitalAssetVersion findVersion(UUID ownerId, UUID versionId) {
+    DigitalAssetPersistenceRow row = mapper.findVersionForOwner(ownerId, versionId);
+    if (row == null) {
+      throw new BusinessError(
+          "DIGITAL_ASSET_VERSION_NOT_FOUND", "Digital asset version was not found");
+    }
+    return toDomain(row);
+  }
+
+  @Override
+  @Transactional
+  public DigitalAssetVersion confirmUpload(UUID ownerId, UUID versionId) {
+    if (mapper.markScanningForOwner(ownerId, versionId) != 1) {
+      throw new BusinessError(
+          "DIGITAL_ASSET_UPLOAD_INVALID", "Digital asset upload cannot be confirmed");
+    }
+    return current(versionId);
+  }
+
+  @Override
   @Transactional
   public DigitalAssetVersion markScanPassed(UUID versionId, Instant scannedAt) {
     if (mapper.markReady(versionId, scannedAt) != 1) {

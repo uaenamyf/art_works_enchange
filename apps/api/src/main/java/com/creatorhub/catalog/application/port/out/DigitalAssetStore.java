@@ -14,7 +14,11 @@ public interface DigitalAssetStore {
       long sizeBytes,
       String sha256);
 
+  DigitalAssetVersion findVersion(UUID ownerId, UUID versionId);
+
   DigitalAssetVersion markScanStarted(UUID versionId);
+
+  DigitalAssetVersion confirmUpload(UUID ownerId, UUID versionId);
 
   DigitalAssetVersion markScanPassed(UUID versionId, java.time.Instant scannedAt);
 

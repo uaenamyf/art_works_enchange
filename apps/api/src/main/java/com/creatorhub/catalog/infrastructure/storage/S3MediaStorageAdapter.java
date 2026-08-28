@@ -1,5 +1,6 @@
 package com.creatorhub.catalog.infrastructure.storage;
 
+import com.creatorhub.catalog.application.port.out.DigitalAssetStoragePort;
 import com.creatorhub.catalog.application.port.out.MediaStoragePort;
 import com.creatorhub.catalog.domain.model.MediaUploadRequest;
 import java.time.Duration;
@@ -20,7 +21,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 
 /** MinIO/S3 存储适配器，负责真实预签名和对象存在性检查，不向业务层泄露 SDK 类型。 */
 @Component
-public class S3MediaStorageAdapter implements MediaStoragePort {
+public class S3MediaStorageAdapter implements MediaStoragePort, DigitalAssetStoragePort {
 
   private final S3Presigner presigner;
   private final S3Client client;
@@ -51,7 +52,7 @@ public class S3MediaStorageAdapter implements MediaStoragePort {
   }
 
   @Override
-  public PresignedUpload presign(
+  public MediaStoragePort.PresignedUpload presign(
       UUID mediaId, String objectKey, MediaUploadRequest request, Instant expiresAt) {
     PutObjectRequest putObject =
         PutObjectRequest.builder()
@@ -66,7 +67,8 @@ public class S3MediaStorageAdapter implements MediaStoragePort {
             .putObjectRequest(putObject)
             .build();
     PresignedPutObjectRequest signed = presigner.presignPutObject(presignRequest);
-    return new PresignedUpload(signed.url().toString(), "PUT", request.contentType(), expiresAt);
+    return new MediaStoragePort.PresignedUpload(
+        signed.url().toString(), "PUT", request.contentType(), expiresAt);
   }
 
   @Override
@@ -96,5 +98,25 @@ public class S3MediaStorageAdapter implements MediaStoragePort {
             .build();
     PresignedGetObjectRequest signed = presigner.presignGetObject(presignRequest);
     return signed.url().toString();
+  }
+
+  @Override
+  public DigitalAssetStoragePort.PresignedUpload presignUpload(
+      String objectKey, String contentType, long sizeBytes, Instant expiresAt) {
+    PutObjectRequest putObject =
+        PutObjectRequest.builder()
+            .bucket(bucket)
+            .key(objectKey)
+            .contentType(contentType)
+            .contentLength(sizeBytes)
+            .build();
+    PutObjectPresignRequest presignRequest =
+        PutObjectPresignRequest.builder()
+            .signatureDuration(Duration.between(Instant.now(), expiresAt))
+            .putObjectRequest(putObject)
+            .build();
+    PresignedPutObjectRequest signed = presigner.presignPutObject(presignRequest);
+    return new DigitalAssetStoragePort.PresignedUpload(
+        signed.url().toString(), "PUT", contentType, expiresAt);
   }
 }
