@@ -92,6 +92,27 @@ class DigitalAssetStoreIntegrationTest {
         .isEqualTo("DIGITAL_ARTWORK_NOT_FOUND");
   }
 
+  @Test
+  void ownerCanRecallReadyVersionAndRepeatedRecallIsRejected() {
+    createArtwork("DIGITAL");
+    DigitalAssetVersion version =
+        assets.createPendingVersion(
+            userId, artworkId, "preset.zip", "application/zip", 1024, "A".repeat(64));
+    assets.markScanStarted(version.id());
+    assets.markScanPassed(version.id(), Instant.now());
+
+    assets.recall(userId, version.id(), "content update", Instant.now());
+
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT status FROM digital_assets WHERE artwork_id = ?", String.class, artworkId))
+        .isEqualTo("RECALLED");
+    assertThatThrownBy(() -> assets.recall(userId, version.id(), "second update", Instant.now()))
+        .isInstanceOf(BusinessError.class)
+        .extracting(error -> ((BusinessError) error).code())
+        .isEqualTo("DIGITAL_ASSET_RECALL_INVALID");
+  }
+
   private void createArtwork(String productType) {
     userId = UUID.randomUUID();
     creatorId = UUID.randomUUID();

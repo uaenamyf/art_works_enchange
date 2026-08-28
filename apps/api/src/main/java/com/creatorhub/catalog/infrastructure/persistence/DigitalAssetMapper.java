@@ -33,6 +33,12 @@ interface DigitalAssetMapper {
       "SELECT dav.* FROM digital_asset_versions dav JOIN digital_assets da ON da.id = dav.digital_asset_id WHERE dav.id = #{versionId} AND da.owner_id = #{ownerId}")
   DigitalAssetPersistenceRow findVersionForOwner(UUID ownerId, UUID versionId);
 
+  @Select(
+      "SELECT da.artwork_id FROM digital_assets da JOIN digital_asset_versions dav ON dav.digital_asset_id = da.id WHERE da.owner_id = #{ownerId} AND dav.id = #{versionId}")
+  UUID findArtworkIdForOwner(
+      @org.apache.ibatis.annotations.Param("ownerId") UUID ownerId,
+      @org.apache.ibatis.annotations.Param("versionId") UUID versionId);
+
   @Update(
       "UPDATE digital_asset_versions SET scan_status = 'SCANNING' WHERE id = #{versionId} AND scan_status = 'PENDING_SCAN'")
   int markScanning(UUID versionId);
@@ -52,4 +58,11 @@ interface DigitalAssetMapper {
   @Update(
       "UPDATE digital_assets SET status = 'READY', current_version = #{version} WHERE id = #{assetId} AND status = 'DRAFT'")
   int markAssetReady(UUID assetId, int version);
+
+  @Update(
+      "UPDATE digital_assets SET status = 'RECALLED', updated_at = #{recalledAt} WHERE owner_id = #{ownerId} AND status = 'READY' AND EXISTS (SELECT 1 FROM digital_asset_versions WHERE id = #{versionId} AND digital_asset_id = digital_assets.id AND scan_status = 'READY')")
+  int recallAsset(
+      @org.apache.ibatis.annotations.Param("ownerId") UUID ownerId,
+      @org.apache.ibatis.annotations.Param("versionId") UUID versionId,
+      @org.apache.ibatis.annotations.Param("recalledAt") Instant recalledAt);
 }

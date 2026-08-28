@@ -1,5 +1,6 @@
 package com.creatorhub.catalog.interfaces.rest;
 
+import com.creatorhub.catalog.application.port.in.DigitalAssetRecallUseCase;
 import com.creatorhub.catalog.application.port.in.DigitalAssetUploadUseCases;
 import com.creatorhub.catalog.application.port.in.DigitalAssetUploadUseCases.UploadView;
 import com.creatorhub.catalog.domain.model.DigitalAssetUploadRequest;
@@ -24,9 +25,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class DigitalAssetController {
 
   private final DigitalAssetUploadUseCases uploads;
+  private final DigitalAssetRecallUseCase recalls;
 
-  public DigitalAssetController(DigitalAssetUploadUseCases uploads) {
+  public DigitalAssetController(
+      DigitalAssetUploadUseCases uploads, DigitalAssetRecallUseCase recalls) {
     this.uploads = uploads;
+    this.recalls = recalls;
   }
 
   @PostMapping("/upload-requests")
@@ -46,6 +50,18 @@ public class DigitalAssetController {
     uploads.confirmUpload(ownerId, versionId);
     return ResponseEntity.noContent().build();
   }
+
+  @PostMapping("/{versionId}/recall")
+  @PreAuthorize("hasRole('CREATOR')")
+  ResponseEntity<Void> recall(
+      @AuthenticationPrincipal UUID ownerId,
+      @PathVariable UUID versionId,
+      @Valid @RequestBody RecallRequest request) {
+    recalls.recall(ownerId, versionId, request.reason());
+    return ResponseEntity.noContent().build();
+  }
+
+  record RecallRequest(@NotBlank @Size(max = 1000) String reason) {}
 
   /** 数字文件只接受私有资产所需的元数据和预先计算的 SHA-256。 */
   record DigitalAssetUploadRequestBody(

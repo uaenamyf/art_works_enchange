@@ -62,6 +62,7 @@ public class SecurityConfig {
                     "/api/v1/media/*/confirm",
                     "/api/v1/favorites/**",
                     "/api/v1/notifications/*/read",
+                    "/api/v1/digital-assets/*/recall",
                     "/api/v1/artworks/**"))
         .cors(Customizer.withDefaults())
         .headers(

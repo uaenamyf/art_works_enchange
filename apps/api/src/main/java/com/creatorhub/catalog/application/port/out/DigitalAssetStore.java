@@ -25,4 +25,9 @@ public interface DigitalAssetStore {
   DigitalAssetVersion markScanPassed(UUID versionId, java.time.Instant scannedAt);
 
   DigitalAssetVersion quarantine(UUID versionId, String reason, java.time.Instant scannedAt);
+
+  DigitalAssetVersion recall(
+      UUID ownerId, UUID versionId, String reason, java.time.Instant recalledAt);
+
+  UUID findArtworkId(UUID ownerId, UUID versionId);
 }

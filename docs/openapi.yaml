@@ -705,6 +705,42 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /digital-assets/{versionId}/recall:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      tags: [Studio]
+      operationId: recallDigitalAsset
+      summary: 撤回已发布数字资产版本（Week 10）
+      parameters:
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  maxLength: 1000
+      responses:
+        '204':
+          description: 数字资产已撤回
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /favorites/{artworkId}:
     parameters:
       - $ref: '#/components/parameters/RequestId'

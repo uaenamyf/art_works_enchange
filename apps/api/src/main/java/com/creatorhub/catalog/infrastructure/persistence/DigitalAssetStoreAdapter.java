@@ -109,6 +109,30 @@ public class DigitalAssetStoreAdapter implements DigitalAssetStore {
     return current(versionId);
   }
 
+  @Override
+  @Transactional
+  public DigitalAssetVersion recall(
+      UUID ownerId, UUID versionId, String reason, Instant recalledAt) {
+    if (reason == null || reason.isBlank() || reason.length() > 1000) {
+      throw new BusinessError(
+          "DIGITAL_ASSET_RECALL_REASON_INVALID", "Digital asset recall reason is invalid");
+    }
+    if (mapper.recallAsset(ownerId, versionId, recalledAt) != 1) {
+      throw new BusinessError("DIGITAL_ASSET_RECALL_INVALID", "Digital asset cannot be recalled");
+    }
+    return current(versionId);
+  }
+
+  @Override
+  public UUID findArtworkId(UUID ownerId, UUID versionId) {
+    UUID artworkId = mapper.findArtworkIdForOwner(ownerId, versionId);
+    if (artworkId == null) {
+      throw new BusinessError(
+          "DIGITAL_ASSET_VERSION_NOT_FOUND", "Digital asset version was not found");
+    }
+    return artworkId;
+  }
+
   private DigitalAssetVersion current(UUID versionId) {
     return toDomain(currentRow(versionId));
   }
