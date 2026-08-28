@@ -852,6 +852,31 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+  /orders/{orderId}/download-grants:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      tags: [Orders]
+      operationId: createDigitalDownloadGrant
+      summary: 获取数字产品短期下载授权（Week 11）
+      description: 仅已支付且授权有效的买家可以调用；响应不包含长期下载 Token 或 object key。
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: 短期下载信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DigitalDownloadGrant'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /orders/{orderId}/payment-intent:
     parameters:
       - $ref: '#/components/parameters/RequestId'
@@ -1759,6 +1784,29 @@ components:
           const: PUT
         contentType:
           type: string
+        expiresAt:
+          type: string
+          format: date-time
+    DigitalDownloadGrant:
+      type: object
+      required: [grantId, fileName, contentType, sizeBytes, version, downloadUrl, expiresAt]
+      properties:
+        grantId:
+          type: string
+          format: uuid
+        fileName:
+          type: string
+        contentType:
+          type: string
+        sizeBytes:
+          type: integer
+          minimum: 1
+        version:
+          type: integer
+          minimum: 1
+        downloadUrl:
+          type: string
+          format: uri
         expiresAt:
           type: string
           format: date-time
