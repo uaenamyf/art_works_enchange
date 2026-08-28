@@ -298,7 +298,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - 相同幂等键同请求重放同一订单，不同请求摘要返回 `409 IDEMPOTENCY_KEY_REUSED`，并发请求只允许一个执行。
 - 订单超期返还库存幂等。
 - PostgreSQL Testcontainers 覆盖条件更新失败、并发预占、缓存降级、超时返还和事务回滚；Redis Testcontainers 覆盖 Lua 原子脚本。
-- 当前剩余：Redis 缓存重建、真实 Redis Testcontainers 验收、Outbox 业务事件接入，以及实体/数字双履约的完整业务验收。
+- 当前剩余：Redis 缓存重建、真实 Redis Testcontainers 验收、Outbox 其余业务事件接入，以及实体/数字双履约的完整业务验收。
 - 数字产品验收新增：地址不落库、数字订单不扣实体库存、授权幂等、下载越权和撤销授权测试。
 
 ---
@@ -374,6 +374,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - 已完成 Notification 表、事件去重表、游标列表、未读筛选和标记已读接口。
 - 已完成本地 Outbox Publisher 到 Notification handler 的可替换消费骨架；重复事件通过事件 ID 幂等。
 - 已完成可替换的邮件投递端口和脱敏 Console stub；当前不接入真实 SMTP。
+- 已接入订单创建 `OrderCreated` 事件；订单状态变更、Catalog 发布和数字交付事件仍待接入业务事务。
 - 业务上下文尚未统一补齐各事件的通知收件人和脱敏文案载荷，真实业务事件接入与邮件触发保持待办，不将日志记录视为通知发送成功。
 
 ---

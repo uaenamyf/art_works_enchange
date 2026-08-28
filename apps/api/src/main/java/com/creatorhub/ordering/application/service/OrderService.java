@@ -40,7 +40,6 @@ public class OrderService implements OrderUseCases {
   private final StockReservationGate reservationGate;
   private final OutboxRepository outbox;
 
-  @Autowired
   public OrderService(
       ArtworkUseCases artworks,
       StockAvailabilityPort stock,
@@ -50,6 +49,7 @@ public class OrderService implements OrderUseCases {
     this(artworks, stock, orders, idempotency, reservationGate, null);
   }
 
+  @Autowired
   public OrderService(
       ArtworkUseCases artworks,
       StockAvailabilityPort stock,
