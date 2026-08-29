@@ -5,48 +5,12 @@ import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ApiError, apiFetch } from "@/lib/api/fetcher";
 import { ROUTES } from "@/lib/config";
 import { useAuth } from "@/features/auth/AuthProvider";
-
-const schema = z
-  .object({
-    quantity: z.coerce.number().int().min(1, "至少购买 1 件").max(99, "最多购买 99 件"),
-    productType: z.enum(["PHYSICAL", "DIGITAL"]).default("PHYSICAL"),
-    recipientName: z.string().max(100).optional(),
-    line1: z.string().max(200).optional(),
-    city: z.string().max(100).optional(),
-    postalCode: z.string().max(20).optional(),
-    countryCode: z.string().optional(),
-    phone: z.string().max(30).optional()
-  })
-  .superRefine((values, context) => {
-    if (values.productType === "DIGITAL") return;
-    const requiredFields: Array<[keyof CheckoutValues, string]> = [
-      ["recipientName", "请输入收货人"],
-      ["line1", "请输入地址"],
-      ["city", "请输入城市"],
-      ["postalCode", "请输入邮编"],
-      ["phone", "请输入有效手机号"]
-    ];
-    for (const [field, message] of requiredFields) {
-      if (!values[field]) {
-        context.addIssue({ code: z.ZodIssueCode.custom, path: [field], message });
-      }
-    }
-    if (!values.countryCode || !/^[A-Z]{2}$/.test(values.countryCode)) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["countryCode"],
-        message: "请输入两位国家代码"
-      });
-    }
-  });
-
-type CheckoutValues = z.infer<typeof schema>;
+import { checkoutSchema, type CheckoutValues } from "@/features/orders/checkoutSchema";
 
 interface ArtworkSnapshot {
   id: string;
@@ -72,7 +36,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ artworkId: 
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<CheckoutValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(checkoutSchema),
     defaultValues: { quantity: 1, countryCode: "CN" }
   });
 
