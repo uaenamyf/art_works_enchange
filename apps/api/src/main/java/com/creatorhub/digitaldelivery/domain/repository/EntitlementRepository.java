@@ -18,4 +18,7 @@ public interface EntitlementRepository {
   Optional<Entitlement> findAvailableByBuyer(UUID buyerId, UUID orderId);
 
   Optional<DigitalDownloadAsset> findDownloadAsset(UUID buyerId, UUID orderId);
+
+  int revokeAvailableByAssetVersion(
+      UUID assetVersionId, String reason, java.time.Instant revokedAt);
 }

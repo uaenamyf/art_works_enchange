@@ -12,4 +12,6 @@ public interface DownloadGrantRepository {
   Optional<DownloadGrant> findById(UUID grantId);
 
   boolean markUsed(UUID grantId, java.time.Instant usedAt);
+
+  int revokeByAssetVersion(UUID assetVersionId, java.time.Instant revokedAt);
 }

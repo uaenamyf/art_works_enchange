@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 /** 授权显式 SQL Mapper；订单唯一约束保证重复支付事件不会重复建权。 */
 @Mapper
@@ -28,4 +29,11 @@ interface EntitlementMapper {
   @Select(
       "SELECT 1 FROM digital_asset_versions WHERE id = #{assetVersionId} AND scan_status = 'READY'")
   Integer isReadyAssetVersion(UUID assetVersionId);
+
+  @Update(
+      "UPDATE digital_entitlements SET status = 'REVOKED', revoke_reason = #{reason}, revoked_at = #{revokedAt}, updated_at = #{revokedAt} WHERE asset_version_id = #{assetVersionId} AND status = 'AVAILABLE'")
+  int revokeAvailableByAssetVersion(
+      @org.apache.ibatis.annotations.Param("assetVersionId") UUID assetVersionId,
+      @org.apache.ibatis.annotations.Param("reason") String reason,
+      @org.apache.ibatis.annotations.Param("revokedAt") java.time.Instant revokedAt);
 }

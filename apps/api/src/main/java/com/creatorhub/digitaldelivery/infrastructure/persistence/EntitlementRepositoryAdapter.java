@@ -62,6 +62,12 @@ public class EntitlementRepositoryAdapter implements EntitlementRepository {
     return Optional.ofNullable(mapper.findDownloadAsset(buyerId, orderId));
   }
 
+  @Override
+  public int revokeAvailableByAssetVersion(
+      UUID assetVersionId, String reason, java.time.Instant revokedAt) {
+    return mapper.revokeAvailableByAssetVersion(assetVersionId, reason, revokedAt);
+  }
+
   private static EntitlementPersistenceRow toRow(Entitlement entitlement) {
     EntitlementPersistenceRow row = new EntitlementPersistenceRow();
     row.setId(entitlement.id());

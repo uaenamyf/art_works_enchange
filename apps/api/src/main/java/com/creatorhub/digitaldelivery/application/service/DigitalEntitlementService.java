@@ -55,7 +55,7 @@ public class DigitalEntitlementService implements DigitalEntitlementUseCases {
               "Entitlement",
               granted.id(),
               0,
-              granted.grantedAt(),
+              paidAt,
               paymentEventId,
               java.util.Map.of(
                   "recipientId", granted.buyerId().toString(),

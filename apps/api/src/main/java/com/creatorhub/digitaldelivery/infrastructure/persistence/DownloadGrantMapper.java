@@ -21,4 +21,10 @@ interface DownloadGrantMapper {
   @Update(
       "UPDATE digital_download_grants SET used_at = #{usedAt} WHERE id = #{grantId} AND used_at IS NULL AND revoked_at IS NULL AND expires_at > #{usedAt}")
   int markUsed(UUID grantId, Instant usedAt);
+
+  @Update(
+      "UPDATE digital_download_grants SET revoked_at = #{revokedAt} WHERE entitlement_id IN (SELECT id FROM digital_entitlements WHERE asset_version_id = #{assetVersionId}) AND used_at IS NULL AND revoked_at IS NULL")
+  int revokeByAssetVersion(
+      @org.apache.ibatis.annotations.Param("assetVersionId") UUID assetVersionId,
+      @org.apache.ibatis.annotations.Param("revokedAt") Instant revokedAt);
 }

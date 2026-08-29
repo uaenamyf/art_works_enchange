@@ -43,6 +43,11 @@ public class DownloadGrantRepositoryAdapter implements DownloadGrantRepository {
     return mapper.markUsed(grantId, usedAt) == 1;
   }
 
+  @Override
+  public int revokeByAssetVersion(UUID assetVersionId, java.time.Instant revokedAt) {
+    return mapper.revokeByAssetVersion(assetVersionId, revokedAt);
+  }
+
   private static DownloadGrant toDomain(DownloadGrantPersistenceRow row) {
     return new DownloadGrant(
         row.getId(),
