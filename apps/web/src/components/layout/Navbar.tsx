@@ -46,7 +46,7 @@ export function Navbar() {
                 发现
                 <ChevronDown aria-hidden className="size-3.5 transition-transform group-hover:rotate-180 group-focus-within:rotate-180" />
               </Link>
-              <div className="invisible absolute left-1/2 top-full w-[min(720px,calc(100vw-40px))] -translate-x-1/2 translate-y-2 border-t border-ink-300 bg-white px-6 py-7 opacity-0 shadow-pop transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+              <div className="invisible fixed left-5 right-5 top-16 w-auto translate-x-0 translate-y-2 border-t border-ink-300 bg-white px-6 py-7 opacity-0 shadow-pop transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 lg:absolute lg:left-1/2 lg:right-auto lg:top-full lg:w-[min(720px,calc(100vw-40px))] lg:-translate-x-1/2">
                 <div className="grid gap-x-10 gap-y-6 sm:grid-cols-3">
                   <div className="sm:col-span-1">
                     <p className="text-xs uppercase tracking-[0.18em] text-ink-500">探索作品</p>
@@ -71,7 +71,7 @@ export function Navbar() {
               </div>
             </div>
           </li>
-          <li className="hidden md:block">
+          <li className="hidden lg:block">
             <Link href="/creators" className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900">
               创作者
             </Link>

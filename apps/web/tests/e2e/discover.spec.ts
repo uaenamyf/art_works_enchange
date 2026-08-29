@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("discover opens artwork detail and searches its category", async ({ page }) => {
   await page.goto("/");
+  await expect(page.locator("body")).toHaveJSProperty("scrollWidth", await page.evaluate(() => window.innerWidth));
   const firstArtwork = page.locator("article").first();
   await expect(firstArtwork).toBeVisible();
 
