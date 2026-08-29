@@ -75,6 +75,39 @@ class NotificationEventHandlerTest {
   }
 
   @Test
+  void consumesAssetRecallForOwnerWithoutDownloadSecrets() {
+    UUID ownerId = UUID.randomUUID();
+    when(notifications.recordEvent(any(), any(), any(Integer.class), any())).thenReturn(true);
+
+    handler.handle(
+        event(
+            UUID.randomUUID(),
+            "DigitalAssetRecalled",
+            Map.of(
+                "recipientId",
+                ownerId.toString(),
+                "artworkId",
+                UUID.randomUUID().toString(),
+                "assetVersionId",
+                UUID.randomUUID().toString(),
+                "reasonCode",
+                "content update",
+                "title",
+                "数字资产已撤回",
+                "body",
+                "新的下载授权将被停止。",
+                "downloadUrl",
+                "https://private.example/secret")));
+
+    ArgumentCaptor<Notification> saved = ArgumentCaptor.forClass(Notification.class);
+    verify(notifications).save(saved.capture());
+    assertThat(saved.getValue().userId()).isEqualTo(ownerId);
+    assertThat(saved.getValue().type().name()).isEqualTo("DIGITAL_ASSET_RECALLED");
+    assertThat(saved.getValue().link()).startsWith("/artworks/");
+    assertThat(saved.getValue().body()).doesNotContain("private.example", "download");
+  }
+
+  @Test
   void skipsDuplicateEventAfterReceipt() {
     when(notifications.recordEvent(any(), any(), any(Integer.class), any())).thenReturn(false);
 
