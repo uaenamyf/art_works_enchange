@@ -16,6 +16,7 @@ import com.creatorhub.config.GlobalExceptionHandler;
 import com.creatorhub.config.SecurityConfig;
 import com.creatorhub.creator.application.port.in.CreatorUseCases;
 import com.creatorhub.creator.application.port.in.CreatorUseCases.CreatorView;
+import com.creatorhub.follow.application.port.in.FollowUseCases;
 import com.creatorhub.identity.infrastructure.security.CookieOriginValidationFilter;
 import com.creatorhub.identity.infrastructure.security.JwtAuthenticationFilter;
 import java.util.List;
@@ -48,6 +49,7 @@ class CreatorControllerTest {
 
   @Autowired MockMvc mvc;
   @MockitoBean CreatorUseCases creators;
+  @MockitoBean FollowUseCases.ReadPort followStats;
 
   @Test
   void publicCreatorDetailDoesNotRequireAuthentication() throws Exception {
