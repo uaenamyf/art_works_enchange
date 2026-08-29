@@ -86,10 +86,11 @@ docker compose -f infra/compose.yaml config
 - Redis 认证限流：注册 IP、登录 IP/邮箱摘要、刷新 IP；超限返回 RFC 9457 `RATE_LIMITED` + `Retry-After`。
 - PostgreSQL Flyway V1/V2、MyBatis-Plus Repository Adapter、显式 UUID TypeHandler 与 Refresh Token `FOR UPDATE` Mapper XML。
 - 前端真实登录/注册、内存 Access Token + HttpOnly Cookie 恢复会话、Creator 申请表单。
+- OpenAPI TypeScript 契约类型生成：`pnpm web:api:generate`，生成文件位于 `apps/web/src/lib/api/schema.gen.ts`。
 
 未完成（Week 3 收尾 / 后续周）：
 
 - 登录/注册/Creator 申请 Playwright 浏览器 E2E（当前后端/组件/集成测试已覆盖）。
-- OpenAPI 客户端生成与 TanStack Query 接入。
+- TanStack Query 接入（OpenAPI 类型已生成，查询与变更 Hook 仍待接入）。
 - Catalog 等后续上下文的 Flyway migration 与数据库集成测试。
 - GitHub Actions CI 工作流（已按要求跳过）。

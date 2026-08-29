@@ -34,6 +34,7 @@ public class OrderRepositoryAdapter implements OrderRepository {
     row.setId(order.id().value());
     row.setOrderNumber(order.orderNumber());
     row.setBuyerId(order.buyerId().value());
+    row.setSellerId(order.sellerId() == null ? null : order.sellerId().value());
     OrderLine line = order.lines().get(0);
     row.setArtworkId(line.artworkId().value());
     row.setTitle(line.title());
@@ -54,6 +55,8 @@ public class OrderRepositoryAdapter implements OrderRepository {
     row.setExpiresAt(order.expiresAt());
     row.setCreatedAt(order.createdAt());
     row.setUpdatedAt(order.updatedAt());
+    row.setTrackingNumber(order.trackingNumber());
+    row.setCarrier(order.carrier());
     if (mapper.findByIdValue(row.getId()) == null) {
       mapper.insertOrder(row);
     } else if (mapper.updateStatus(row) != 1) {
@@ -89,6 +92,19 @@ public class OrderRepositoryAdapter implements OrderRepository {
         .toList();
   }
 
+  @Override
+  public List<Order> findBySeller(
+      UUID sellerUserId, OrderStatus status, Instant beforeCreatedAt, UUID beforeId, int limit) {
+    return mapper.findBySeller(sellerUserId, status, beforeCreatedAt, beforeId, limit).stream()
+        .map(this::toDomain)
+        .toList();
+  }
+
+  @Override
+  public Optional<Order> findByIdAndSeller(UUID orderId, UUID sellerUserId) {
+    return Optional.ofNullable(mapper.findByIdAndSeller(orderId, sellerUserId)).map(this::toDomain);
+  }
+
   private Order toDomain(OrderPersistenceRow row) {
     try {
       ShippingAddress address =
@@ -98,6 +114,7 @@ public class OrderRepositoryAdapter implements OrderRepository {
       return Order.reconstitute(
           com.creatorhub.ordering.domain.model.OrderId.of(row.getId()),
           UserId.of(row.getBuyerId()),
+          row.getSellerId() == null ? null : UserId.of(row.getSellerId()),
           row.getOrderNumber(),
           new OrderLine(
               ArtworkId.of(row.getArtworkId()),
@@ -111,7 +128,9 @@ public class OrderRepositoryAdapter implements OrderRepository {
           row.getUpdatedAt(),
           row.getFulfillmentType() == null
               ? com.creatorhub.ordering.domain.model.FulfillmentType.PHYSICAL
-              : row.getFulfillmentType());
+              : row.getFulfillmentType(),
+          row.getTrackingNumber(),
+          row.getCarrier());
     } catch (JsonProcessingException exception) {
       throw new IllegalStateException("Shipping address deserialization failed", exception);
     }

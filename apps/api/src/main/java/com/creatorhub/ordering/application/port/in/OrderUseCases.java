@@ -36,6 +36,8 @@ public interface OrderUseCases {
       OrderStatus status,
       ShippingAddress shippingAddress,
       FulfillmentType fulfillmentType,
+      String trackingNumber,
+      String carrier,
       Instant createdAt,
       Instant updatedAt,
       Instant expiresAt) {
@@ -67,6 +69,8 @@ public interface OrderUseCases {
           status,
           shippingAddress,
           FulfillmentType.PHYSICAL,
+          null,
+          null,
           createdAt,
           updatedAt,
           expiresAt);

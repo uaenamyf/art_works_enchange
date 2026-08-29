@@ -788,7 +788,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ArtworkPage'
+                $ref: '#/components/schemas/StudioArtworkPage'
         '401':
           $ref: '#/components/responses/Unauthorized'
   /orders:
@@ -1618,6 +1618,56 @@ components:
           type: [string, 'null']
         hasMore:
           type: boolean
+    StudioArtworkPage:
+      type: object
+      required: [items, hasMore]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudioArtworkListItem'
+        nextCursor:
+          type: [string, 'null']
+        hasMore:
+          type: boolean
+    StudioArtworkListItem:
+      type: object
+      required: [id, title, category, priceAmount, priceCurrency, stock, creatorId, coverMediaId, status, productType, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        category:
+          $ref: '#/components/schemas/ArtworkCategory'
+        priceAmount:
+          type: string
+          pattern: '^\d+(\.\d{1,2})?$'
+        priceCurrency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        stock:
+          type: integer
+          minimum: 0
+        creatorId:
+          type: string
+          format: uuid
+        coverMediaId:
+          type: [string, 'null']
+          format: uuid
+        status:
+          $ref: '#/components/schemas/ArtworkStatus'
+        productType:
+          $ref: '#/components/schemas/ProductType'
+        updatedAt:
+          type: string
+          format: date-time
+        favoriteCount:
+          type: integer
+          minimum: 0
+        favoritedByMe:
+          type: boolean
     ArtworkListItem:
       type: object
       required: [id, title, category, priceAmount, priceCurrency, stock, creatorId, coverMediaId, status, publishedAt]
@@ -1642,7 +1692,7 @@ components:
           type: string
           format: uuid
         coverMediaId:
-          type: string
+          type: [string, 'null']
           format: uuid
         status:
           type: string

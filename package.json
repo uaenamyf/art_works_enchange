@@ -11,6 +11,7 @@
     "web:dev": "pnpm --filter @creatorhub/web dev",
     "web:build": "pnpm --filter @creatorhub/web build",
     "web:start": "pnpm --filter @creatorhub/web start",
+    "web:api:generate": "pnpm --filter @creatorhub/web api:generate",
     "web:lint": "pnpm --filter @creatorhub/web lint",
     "web:typecheck": "pnpm --filter @creatorhub/web typecheck",
     "web:test": "pnpm --filter @creatorhub/web test"

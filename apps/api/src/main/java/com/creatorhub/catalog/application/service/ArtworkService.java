@@ -3,6 +3,7 @@ package com.creatorhub.catalog.application.service;
 import com.creatorhub.catalog.application.port.in.ArtworkUseCases;
 import com.creatorhub.catalog.domain.model.Artwork;
 import com.creatorhub.catalog.domain.model.ArtworkId;
+import com.creatorhub.catalog.domain.model.ArtworkStatus;
 import com.creatorhub.catalog.domain.repository.ArtworkRepository;
 import com.creatorhub.collection.application.port.in.FavoriteUseCases;
 import com.creatorhub.creator.application.port.in.CreatorUseCases;
@@ -201,6 +202,40 @@ public class ArtworkService implements ArtworkUseCases {
         hasMore);
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public StudioArtworkPage listOwned(UUID userId, ArtworkStatus status, String cursor, int limit) {
+    int pageSize = Math.min(Math.max(limit, 1), 50);
+    Cursor decoded = Cursor.decodeUpdated(cursor);
+    List<Artwork> results =
+        artworks.findOwnedPage(
+            new ArtworkRepository.OwnedPageQuery(
+                UserId.of(userId), status, decoded.updatedAt(), decoded.id(), pageSize + 1));
+    boolean hasMore = results.size() > pageSize;
+    List<Artwork> page = results.stream().limit(pageSize).toList();
+    return new StudioArtworkPage(
+        page.stream()
+            .map(
+                artwork ->
+                    new StudioArtworkListView(
+                        artwork.id().value(),
+                        artwork.title(),
+                        artwork.category(),
+                        artwork.price().amount(),
+                        artwork.price().currency().getCurrencyCode(),
+                        artwork.stock(),
+                        artwork.creatorId(),
+                        artwork.mediaIds().isEmpty() ? null : artwork.mediaIds().get(0),
+                        artwork.status(),
+                        artwork.productType(),
+                        artwork.updatedAt(),
+                        favoriteStats.countByArtworkId(artwork.id().value()),
+                        false))
+            .toList(),
+        hasMore ? Cursor.encodeUpdated(page.get(page.size() - 1)) : null,
+        hasMore);
+  }
+
   private Artwork owned(UUID userId, UUID artworkId) {
     return artworks
         .findByOwnerId(UserId.of(userId), ArtworkId.of(artworkId))
@@ -217,13 +252,13 @@ public class ArtworkService implements ArtworkUseCases {
     return value == null || value.isBlank() ? null : value.trim();
   }
 
-  private record Cursor(Instant createdAt, ArtworkId id) {
+  private record Cursor(Instant createdAt, Instant updatedAt, ArtworkId id) {
     static Cursor decode(String value) {
-      if (value == null || value.isBlank()) return new Cursor(null, null);
+      if (value == null || value.isBlank()) return new Cursor(null, null, null);
       try {
         String decoded = new String(Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8);
         String[] parts = decoded.split("\\|", 2);
-        return new Cursor(Instant.parse(parts[0]), ArtworkId.of(UUID.fromString(parts[1])));
+        return new Cursor(Instant.parse(parts[0]), null, ArtworkId.of(UUID.fromString(parts[1])));
       } catch (RuntimeException ex) {
         throw new BusinessError("INVALID_CURSOR", "Cursor is invalid");
       }
@@ -234,6 +269,24 @@ public class ArtworkService implements ArtworkUseCases {
       return Base64.getUrlEncoder()
           .withoutPadding()
           .encodeToString(value.getBytes(StandardCharsets.UTF_8));
+    }
+
+    static String encodeUpdated(Artwork artwork) {
+      String value = artwork.updatedAt() + "|" + artwork.id().value();
+      return Base64.getUrlEncoder()
+          .withoutPadding()
+          .encodeToString(value.getBytes(StandardCharsets.UTF_8));
+    }
+
+    static Cursor decodeUpdated(String value) {
+      if (value == null || value.isBlank()) return new Cursor(null, null, null);
+      try {
+        String decoded = new String(Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8);
+        String[] parts = decoded.split("\\|", 2);
+        return new Cursor(null, Instant.parse(parts[0]), ArtworkId.of(UUID.fromString(parts[1])));
+      } catch (RuntimeException ex) {
+        throw new BusinessError("INVALID_CURSOR", "Cursor is invalid");
+      }
     }
   }
 

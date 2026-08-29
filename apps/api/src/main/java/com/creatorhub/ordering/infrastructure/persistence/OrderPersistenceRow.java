@@ -15,6 +15,7 @@ class OrderPersistenceRow {
   @TableId private UUID id;
   private String orderNumber;
   private UUID buyerId;
+  private UUID sellerId;
   private UUID artworkId;
   private String title;
   private BigDecimal unitPrice;
@@ -27,6 +28,8 @@ class OrderPersistenceRow {
   private Instant expiresAt;
   private Instant createdAt;
   private Instant updatedAt;
+  private String trackingNumber;
+  private String carrier;
 
   public UUID getId() {
     return id;
@@ -46,6 +49,14 @@ class OrderPersistenceRow {
 
   public UUID getBuyerId() {
     return buyerId;
+  }
+
+  public UUID getSellerId() {
+    return sellerId;
+  }
+
+  public void setSellerId(UUID sellerId) {
+    this.sellerId = sellerId;
   }
 
   public void setBuyerId(UUID buyerId) {
@@ -146,5 +157,21 @@ class OrderPersistenceRow {
 
   public void setUpdatedAt(Instant updatedAt) {
     this.updatedAt = updatedAt;
+  }
+
+  public String getTrackingNumber() {
+    return trackingNumber;
+  }
+
+  public void setTrackingNumber(String trackingNumber) {
+    this.trackingNumber = trackingNumber;
+  }
+
+  public String getCarrier() {
+    return carrier;
+  }
+
+  public void setCarrier(String carrier) {
+    this.carrier = carrier;
   }
 }

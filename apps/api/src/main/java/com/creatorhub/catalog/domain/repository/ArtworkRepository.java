@@ -19,11 +19,21 @@ public interface ArtworkRepository {
 
   List<Artwork> findPublishedPage(PublishedPageQuery query);
 
+  /** 按作品 owner 查询 Studio 列表，状态筛选和游标由数据库执行。 */
+  List<Artwork> findOwnedPage(OwnedPageQuery query);
+
   record PublishedPageQuery(
       String query,
       String category,
       UUID creatorId,
       Instant beforeCreatedAt,
+      ArtworkId beforeId,
+      int limit) {}
+
+  record OwnedPageQuery(
+      UserId ownerId,
+      com.creatorhub.catalog.domain.model.ArtworkStatus status,
+      Instant beforeUpdatedAt,
       ArtworkId beforeId,
       int limit) {}
 

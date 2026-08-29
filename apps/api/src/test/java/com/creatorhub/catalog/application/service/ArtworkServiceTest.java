@@ -77,6 +77,30 @@ class ArtworkServiceTest {
     assertThat(event.getValue().payload()).doesNotContainKeys("price", "stock", "mediaObjectKey");
   }
 
+  @Test
+  void listsOwnedArtworksWithStatusAndStableCursor() {
+    ArtworkRepository repository = mock(ArtworkRepository.class);
+    CreatorUseCases creators = mock(CreatorUseCases.class);
+    ArtworkService service = new ArtworkService(repository, creators, favoriteStats());
+    UUID ownerId = UUID.randomUUID();
+    Artwork first = approvedArtwork(ownerId, "first");
+    Artwork second = approvedArtwork(ownerId, "second");
+    when(repository.findOwnedPage(any())).thenReturn(List.of(first, second));
+
+    ArtworkUseCases.StudioArtworkPage page =
+        service.listOwned(ownerId, ArtworkStatus.APPROVED, null, 1);
+
+    ArgumentCaptor<ArtworkRepository.OwnedPageQuery> query =
+        ArgumentCaptor.forClass(ArtworkRepository.OwnedPageQuery.class);
+    verify(repository).findOwnedPage(query.capture());
+    assertThat(query.getValue().ownerId()).isEqualTo(UserId.of(ownerId));
+    assertThat(query.getValue().status()).isEqualTo(ArtworkStatus.APPROVED);
+    assertThat(query.getValue().limit()).isEqualTo(2);
+    assertThat(page.items()).hasSize(1);
+    assertThat(page.hasMore()).isTrue();
+    assertThat(page.nextCursor()).isNotBlank();
+  }
+
   private static FavoriteUseCases.ReadPort favoriteStats() {
     return new FavoriteUseCases.ReadPort() {
       public long countByArtworkId(UUID artworkId) {

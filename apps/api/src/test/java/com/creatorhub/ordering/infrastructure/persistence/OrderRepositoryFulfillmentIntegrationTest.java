@@ -50,16 +50,19 @@ class OrderRepositoryFulfillmentIntegrationTest {
 
   private UUID orderId;
   private UUID buyerId;
+  private UUID sellerId;
 
   @AfterEach
   void cleanUp() {
     if (orderId != null) jdbc.update("DELETE FROM orders WHERE id = ?", orderId);
     if (buyerId != null) jdbc.update("DELETE FROM users WHERE id = ?", buyerId);
+    if (sellerId != null) jdbc.update("DELETE FROM users WHERE id = ?", sellerId);
   }
 
   @Test
   void digitalOrderRoundTripsWithoutShippingAddress() {
     buyerId = UUID.randomUUID();
+    sellerId = UUID.randomUUID();
     orderId = UUID.randomUUID();
     Instant now = Instant.parse("2026-08-28T00:00:00Z");
     jdbc.update(
@@ -68,10 +71,17 @@ class OrderRepositoryFulfillmentIntegrationTest {
         buyerId + "@example.com",
         Timestamp.from(now),
         Timestamp.from(now));
+    jdbc.update(
+        "INSERT INTO users (id, email, password_hash, display_name, role, created_at, updated_at) VALUES (?, ?, 'hash', 'Seller', 'CREATOR', ?, ?)",
+        sellerId,
+        sellerId + "@example.com",
+        Timestamp.from(now),
+        Timestamp.from(now));
     Order order =
-        Order.create(
+        Order.createWithSeller(
             OrderId.of(orderId),
             UserId.of(buyerId),
+            UserId.of(sellerId),
             "CH" + orderId.toString().replace("-", "").substring(0, 18),
             new OrderLine(ArtworkId.random(), "Preset", Money.of("10", "CNY"), 1),
             (ShippingAddress) null,
@@ -84,9 +94,52 @@ class OrderRepositoryFulfillmentIntegrationTest {
     Order restored = orders.findById(orderId).orElseThrow();
     assertThat(restored.fulfillmentType()).isEqualTo(FulfillmentType.DIGITAL);
     assertThat(restored.shippingAddress()).isNull();
+    assertThat(restored.sellerId()).isEqualTo(UserId.of(sellerId));
     assertThat(
             jdbc.queryForObject(
                 "SELECT fulfillment_type FROM orders WHERE id = ?", String.class, orderId))
         .isEqualTo("DIGITAL");
+  }
+
+  @Test
+  void physicalOrderRoundTripsShippingTracking() {
+    buyerId = UUID.randomUUID();
+    sellerId = UUID.randomUUID();
+    orderId = UUID.randomUUID();
+    Instant now = Instant.parse("2026-08-28T00:00:00Z");
+    jdbc.update(
+        "INSERT INTO users (id, email, password_hash, display_name, role, created_at, updated_at) VALUES (?, ?, 'hash', 'Buyer', 'USER', ?, ?)",
+        buyerId,
+        buyerId + "@example.com",
+        Timestamp.from(now),
+        Timestamp.from(now));
+    jdbc.update(
+        "INSERT INTO users (id, email, password_hash, display_name, role, created_at, updated_at) VALUES (?, ?, 'hash', 'Seller', 'CREATOR', ?, ?)",
+        sellerId,
+        sellerId + "@example.com",
+        Timestamp.from(now),
+        Timestamp.from(now));
+    Order order =
+        Order.createWithSeller(
+            OrderId.of(orderId),
+            UserId.of(buyerId),
+            UserId.of(sellerId),
+            "CH" + orderId.toString().replace("-", "").substring(0, 18),
+            new OrderLine(ArtworkId.random(), "Preset", Money.of("10", "CNY"), 1),
+            new ShippingAddress(
+                "Buyer", "Line 1", null, "Shanghai", null, "200000", "CN", "13800138000"),
+            now,
+            now.plusSeconds(1800),
+            FulfillmentType.PHYSICAL);
+    order.markPaid(now.plusSeconds(1));
+    order.startProcessing(now.plusSeconds(2));
+    order.markShipped(now.plusSeconds(3), "SF123456", "SF");
+
+    orders.save(order);
+
+    Order restored = orders.findById(orderId).orElseThrow();
+    assertThat(restored.sellerId()).isEqualTo(UserId.of(sellerId));
+    assertThat(restored.trackingNumber()).isEqualTo("SF123456");
+    assertThat(restored.carrier()).isEqualTo("SF");
   }
 }

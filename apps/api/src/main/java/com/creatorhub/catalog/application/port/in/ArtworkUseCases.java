@@ -31,6 +31,9 @@ public interface ArtworkUseCases {
   ArtworkPage listPublished(
       String query, String category, UUID creatorId, String sort, String cursor, int limit);
 
+  /** Studio 作品列表只返回当前 Creator 自己的作品。 */
+  StudioArtworkPage listOwned(UUID userId, ArtworkStatus status, String cursor, int limit);
+
   default ArtworkPage listPublished(
       String query,
       String category,
@@ -124,6 +127,8 @@ public interface ArtworkUseCases {
 
   record ArtworkPage(List<ArtworkListView> items, String nextCursor, boolean hasMore) {}
 
+  record StudioArtworkPage(List<StudioArtworkListView> items, String nextCursor, boolean hasMore) {}
+
   record ArtworkListView(
       UUID id,
       String title,
@@ -136,6 +141,21 @@ public interface ArtworkUseCases {
       ArtworkStatus status,
       ProductType productType,
       Instant publishedAt,
+      long favoriteCount,
+      boolean favoritedByMe) {}
+
+  record StudioArtworkListView(
+      UUID id,
+      String title,
+      String category,
+      BigDecimal priceAmount,
+      String priceCurrency,
+      int stock,
+      UUID creatorId,
+      UUID coverMediaId,
+      ArtworkStatus status,
+      ProductType productType,
+      Instant updatedAt,
       long favoriteCount,
       boolean favoritedByMe) {}
 }

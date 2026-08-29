@@ -67,6 +67,20 @@ public class ArtworkRepositoryAdapter
   }
 
   @Override
+  public List<Artwork> findOwnedPage(OwnedPageQuery query) {
+    return mapper
+        .findOwnedPage(
+            query.ownerId().value(),
+            query.status(),
+            query.beforeUpdatedAt(),
+            query.beforeId() == null ? null : query.beforeId().value(),
+            query.limit())
+        .stream()
+        .map(row -> toDomain(row, mediaMapper.findIdsByArtworkId(row.getId())))
+        .toList();
+  }
+
+  @Override
   public Artwork save(Artwork artwork) {
     ArtworkPersistenceRow row = mapper.findByIdValue(artwork.id().value());
     boolean inserting = row == null;

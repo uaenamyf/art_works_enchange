@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import NotificationsPage from "./page";
 
 const authenticatedFetch = vi.fn();
@@ -32,7 +33,12 @@ describe("NotificationsPage", () => {
       hasMore: false,
       unreadCount: 1
     });
-    render(<NotificationsPage />);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <NotificationsPage />
+      </QueryClientProvider>
+    );
 
     await waitFor(() => expect(screen.getByText("订单已创建")).toBeInTheDocument());
     fireEvent.click(screen.getByRole("checkbox", { name: "只看未读" }));

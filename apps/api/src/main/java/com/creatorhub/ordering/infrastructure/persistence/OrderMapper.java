@@ -16,10 +16,10 @@ interface OrderMapper extends BaseMapper<OrderPersistenceRow> {
 
   @Insert(
       """
-      INSERT INTO orders (id, order_number, buyer_id, artwork_id, title, unit_price, currency,
-          quantity, subtotal, status, fulfillment_type, shipping_address, expires_at, created_at, updated_at)
-      VALUES (#{id}, #{orderNumber}, #{buyerId}, #{artworkId}, #{title}, #{unitPrice}, #{currency},
-          #{quantity}, #{subtotal}, #{status}, #{fulfillmentType}, CAST(#{shippingAddress} AS jsonb), #{expiresAt}, #{createdAt}, #{updatedAt})
+        INSERT INTO orders (id, order_number, buyer_id, seller_id, artwork_id, title, unit_price, currency,
+            quantity, subtotal, status, fulfillment_type, shipping_address, tracking_number, carrier, expires_at, created_at, updated_at)
+        VALUES (#{id}, #{orderNumber}, #{buyerId}, #{sellerId}, #{artworkId}, #{title}, #{unitPrice}, #{currency},
+            #{quantity}, #{subtotal}, #{status}, #{fulfillmentType}, CAST(#{shippingAddress} AS jsonb), #{trackingNumber}, #{carrier}, #{expiresAt}, #{createdAt}, #{updatedAt})
       """)
   int insertOrder(OrderPersistenceRow row);
 
@@ -31,7 +31,8 @@ interface OrderMapper extends BaseMapper<OrderPersistenceRow> {
   int cancel(OrderPersistenceRow row);
 
   /** 仅持久化聚合状态变化；状态合法性由领域聚合负责，数据库按订单 ID 原子更新。 */
-  @Update("UPDATE orders SET status = #{status}, updated_at = #{updatedAt} WHERE id = #{id}")
+  @Update(
+      "UPDATE orders SET status = #{status}, tracking_number = #{trackingNumber}, carrier = #{carrier}, updated_at = #{updatedAt} WHERE id = #{id}")
   int updateStatus(OrderPersistenceRow row);
 
   @Select(
@@ -51,4 +52,23 @@ interface OrderMapper extends BaseMapper<OrderPersistenceRow> {
             """)
   List<OrderPersistenceRow> findByBuyer(
       UUID buyerId, OrderStatus status, Instant beforeCreatedAt, UUID beforeId, int limit);
+
+  /** 销售订单只通过不可变 seller_id 快照隔离 Creator owner，避免跨上下文表 Join。 */
+  @Select(
+      """
+            <script>
+            SELECT o.*
+            FROM orders o
+            WHERE o.seller_id = #{sellerUserId}
+                <if test='status != null'>AND o.status = #{status}</if>
+                <if test='beforeCreatedAt != null'>AND (o.created_at, o.id) &lt; (#{beforeCreatedAt}, #{beforeId})</if>
+            ORDER BY o.created_at DESC, o.id DESC
+            LIMIT #{limit}
+            </script>
+            """)
+  List<OrderPersistenceRow> findBySeller(
+      UUID sellerUserId, OrderStatus status, Instant beforeCreatedAt, UUID beforeId, int limit);
+
+  @Select("SELECT * FROM orders WHERE id = #{orderId} AND seller_id = #{sellerUserId}")
+  OrderPersistenceRow findByIdAndSeller(UUID orderId, UUID sellerUserId);
 }

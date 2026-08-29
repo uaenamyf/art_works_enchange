@@ -3,6 +3,7 @@ package com.creatorhub.ordering.application.service;
 import com.creatorhub.catalog.application.port.in.ArtworkUseCases;
 import com.creatorhub.catalog.application.port.in.StockAvailabilityPort;
 import com.creatorhub.catalog.domain.model.ArtworkId;
+import com.creatorhub.creator.application.port.in.CreatorUseCases;
 import com.creatorhub.ordering.application.port.in.OrderUseCases;
 import com.creatorhub.ordering.application.port.out.OrderIdempotencyClaim;
 import com.creatorhub.ordering.application.port.out.OrderIdempotencyPort;
@@ -39,6 +40,7 @@ public class OrderService implements OrderUseCases {
   private final OrderIdempotencyPort idempotency;
   private final StockReservationGate reservationGate;
   private final OutboxRepository outbox;
+  private final CreatorUseCases creators;
 
   public OrderService(
       ArtworkUseCases artworks,
@@ -46,7 +48,17 @@ public class OrderService implements OrderUseCases {
       OrderRepository orders,
       OrderIdempotencyPort idempotency,
       StockReservationGate reservationGate) {
-    this(artworks, stock, orders, idempotency, reservationGate, null);
+    this(artworks, stock, orders, idempotency, reservationGate, null, null);
+  }
+
+  public OrderService(
+      ArtworkUseCases artworks,
+      StockAvailabilityPort stock,
+      OrderRepository orders,
+      OrderIdempotencyPort idempotency,
+      StockReservationGate reservationGate,
+      OutboxRepository outbox) {
+    this(artworks, stock, orders, idempotency, reservationGate, outbox, null);
   }
 
   @Autowired
@@ -56,13 +68,15 @@ public class OrderService implements OrderUseCases {
       OrderRepository orders,
       OrderIdempotencyPort idempotency,
       StockReservationGate reservationGate,
-      OutboxRepository outbox) {
+      OutboxRepository outbox,
+      CreatorUseCases creators) {
     this.artworks = artworks;
     this.stock = stock;
     this.orders = orders;
     this.idempotency = idempotency;
     this.reservationGate = reservationGate;
     this.outbox = outbox;
+    this.creators = creators;
   }
 
   @Override
@@ -108,7 +122,8 @@ public class OrderService implements OrderUseCases {
       }
     }
     try {
-      Order order = buildOrder(buyerId, command, artwork, fulfillmentType);
+      UUID sellerId = creators == null ? null : creators.get(artwork.creatorId()).userId();
+      Order order = buildOrder(buyerId, sellerId, command, artwork, fulfillmentType);
       if (fulfillmentType == FulfillmentType.PHYSICAL
           && !stock.reserve(command.artworkId(), command.quantity(), order.id().value())) {
         throw new BusinessError("INSUFFICIENT_STOCK", "Artwork stock is insufficient");
@@ -226,6 +241,7 @@ public class OrderService implements OrderUseCases {
 
   private static Order buildOrder(
       UUID buyerId,
+      UUID sellerId,
       CreateCommand command,
       ArtworkUseCases.ArtworkView artwork,
       FulfillmentType fulfillmentType) {
@@ -236,9 +252,10 @@ public class OrderService implements OrderUseCases {
             artwork.title(),
             Money.of(artwork.priceAmount().toPlainString(), artwork.priceCurrency()),
             command.quantity());
-    return Order.create(
+    return Order.createWithSeller(
         OrderId.random(),
         UserId.of(buyerId),
+        sellerId == null ? null : UserId.of(sellerId),
         orderNumber(),
         line,
         command.shippingAddress(),
@@ -262,6 +279,8 @@ public class OrderService implements OrderUseCases {
         order.status(),
         order.shippingAddress(),
         order.fulfillmentType(),
+        order.trackingNumber(),
+        order.carrier(),
         order.createdAt(),
         order.updatedAt(),
         order.expiresAt());

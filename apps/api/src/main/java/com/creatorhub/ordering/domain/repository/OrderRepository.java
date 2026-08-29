@@ -21,4 +21,11 @@ public interface OrderRepository {
 
   List<Order> findByBuyer(
       UUID buyerId, OrderStatus status, Instant beforeCreatedAt, UUID beforeId, int limit);
+
+  /** 通过作品 owner 查询销售订单；查询实现位于 Ordering infrastructure。 */
+  List<Order> findBySeller(
+      UUID sellerUserId, OrderStatus status, Instant beforeCreatedAt, UUID beforeId, int limit);
+
+  /** 精确校验订单是否属于当前 Creator，避免使用游标列表反查造成边界错误。 */
+  Optional<Order> findByIdAndSeller(UUID orderId, UUID sellerUserId);
 }

@@ -38,6 +38,30 @@ class OrderTest {
   }
 
   @Test
+  void recordsShippingTrackingWhenMarkingOrderShipped() {
+    Order order = order();
+    order.markPaid(CREATED_AT.plusSeconds(1));
+    order.startProcessing(CREATED_AT.plusSeconds(2));
+
+    order.markShipped(CREATED_AT.plusSeconds(3), "SF123456", "顺丰");
+
+    assertThat(order.status()).isEqualTo(OrderStatus.SHIPPED);
+    assertThat(order.trackingNumber()).isEqualTo("SF123456");
+    assertThat(order.carrier()).isEqualTo("顺丰");
+  }
+
+  @Test
+  void rejectsOversizedShippingTracking() {
+    Order order = order();
+    order.markPaid(CREATED_AT.plusSeconds(1));
+    order.startProcessing(CREATED_AT.plusSeconds(2));
+
+    assertThatThrownBy(
+            () -> order.markShipped(CREATED_AT.plusSeconds(3), "x".repeat(101), "Carrier"))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
   void rejectsInvalidAddressAndQuantity() {
     assertThatThrownBy(
             () ->

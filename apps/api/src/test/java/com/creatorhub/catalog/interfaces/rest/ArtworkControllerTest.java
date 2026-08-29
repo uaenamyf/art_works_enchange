@@ -156,6 +156,32 @@ class ArtworkControllerTest {
   }
 
   @Test
+  void creatorCanListOwnedStudioArtworksWithFilters() throws Exception {
+    UUID userId = UUID.randomUUID();
+    when(artworks.listOwned(userId, ArtworkStatus.DRAFT, "cursor", 10))
+        .thenReturn(new ArtworkUseCases.StudioArtworkPage(List.of(), null, false));
+
+    mvc.perform(
+            get("/api/v1/studio/artworks")
+                .param("status", "DRAFT")
+                .param("cursor", "cursor")
+                .param("limit", "10")
+                .with(authentication(user(userId, "CREATOR"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items").isArray())
+        .andExpect(jsonPath("$.hasMore").value(false));
+
+    verify(artworks).listOwned(userId, ArtworkStatus.DRAFT, "cursor", 10);
+  }
+
+  @Test
+  void ordinaryUserCannotListStudioArtworks() throws Exception {
+    mvc.perform(
+            get("/api/v1/studio/artworks").with(authentication(user(UUID.randomUUID(), "USER"))))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
   void creatorCannotApproveArtworkReview() throws Exception {
     mvc.perform(
             post("/api/v1/artworks/{artworkId}/review/approve", UUID.randomUUID())

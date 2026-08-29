@@ -2,63 +2,48 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { FavoriteButton } from "@/features/favorites/FavoriteButton";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ApiError } from "@/lib/api/fetcher";
 import { ROUTES } from "@/lib/config";
+import type { components } from "@/lib/api/schema.gen";
 
 const FAVORITES_API_PATH = "/api/v1/me/favorites";
 
-interface FavoriteItem {
-  id: string;
-  title: string;
-  category: string;
-  priceAmount: string;
-  priceCurrency: string;
-  stock: number;
-  creatorId: string;
-  mediaIds: string[];
-  favoritedAt: string;
-}
-
-interface FavoritePageResponse {
-  items: FavoriteItem[];
-  nextCursor: string | null;
-  hasMore: boolean;
-}
-
-interface MediaResponse { id: string; url: string }
+type FavoritePageResponse = components["schemas"]["FavoritePage"];
+type MediaResponse = components["schemas"]["Media"];
 
 /** 当前用户的收藏工作台，访问令牌只通过 AuthProvider 注入请求。 */
 export default function FavoritesPage() {
   const { session, loading, authenticatedFetch } = useAuth();
-  const [response, setResponse] = useState<FavoritePageResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [media, setMedia] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (!session) return;
-    void authenticatedFetch<FavoritePageResponse>(FAVORITES_API_PATH)
-      .then(async (result) => {
-        setResponse(result);
-        const mediaEntries = await Promise.all(result.items.map(async (item) => {
-          const coverId = item.mediaIds[0];
-          if (!coverId) return null;
-          const cover = await authenticatedFetch<MediaResponse>(`/api/v1/media/${coverId}`);
-          return [item.id, cover.url] as const;
-        }));
-        setMedia(Object.fromEntries(mediaEntries.filter((entry): entry is readonly [string, string] => entry !== null)));
-      })
-      .catch((requestError: unknown) => {
-        setError(requestError instanceof ApiError ? requestError.problem.detail ?? "收藏加载失败" : "收藏加载失败");
-      });
-  }, [authenticatedFetch, session]);
+  const favorites = useQuery<FavoritePageResponse, Error>({
+    queryKey: ["favorites", "mine"],
+    enabled: Boolean(session) && !loading,
+    queryFn: () => authenticatedFetch<FavoritePageResponse>(FAVORITES_API_PATH)
+  });
+  const mediaQueries = useQueries({
+    queries: (favorites.data?.items ?? []).map((item) => {
+      const coverId = item.mediaIds[0];
+      return {
+        queryKey: ["media", coverId],
+        enabled: Boolean(session) && Boolean(coverId),
+        queryFn: () => authenticatedFetch<MediaResponse>(`/api/v1/media/${coverId}`)
+      };
+    })
+  });
+  const media = Object.fromEntries(
+    (favorites.data?.items ?? []).flatMap((item, index) => {
+      const url = mediaQueries[index]?.data?.url;
+      return url ? [[item.id, url] as const] : [];
+    })
+  );
 
   if (loading) return <main className="mx-auto w-full max-w-[1280px] px-5 py-16 lg:px-8"><p className="text-sm text-ink-500">正在加载账户...</p></main>;
   if (!session) return <main className="mx-auto w-full max-w-[1280px] px-5 py-16 lg:px-8"><h1 className="text-5xl text-ink-900">我的收藏</h1><p className="mt-4 text-ink-500">登录后查看收藏的作品。</p><Link href={ROUTES.authLogin} className="mt-6 inline-flex h-11 items-center rounded-token bg-ink-900 px-5 text-sm text-white">去登录</Link></main>;
-  if (error) return <main className="mx-auto w-full max-w-[1280px] px-5 py-16 lg:px-8"><h1 className="text-5xl text-ink-900">我的收藏</h1><p role="alert" className="mt-6 text-sm text-error">{error}</p></main>;
-  if (!response) return <main className="mx-auto w-full max-w-[1280px] px-5 py-16 lg:px-8"><p className="text-sm text-ink-500">正在加载收藏...</p></main>;
+  if (favorites.isError) return <main className="mx-auto w-full max-w-[1280px] px-5 py-16 lg:px-8"><h1 className="text-5xl text-ink-900">我的收藏</h1><p role="alert" className="mt-6 text-sm text-error">{favorites.error instanceof ApiError ? favorites.error.problem.detail ?? "收藏加载失败" : "收藏加载失败"}</p></main>;
+  if (favorites.isPending) return <main className="mx-auto w-full max-w-[1280px] px-5 py-16 lg:px-8"><p className="text-sm text-ink-500">正在加载收藏...</p></main>;
+  const response = favorites.data;
   return (
     <main className="mx-auto w-full max-w-[1280px] px-5 pb-20 pt-12 lg:px-8">
       <header className="mb-10 border-b border-ink-300 pb-6"><p className="text-xs uppercase tracking-[0.2em] text-brand-500">CreatorHub / 收藏</p><h1 className="mt-3 text-5xl text-ink-900">我的收藏</h1></header>

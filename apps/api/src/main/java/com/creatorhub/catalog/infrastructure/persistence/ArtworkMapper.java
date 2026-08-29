@@ -1,6 +1,7 @@
 package com.creatorhub.catalog.infrastructure.persistence;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.creatorhub.catalog.domain.model.ArtworkStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -60,6 +61,28 @@ interface ArtworkMapper extends BaseMapper<ArtworkPersistenceRow> {
       @Param("category") String category,
       @Param("creatorId") UUID creatorId,
       @Param("beforeCreatedAt") Instant beforeCreatedAt,
+      @Param("beforeId") UUID beforeId,
+      @Param("limit") int limit);
+
+  /** Studio 作品列表按 owner 隔离草稿和审核状态，游标按更新时间稳定分页。 */
+  @Select(
+      """
+            <script>
+            SELECT id, owner_id, creator_id, title, description, category,
+                         price_amount, price_currency, stock, product_type, status, version,
+                         review_reason, reviewed_at, created_at, updated_at
+            FROM artworks
+            WHERE owner_id = #{ownerId}
+                <if test='status != null'>AND status = #{status}</if>
+                <if test='beforeUpdatedAt != null'>AND (updated_at, id) &lt; (#{beforeUpdatedAt}, #{beforeId})</if>
+            ORDER BY updated_at DESC, id DESC
+            LIMIT #{limit}
+            </script>
+            """)
+  List<ArtworkPersistenceRow> findOwnedPage(
+      @Param("ownerId") UUID ownerId,
+      @Param("status") ArtworkStatus status,
+      @Param("beforeUpdatedAt") Instant beforeUpdatedAt,
       @Param("beforeId") UUID beforeId,
       @Param("limit") int limit);
 

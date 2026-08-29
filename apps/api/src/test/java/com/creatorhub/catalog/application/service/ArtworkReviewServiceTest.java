@@ -127,6 +127,11 @@ class ArtworkReviewServiceTest {
     }
 
     @Override
+    public List<Artwork> findOwnedPage(OwnedPageQuery query) {
+      return List.of();
+    }
+
+    @Override
     public Artwork save(Artwork value) {
       artwork = value;
       return value;
