@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ApiError } from "@/lib/api/fetcher";
 import { ROUTES } from "@/lib/config";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { normalizeOrderPage } from "@/features/orders/orderResponse";
 import type { components } from "@/lib/api/schema.gen";
 
 type OrderPageResponse = components["schemas"]["OrderPage"];
@@ -15,7 +16,7 @@ export default function OrdersPage() {
   const orders = useQuery<OrderPageResponse, Error>({
     queryKey: ["orders", "mine"],
     enabled: Boolean(session) && !loading,
-    queryFn: () => authenticatedFetch<OrderPageResponse>("/api/v1/orders?limit=20")
+    queryFn: async () => normalizeOrderPage(await authenticatedFetch<unknown>("/api/v1/orders?limit=20"))
   });
 
   if (loading) return <Message text="正在加载账户..." />;

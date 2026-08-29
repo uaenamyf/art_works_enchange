@@ -87,7 +87,6 @@ class OrderControllerTest {
             post("/api/v1/orders")
                 .header("Idempotency-Key", "order-key")
                 .with(authentication(user(buyerId)))
-                .with(csrf())
                 .contentType("application/json")
                 .content(
                     """

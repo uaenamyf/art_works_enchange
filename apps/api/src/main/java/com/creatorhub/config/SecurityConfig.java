@@ -63,7 +63,8 @@ public class SecurityConfig {
                     "/api/v1/favorites/**",
                     "/api/v1/notifications/*/read",
                     "/api/v1/digital-assets/*/recall",
-                    "/api/v1/artworks/**"))
+                    "/api/v1/artworks/**",
+                    "/api/v1/orders/**"))
         .cors(Customizer.withDefaults())
         .headers(
             headers ->

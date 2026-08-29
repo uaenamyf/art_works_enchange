@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/lib/api/fetcher";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { normalizeOrderPage } from "@/features/orders/orderResponse";
 import type { components } from "@/lib/api/schema.gen";
 
 type OrderPage = components["schemas"]["OrderPage"];
@@ -30,11 +31,11 @@ export default function StudioOrdersPage() {
   const orders = useQuery<OrderPage, Error>({
     queryKey: ["studio-orders", { status, cursor }],
     enabled: Boolean(session) && !loading,
-    queryFn: () => {
+    queryFn: async () => {
       const params = new URLSearchParams({ limit: "20" });
       if (status) params.set("status", status);
       if (cursor) params.set("cursor", cursor);
-      return authenticatedFetch<OrderPage>(`/api/v1/studio/orders?${params.toString()}`);
+      return normalizeOrderPage(await authenticatedFetch<unknown>(`/api/v1/studio/orders?${params.toString()}`));
     }
   });
   const updateStatus = useMutation<unknown, Error, { orderId: string; request: UpdateOrderStatusRequest }>({
