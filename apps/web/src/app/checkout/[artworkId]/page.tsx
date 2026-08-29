@@ -12,15 +12,39 @@ import { ApiError, apiFetch } from "@/lib/api/fetcher";
 import { ROUTES } from "@/lib/config";
 import { useAuth } from "@/features/auth/AuthProvider";
 
-const schema = z.object({
-  quantity: z.coerce.number().int().min(1, "至少购买 1 件").max(99, "最多购买 99 件"),
-  recipientName: z.string().min(1, "请输入收货人").max(100),
-  line1: z.string().min(1, "请输入地址").max(200),
-  city: z.string().min(1, "请输入城市").max(100),
-  postalCode: z.string().min(1, "请输入邮编").max(20),
-  countryCode: z.string().regex(/^[A-Z]{2}$/, "请输入两位国家代码"),
-  phone: z.string().min(6, "请输入有效手机号").max(30)
-});
+const schema = z
+  .object({
+    quantity: z.coerce.number().int().min(1, "至少购买 1 件").max(99, "最多购买 99 件"),
+    productType: z.enum(["PHYSICAL", "DIGITAL"]).default("PHYSICAL"),
+    recipientName: z.string().max(100).optional(),
+    line1: z.string().max(200).optional(),
+    city: z.string().max(100).optional(),
+    postalCode: z.string().max(20).optional(),
+    countryCode: z.string().optional(),
+    phone: z.string().max(30).optional()
+  })
+  .superRefine((values, context) => {
+    if (values.productType === "DIGITAL") return;
+    const requiredFields: Array<[keyof CheckoutValues, string]> = [
+      ["recipientName", "请输入收货人"],
+      ["line1", "请输入地址"],
+      ["city", "请输入城市"],
+      ["postalCode", "请输入邮编"],
+      ["phone", "请输入有效手机号"]
+    ];
+    for (const [field, message] of requiredFields) {
+      if (!values[field]) {
+        context.addIssue({ code: z.ZodIssueCode.custom, path: [field], message });
+      }
+    }
+    if (!values.countryCode || !/^[A-Z]{2}$/.test(values.countryCode)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["countryCode"],
+        message: "请输入两位国家代码"
+      });
+    }
+  });
 
 type CheckoutValues = z.infer<typeof schema>;
 
@@ -47,7 +71,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ artworkId: 
   const [artwork, setArtwork] = useState<ArtworkSnapshot | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<CheckoutValues>({
+  const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<CheckoutValues>({
     resolver: zodResolver(schema),
     defaultValues: { quantity: 1, countryCode: "CN" }
   });
@@ -56,10 +80,13 @@ export default function CheckoutPage({ params }: { params: Promise<{ artworkId: 
     void params.then(({ artworkId: id }) => {
       setArtworkId(id);
       void apiFetch<ArtworkSnapshot>(`/api/v1/artworks/${id}`)
-        .then(setArtwork)
+        .then((loadedArtwork) => {
+          setArtwork(loadedArtwork);
+          setValue("productType", loadedArtwork.productType ?? "PHYSICAL");
+        })
         .catch(() => setLoadError("作品加载失败，请返回详情页重试"));
     });
-  }, [params]);
+  }, [params, setValue]);
 
   async function submit(values: CheckoutValues) {
     if (!session || !artworkId) return;
@@ -109,6 +136,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ artworkId: 
         <p className="mt-3 text-ink-700">{artwork.title} · {artwork.priceAmount} {artwork.priceCurrency}</p>
       </header>
       <form onSubmit={handleSubmit(submit)} noValidate className="grid gap-8 lg:grid-cols-[1fr_320px]">
+        <input type="hidden" {...register("productType")} />
         {productType === "DIGITAL" ? (
           <section className="rounded-token border border-ink-300 bg-white p-6">
             <p className="text-xs uppercase tracking-[0.18em] text-brand-500">数字交付</p>
