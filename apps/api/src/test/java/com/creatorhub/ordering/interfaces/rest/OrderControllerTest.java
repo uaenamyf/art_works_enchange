@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -131,6 +132,22 @@ class OrderControllerTest {
         .andExpect(jsonPath("$.hasMore").value(false));
 
     verify(orders).list(buyerId, OrderStatus.PENDING_PAYMENT, "cursor", 10);
+  }
+
+  @Test
+  void corsPreflightAllowsOrderIdempotencyKey() throws Exception {
+    mvc.perform(
+            options("/api/v1/orders")
+                .header("Origin", "http://localhost:3000")
+                .header("Access-Control-Request-Method", "POST")
+                .header("Access-Control-Request-Headers", "content-type,idempotency-key"))
+        .andExpect(status().isOk())
+        .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:3000"))
+        .andExpect(
+            header()
+                .string(
+                    "Access-Control-Allow-Headers",
+                    org.hamcrest.Matchers.containsStringIgnoringCase("Idempotency-Key")));
   }
 
   @Test

@@ -114,7 +114,8 @@ public class SecurityConfig {
             .toList());
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(
-        List.of("Authorization", "Content-Type", "X-Request-Id", "X-CSRF-TOKEN"));
+        List.of(
+            "Authorization", "Content-Type", "Idempotency-Key", "X-Request-Id", "X-CSRF-TOKEN"));
     configuration.setExposedHeaders(List.of("Location", "X-Request-Id"));
     configuration.setAllowCredentials(true);
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
