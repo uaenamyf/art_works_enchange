@@ -58,6 +58,9 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto w-full max-w-gallery px-6 py-16">
+      <Link href={ROUTES.home} className="mb-8 inline-flex min-h-11 items-center text-sm text-ink-500 hover:text-ink-900">
+        返回发现
+      </Link>
       <div className="grid gap-10 lg:grid-cols-[3fr_2fr]">
         <MediaGallery items={galleryItems} />
         <aside className="flex flex-col gap-6">
