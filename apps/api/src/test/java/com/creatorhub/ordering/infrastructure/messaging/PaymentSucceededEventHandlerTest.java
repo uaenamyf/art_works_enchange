@@ -12,6 +12,7 @@ import com.creatorhub.ordering.domain.model.OrderId;
 import com.creatorhub.ordering.domain.model.OrderLine;
 import com.creatorhub.ordering.domain.model.OrderStatus;
 import com.creatorhub.ordering.domain.repository.OrderRepository;
+import com.creatorhub.ordering.domain.repository.PaymentEventConsumptionRepository;
 import com.creatorhub.outbox.domain.model.OutboxEvent;
 import com.creatorhub.sharedkernel.UserId;
 import com.creatorhub.sharedkernel.domain.Money;
@@ -25,12 +26,20 @@ import org.junit.jupiter.api.Test;
 class PaymentSucceededEventHandlerTest {
 
   private final OrderRepository orders = org.mockito.Mockito.mock(OrderRepository.class);
-  private final PaymentSucceededEventHandler handler = new PaymentSucceededEventHandler(orders);
+  private final PaymentEventConsumptionRepository consumptions =
+      org.mockito.Mockito.mock(PaymentEventConsumptionRepository.class);
+  private final PaymentSucceededEventHandler handler =
+      new PaymentSucceededEventHandler(orders, consumptions);
 
   @Test
   void marksPendingOrderPaidAfterValidPaymentEvent() {
     Order order = pendingOrder();
     when(orders.findById(order.id().value())).thenReturn(Optional.of(order));
+    when(consumptions.recordPaymentSucceeded(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.eq(order.id().value()),
+            org.mockito.ArgumentMatchers.any()))
+        .thenReturn(true);
 
     handler.handle(event(order, "20.00", "CNY"));
 
@@ -56,6 +65,11 @@ class PaymentSucceededEventHandlerTest {
     Order order = pendingOrder();
     order.markPaid(Instant.parse("2026-08-29T00:00:00Z"));
     when(orders.findById(order.id().value())).thenReturn(Optional.of(order));
+    when(consumptions.recordPaymentSucceeded(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.eq(order.id().value()),
+            org.mockito.ArgumentMatchers.any()))
+        .thenReturn(false);
 
     handler.handle(event(order, "20.00", "CNY"));
 

@@ -2,6 +2,7 @@ package com.creatorhub.ordering.infrastructure.messaging;
 
 import com.creatorhub.ordering.domain.model.Order;
 import com.creatorhub.ordering.domain.repository.OrderRepository;
+import com.creatorhub.ordering.domain.repository.PaymentEventConsumptionRepository;
 import com.creatorhub.outbox.application.port.out.OutboxEventHandler;
 import com.creatorhub.outbox.domain.model.OutboxEvent;
 import com.creatorhub.sharedkernel.domain.Money;
@@ -14,9 +15,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class PaymentSucceededEventHandler implements OutboxEventHandler {
 
   private final OrderRepository orders;
+  private final PaymentEventConsumptionRepository consumptions;
 
-  public PaymentSucceededEventHandler(OrderRepository orders) {
+  public PaymentSucceededEventHandler(
+      OrderRepository orders, PaymentEventConsumptionRepository consumptions) {
     this.orders = orders;
+    this.consumptions = consumptions;
   }
 
   @Override
@@ -39,6 +43,9 @@ public class PaymentSucceededEventHandler implements OutboxEventHandler {
     Money paidAmount = Money.of(text(event, "amount"), text(event, "currency"));
     if (!order.subtotal().equals(paidAmount)) {
       throw new IllegalArgumentException("Payment event amount mismatch");
+    }
+    if (!consumptions.recordPaymentSucceeded(event.eventId(), orderId, event.occurredAt())) {
+      return;
     }
     if (order.status() == com.creatorhub.ordering.domain.model.OrderStatus.PENDING_PAYMENT) {
       order.markPaid(event.occurredAt());
