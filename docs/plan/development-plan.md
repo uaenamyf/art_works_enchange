@@ -470,6 +470,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 **Week 12 验收**
 
 - Discover E2E 已完成并在 375 / 768 / 1440 三档 Chromium 视口通过；实体购买 E2E 已完成并支持环境变量注入测试账号。
+- 认证通知页 E2E 已完成，覆盖登录、通知页访问和未读筛选切换。
 - 当前仍未完成：数字购买、Creator Publish、Creator Fulfillment 三条完整 E2E，以及真实支付 Provider 联调。
 - OWASP ASVS L1 检查清单通过。
 - 没有高危 CVE。

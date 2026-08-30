@@ -7,7 +7,9 @@ test("discover opens artwork detail and searches its category", async ({ page })
   await expect(firstArtwork).toBeVisible();
 
   const artworkTitle = await firstArtwork.getByRole("heading", { level: 3 }).innerText();
-  await firstArtwork.getByRole("link", { name: /查看作品/ }).click();
+  const artworkLink = firstArtwork.getByRole("link", { name: /查看作品/ });
+  await expect(artworkLink).toHaveAttribute("href", /\/artworks\/[0-9a-f-]+$/);
+  await artworkLink.click();
   await expect(page).toHaveURL(/\/artworks\/[0-9a-f-]+$/);
   await expect(page.getByRole("heading", { level: 1 })).toContainText(artworkTitle);
 

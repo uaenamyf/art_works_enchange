@@ -94,6 +94,7 @@ docker compose -f infra/compose.yaml config
 - Studio：Dashboard、作品列表、订单履约和物流状态推进。
 - Web：TanStack Query、Checkout 实体/数字产品分流、订单兼容响应层和认证用户订单入口。
 - E2E：Playwright Discover 三档响应式流程，以及环境变量驱动的实体购买流程。
+- E2E：已补充认证通知页访问与未读筛选流程。
 
 未完成（Week 12 收尾 / 后续周）：
 

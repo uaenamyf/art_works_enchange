@@ -11,7 +11,7 @@ test("physical purchase creates a pending order and opens its detail", async ({ 
   await page.getByLabel("邮箱").fill(email!);
   await page.getByLabel("密码").fill(password!);
   await page.getByRole("button", { name: "登录" }).click();
-  await expect(page.getByText("Local Admin")).toBeVisible();
+  await expect(page).toHaveURL("/");
 
   await page.goto(`/checkout/${artworkId}`);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("确认订单");
