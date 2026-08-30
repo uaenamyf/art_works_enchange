@@ -84,14 +84,14 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 
 **基础设施**
 
-- `infra/compose.yaml`：`postgres`、`redis`、`minio`、`api`、`web`、健康检查、共享网络、卷。
+- `infra/compose.yaml`：已接入 `postgres`、`redis`、`minio`、`api`、`web`，并配置健康检查、启动依赖、共享网络和持久化卷；默认可一键启动完整本地栈。
 - `infra/env.example`，不含真实密钥。
 - Dockerfile（多阶段）。
 - GitHub Actions：已补齐统一 CI（Maven 测试/格式、pnpm 类型/lint/测试/构建、OpenAPI lint 与生成类型漂移检查、Docker 镜像构建和 Compose 校验）；Dependabot 已配置 npm 与 Maven 每周更新。
 
 **Week 1 验收**
 
-- `docker compose -f infra/compose.yaml up` 成功，API `/actuator/health` 200。
+- `docker compose -f infra/compose.yaml up` 的完整编排已配置；API `/actuator/health` 200 和镜像启动演练待 Docker Hub 网络可用时执行。
 - Web 首页能打开。
 - Flyway 迁移成功一次。
 - CI 全绿。
@@ -515,7 +515,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 
 **当前状态**
 
-- CI 已覆盖后端、前端、OpenAPI 生成漂移、Docker 镜像和 Compose 配置；AWS 部署脚本、Sentry/CloudWatch 告警和备份恢复演练仍待真实环境配置。
+- CI 已覆盖后端、前端、OpenAPI 生成漂移、Docker 镜像和 Compose 配置；本地完整 Compose 编排已配置；AWS 部署脚本、Sentry/CloudWatch 告警和备份恢复演练仍待真实环境配置。
 
 ---
 

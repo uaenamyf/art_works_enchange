@@ -1,12 +1,14 @@
 # Infra
 
-Docker Compose 只负责 CreatorHub 本地中间件。本机 API 使用 Java 21 + Maven，Web 使用
-Node.js + pnpm；PostgreSQL、Redis、MinIO 由容器统一版本。
+Docker Compose 默认启动 CreatorHub 完整本地栈：API、Web、PostgreSQL、Redis 和 MinIO。
+只需要中间件时可以显式指定 `postgres redis minio` 服务。
 
 ## compose.yaml
 
 包含以下服务：
 
+- `api`：Spring Boot API，8080。
+- `web`：Next.js standalone，3000。
 - `postgres`：PostgreSQL 17，容器端口 5432，主机端口 15432（避免与宿主机 PostgreSQL 冲突）。
 - `redis`：Redis 8，6379。
 - `minio`：S3 兼容对象存储，9000（API）、9001（控制台）。
@@ -19,9 +21,13 @@ docker compose -f infra/compose.yaml up -d
 docker compose -f infra/compose.yaml ps
 ```
 
+完整栈启动会先等待 PostgreSQL、Redis、MinIO 健康，再启动 API，最后启动 Web。
+浏览器访问 `http://localhost:3000`，API 健康检查访问 `http://localhost:8080/actuator/health`。
+如果镜像构建因 Docker Hub 或 npm registry 网络不可用失败，修复网络后重新执行同一命令即可；镜像构建不会修改数据库卷。
+
 Linux / macOS 使用 `cp infra/env.example .env`。
 
-部署镜像职责（不由当前 compose.yaml 启动）：
+镜像职责：
 
 - `api.Dockerfile` 使用 Maven 3.9 + JDK 21 构建 Spring Boot jar。
 - `web.Dockerfile` 使用 Node 22 + pnpm 11 构建 Next.js standalone 产物；不依赖本机 Node/pnpm。
@@ -32,7 +38,7 @@ Linux / macOS 使用 `cp infra/env.example .env`。
 
 ## 日常开发
 
-中间件启动后，在仓库根分别启动 API 与 Web：
+不使用 Compose 时，也可以在仓库根分别启动 API 与 Web：
 
 ```powershell
 mvn -B -ntp -f apps/api/pom.xml spring-boot:run -Dspring-boot.run.profiles=local
