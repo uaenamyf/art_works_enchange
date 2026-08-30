@@ -639,6 +639,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orders/{orderId}/entitlement": {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询数字订单授权状态（Week 11）
+         * @description 仅当前买家可查询；响应不包含 object key、下载 Token 或签名 URL。
+         */
+        get: operations["getDigitalEntitlement"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orders/{orderId}/payment-intent": {
         parameters: {
             query?: never;
@@ -1128,6 +1151,26 @@ export interface components {
             downloadUrl: string;
             /** Format: date-time */
             expiresAt: string;
+        };
+        DigitalEntitlement: {
+            /** Format: uuid */
+            entitlementId: string;
+            /** Format: uuid */
+            orderId: string;
+            /** Format: uuid */
+            artworkId: string;
+            /** Format: uuid */
+            assetVersionId: string;
+            /** @enum {string} */
+            status: "PENDING" | "AVAILABLE" | "REVOKED";
+            /** Format: date-time */
+            grantedAt?: string | null;
+            /** Format: date-time */
+            revokedAt?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
         };
         ReviewRequest: {
             reason: string;
@@ -2415,6 +2458,34 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    getDigitalEntitlement: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path: {
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 数字授权状态 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DigitalEntitlement"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     createPaymentIntent: {

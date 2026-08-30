@@ -5,6 +5,7 @@ import com.creatorhub.digitaldelivery.domain.model.Entitlement;
 import com.creatorhub.digitaldelivery.domain.repository.EntitlementRepository;
 import com.creatorhub.outbox.domain.model.OutboxEvent;
 import com.creatorhub.outbox.domain.repository.OutboxRepository;
+import com.creatorhub.sharedkernel.error.BusinessError;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Objects;
@@ -28,6 +29,26 @@ public class DigitalEntitlementService implements DigitalEntitlementUseCases {
   public DigitalEntitlementService(EntitlementRepository entitlements, OutboxRepository outbox) {
     this.entitlements = entitlements;
     this.outbox = outbox;
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public EntitlementView getForBuyer(UUID buyerId, UUID orderId) {
+    Entitlement entitlement =
+        entitlements
+            .findByOrderId(orderId)
+            .filter(candidate -> candidate.buyerId().equals(buyerId))
+            .orElseThrow(() -> new BusinessError("DIGITAL_ENTITLEMENT_NOT_FOUND", "Digital entitlement was not found"));
+    return new EntitlementView(
+        entitlement.id(),
+        entitlement.orderId(),
+        entitlement.artworkId(),
+        entitlement.assetVersionId(),
+        entitlement.status().name(),
+        entitlement.grantedAt(),
+        entitlement.revokedAt(),
+        entitlement.createdAt(),
+        entitlement.updatedAt());
   }
 
   @Override

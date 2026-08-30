@@ -913,6 +913,29 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+  /orders/{orderId}/entitlement:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      tags: [Orders]
+      operationId: getDigitalEntitlement
+      summary: 查询数字订单授权状态（Week 11）
+      description: 仅当前买家可查询；响应不包含 object key、下载 Token 或签名 URL。
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: 数字授权状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DigitalEntitlement'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /orders/{orderId}/payment-intent:
     parameters:
       - $ref: '#/components/parameters/RequestId'
@@ -1894,6 +1917,37 @@ components:
           type: string
           format: uri
         expiresAt:
+          type: string
+          format: date-time
+    DigitalEntitlement:
+      type: object
+      required: [entitlementId, orderId, artworkId, assetVersionId, status, createdAt, updatedAt]
+      properties:
+        entitlementId:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+        artworkId:
+          type: string
+          format: uuid
+        assetVersionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [PENDING, AVAILABLE, REVOKED]
+        grantedAt:
+          type: [string, 'null']
+          format: date-time
+        revokedAt:
+          type: [string, 'null']
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
           type: string
           format: date-time
     ReviewRequest:

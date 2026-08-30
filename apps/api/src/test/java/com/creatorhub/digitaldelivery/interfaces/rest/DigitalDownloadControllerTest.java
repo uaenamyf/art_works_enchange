@@ -12,6 +12,8 @@ import com.creatorhub.config.GlobalExceptionHandler;
 import com.creatorhub.config.SecurityConfig;
 import com.creatorhub.digitaldelivery.application.service.DigitalDownloadService;
 import com.creatorhub.digitaldelivery.application.service.DigitalDownloadService.DownloadView;
+import com.creatorhub.digitaldelivery.application.port.in.DigitalEntitlementUseCases;
+import com.creatorhub.digitaldelivery.application.port.in.DigitalEntitlementUseCases.EntitlementView;
 import com.creatorhub.identity.infrastructure.security.CookieOriginValidationFilter;
 import com.creatorhub.identity.infrastructure.security.JwtAuthenticationFilter;
 import java.time.Instant;
@@ -43,6 +45,7 @@ class DigitalDownloadControllerTest {
 
   @Autowired MockMvc mvc;
   @MockitoBean DigitalDownloadService downloads;
+  @MockitoBean DigitalEntitlementUseCases entitlements;
 
   @Test
   void authenticatedBuyerReceivesShortLivedGrant() throws Exception {
@@ -81,6 +84,38 @@ class DigitalDownloadControllerTest {
   void anonymousBuyerCannotRequestGrant() throws Exception {
     mvc.perform(post("/api/v1/orders/{orderId}/download-grants", UUID.randomUUID()).with(csrf()))
         .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void authenticatedBuyerCanReadRedactedEntitlement() throws Exception {
+    UUID buyerId = UUID.randomUUID();
+    UUID orderId = UUID.randomUUID();
+    UUID artworkId = UUID.randomUUID();
+    UUID versionId = UUID.randomUUID();
+    when(entitlements.getForBuyer(buyerId, orderId))
+        .thenReturn(
+            new EntitlementView(
+                UUID.randomUUID(),
+                orderId,
+                artworkId,
+                versionId,
+                "AVAILABLE",
+                Instant.parse("2026-08-28T00:00:00Z"),
+                null,
+                Instant.parse("2026-08-28T00:00:00Z"),
+                Instant.parse("2026-08-28T00:00:00Z")));
+
+    mvc.perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(
+                    "/api/v1/orders/{orderId}/entitlement", orderId)
+                .with(authentication(user(buyerId))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.orderId").value(orderId.toString()))
+        .andExpect(jsonPath("$.status").value("AVAILABLE"))
+        .andExpect(jsonPath("$.objectKey").doesNotExist())
+        .andExpect(jsonPath("$.downloadUrl").doesNotExist());
+
+    verify(entitlements).getForBuyer(buyerId, orderId);
   }
 
   private static UsernamePasswordAuthenticationToken user(UUID userId) {
