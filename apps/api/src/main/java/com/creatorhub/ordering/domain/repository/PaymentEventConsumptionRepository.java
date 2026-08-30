@@ -7,4 +7,6 @@ import java.util.UUID;
 public interface PaymentEventConsumptionRepository {
 
   boolean recordPaymentSucceeded(UUID eventId, UUID orderId, Instant consumedAt);
+
+  boolean recordPaymentFailed(UUID eventId, UUID orderId, Instant consumedAt);
 }

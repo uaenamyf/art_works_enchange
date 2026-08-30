@@ -18,4 +18,13 @@ interface PaymentEventConsumptionMapper {
       @Param("eventId") UUID eventId,
       @Param("orderId") UUID orderId,
       @Param("consumedAt") Instant consumedAt);
+
+  @Insert(
+      "INSERT INTO ordering_payment_event_consumptions (event_id, order_id, consumed_at) "
+          + "VALUES (#{eventId}, #{orderId}, #{consumedAt}) "
+          + "ON CONFLICT DO NOTHING")
+  int recordPaymentFailed(
+      @Param("eventId") UUID eventId,
+      @Param("orderId") UUID orderId,
+      @Param("consumedAt") Instant consumedAt);
 }

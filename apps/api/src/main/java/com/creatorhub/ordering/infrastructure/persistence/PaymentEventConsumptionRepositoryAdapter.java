@@ -19,4 +19,9 @@ public class PaymentEventConsumptionRepositoryAdapter implements PaymentEventCon
   public boolean recordPaymentSucceeded(UUID eventId, UUID orderId, Instant consumedAt) {
     return mapper.recordPaymentSucceeded(eventId, orderId, consumedAt) == 1;
   }
+
+  @Override
+  public boolean recordPaymentFailed(UUID eventId, UUID orderId, Instant consumedAt) {
+    return mapper.recordPaymentFailed(eventId, orderId, consumedAt) == 1;
+  }
 }

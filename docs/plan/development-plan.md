@@ -300,7 +300,8 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - PostgreSQL Testcontainers 覆盖条件更新失败、并发预占、缓存降级、超时返还和事务回滚；Redis Testcontainers 覆盖 Lua 原子脚本。
 - 已完成：PaymentSucceeded v1 的 Ordering Outbox 消费者，校验订单号、金额和币种，并通过状态机守卫推进 `PENDING_PAYMENT → PAID`。
 - 已完成：V21 `ordering_payment_event_consumptions` 事件消费记录表，使用 `event_id + order_id` 幂等约束，消费记录与订单状态更新在同一事务中提交。
-- 当前剩余：PaymentFailed 消费、Outbox 其余业务事件接入，以及实体/数字双履约的完整业务验收。
+- 已完成：PaymentFailed v1 的 Ordering Outbox 消费者，记录失败事件消费幂等事实且不回退或修改订单状态。
+- 当前剩余：Outbox 其余业务事件接入，以及实体/数字双履约的完整业务验收。
 - 数字产品验收新增：地址不落库、数字订单不扣实体库存、授权幂等、下载越权和撤销授权测试。
 
 ---
@@ -377,7 +378,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - 已完成本地 Outbox Publisher 到 Notification handler 的可替换消费骨架；重复事件通过事件 ID 幂等。
 - 已完成可替换的邮件投递端口和脱敏 Console stub；当前不接入真实 SMTP。
 - 已接入订单创建 `OrderCreated`、作品发布 `ArtworkPublished`、主动/超时取消产生的 `OrderStatusChanged`，以及可信支付成功后的 `DigitalEntitlementGranted` 事件；数字资产撤回事件仍待接入业务事务。
-- 已完成 PaymentSucceeded 在 Ordering 侧的持久化消费幂等；数字资产撤回事件和 PaymentFailed 业务消费者仍待接入。
+- 已完成 PaymentSucceeded 和 PaymentFailed 在 Ordering 侧的持久化消费幂等；数字资产撤回事件仍待接入业务事务。
 - 业务上下文尚未统一补齐各事件的通知收件人和脱敏文案载荷，真实业务事件接入与邮件触发保持待办，不将日志记录视为通知发送成功。
 
 ---
