@@ -95,6 +95,7 @@ docker compose -f infra/compose.yaml config
 - Web：TanStack Query、Checkout 实体/数字产品分流、订单兼容响应层和认证用户订单入口。
 - E2E：Playwright Discover 三档响应式流程，以及环境变量驱动的实体购买流程。
 - E2E：已补充认证通知页访问与未读筛选流程。
+- E2E：已加入环境变量驱动的数字 Checkout 前置流程；需要 `CREATORHUB_E2E_DIGITAL_ARTWORK_ID` 才执行。
 
 未完成（Week 12 收尾 / 后续周）：
 
