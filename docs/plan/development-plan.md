@@ -422,7 +422,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - Checkout：地址表单（React Hook Form + Zod）、订单摘要和错误展示已完成；Stripe Element 等真实 Provider 组件按范围调整暂缓。
 - Checkout 根据产品类型选择地址表单；数字产品不收集地址，并显示支付完成后的交付说明。
 - Order Result：成功/失败/待处理三态。
-- Order History：列表、分页基础结构、空态和认证导航入口已完成；状态筛选仍待补齐买家端交互。
+- Order History：列表、分页基础结构、空态、认证导航入口和 URL 驱动的状态筛选已完成。
 - Digital Delivery：订单详情展示授权状态、文件名、大小和版本；只有授权有效时才能申请短期下载链接，过期后重新申请。
 - Mobile responsive：375 / 768 / 1440。
 - 动效：160–240ms，遵守 `prefers-reduced-motion`。
