@@ -20,6 +20,11 @@ function AuthenticatedFetchProbe() {
   return <button onClick={() => void authenticatedFetch("/api/v1/orders")}>load orders</button>;
 }
 
+function ConcurrentAuthenticatedFetchProbe() {
+  const { authenticatedFetch } = useAuth();
+  return <button onClick={() => void Promise.all([authenticatedFetch("/api/v1/orders"), authenticatedFetch("/api/v1/notifications")])}>load orders</button>;
+}
+
 /** 验证 Provider 只通过 Refresh Cookie 恢复会话，不依赖 Web Storage。 */
 describe("AuthProvider", () => {
   it("restores the in-memory session from the refresh endpoint", async () => {
@@ -66,5 +71,39 @@ describe("AuthProvider", () => {
       "/api/v1/orders",
       expect.objectContaining({ headers: { Authorization: "Bearer restored-access" } })
     ]);
+  });
+
+  it("shares one refresh request across concurrent expired requests", async () => {
+    const initialSession = {
+      accessToken: "initial-access",
+      expiresIn: 900,
+      user: { id: "u-1", displayName: "Alice", avatarUrl: null, role: "USER" as const }
+    };
+    const restoredSession = { ...initialSession, accessToken: "restored-access" };
+    mockedApiFetch.mockResolvedValue(initialSession);
+
+    render(
+      <AuthProvider>
+        <ConcurrentAuthenticatedFetchProbe />
+      </AuthProvider>
+    );
+    await waitFor(() => expect(screen.getByText("load orders")).toBeInTheDocument());
+    mockedApiFetch.mockClear();
+    mockedApiFetch
+      .mockRejectedValueOnce(new ApiError("expired", {}, 401, null))
+      .mockRejectedValueOnce(new ApiError("expired", {}, 401, null))
+      .mockResolvedValueOnce(restoredSession)
+      .mockResolvedValueOnce({ items: [] })
+      .mockResolvedValueOnce({ items: [] });
+    screen.getByText("load orders").click();
+
+    await waitFor(() => expect(mockedApiFetch).toHaveBeenCalledTimes(5));
+    expect(mockedApiFetch.mock.calls[2]).toEqual(["/api/v1/auth/refresh", { method: "POST" }]);
+    expect(mockedApiFetch.mock.calls[3][1]).toEqual(
+      expect.objectContaining({ headers: { Authorization: "Bearer restored-access" } })
+    );
+    expect(mockedApiFetch.mock.calls[4][1]).toEqual(
+      expect.objectContaining({ headers: { Authorization: "Bearer restored-access" } })
+    );
   });
 });

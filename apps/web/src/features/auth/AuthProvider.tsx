@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { apiFetch, type ApiFetchOptions } from "@/lib/api/fetcher";
 import type { AuthSession } from "./types";
 
@@ -24,15 +24,25 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSessionState] = useState<AuthSession | null>(null);
   const [loading, setLoading] = useState(true);
+  const refreshPromise = useRef<Promise<AuthSession | null> | null>(null);
 
   const refresh = useCallback(async function refresh(): Promise<AuthSession | null> {
+    if (refreshPromise.current) return refreshPromise.current;
+    const pending = (async () => {
+      try {
+        const restored = await apiFetch<AuthSession>("/api/v1/auth/refresh", { method: "POST" });
+        setSessionState(restored);
+        return restored;
+      } catch {
+        setSessionState(null);
+        return null;
+      }
+    })();
+    refreshPromise.current = pending;
     try {
-      const restored = await apiFetch<AuthSession>("/api/v1/auth/refresh", { method: "POST" });
-      setSessionState(restored);
-      return restored;
-    } catch {
-      setSessionState(null);
-      return null;
+      return await pending;
+    } finally {
+      if (refreshPromise.current === pending) refreshPromise.current = null;
     }
   }, []);
 

@@ -98,6 +98,7 @@ docker compose -f infra/compose.yaml config
 - E2E：已加入环境变量驱动的数字 Checkout 前置流程；需要 `CREATORHUB_E2E_DIGITAL_ARTWORK_ID` 才执行。
 - E2E：已加入 Creator Studio 履约状态推进流程；需要 `CREATORHUB_E2E_PAID_ORDER_ID` 才执行。
 - 订单详情：已补齐待支付、履约、完成、取消和退款结果态展示，支付成功仍只由服务端状态决定。
+- 认证联调：Access Token 过期时自动使用 HttpOnly Refresh Cookie 续期并重试一次，并发请求共享同一次 refresh。
 
 未完成（Week 12 收尾 / 后续周）：
 
