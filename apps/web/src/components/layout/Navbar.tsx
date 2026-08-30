@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, Search, UserRound } from "lucide-react";
+import { ChevronDown, UserRound } from "lucide-react";
 import { APP_NAME, ROUTES } from "@/lib/config";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { productSections } from "@/features/artworks/artworkCatalog";
@@ -25,8 +25,8 @@ export function Navbar() {
           {APP_NAME}
         </Link>
         <ul className="flex min-w-0 max-w-[calc(100%-7rem)] items-center justify-end gap-1 overflow-x-auto text-sm text-ink-700 md:gap-2 lg:overflow-visible">
-          <li>
-            <div className="group relative">
+          <li className="group relative flex h-16 items-center">
+            <div className="relative flex h-full items-center">
               <Link
                 href={ROUTES.discover}
                 className="flex h-11 items-center gap-1 rounded-full px-4 hover:bg-ink-100 hover:text-ink-900 focus-visible:bg-ink-100"
@@ -35,7 +35,7 @@ export function Navbar() {
                 发现
                 <ChevronDown aria-hidden className="size-3.5 transition-transform group-hover:rotate-180 group-focus-within:rotate-180" />
               </Link>
-              <div className="invisible fixed left-5 right-5 top-16 w-auto translate-x-0 translate-y-2 border-t border-ink-300 bg-white px-6 py-7 opacity-0 shadow-pop transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 lg:absolute lg:left-1/2 lg:right-auto lg:top-full lg:w-[min(720px,calc(100vw-40px))] lg:-translate-x-1/2">
+              <div className="invisible fixed left-5 right-5 top-16 w-auto translate-y-2 border-t border-ink-300 bg-white px-6 py-7 opacity-0 shadow-pop transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 lg:absolute lg:left-1/2 lg:right-auto lg:top-full lg:w-[min(720px,calc(100vw-40px))] lg:-translate-x-1/2">
                 <div className="grid gap-x-10 gap-y-6 sm:grid-cols-3">
                   <div className="sm:col-span-1">
                     <p className="text-xs uppercase tracking-[0.18em] text-ink-500">探索作品</p>
@@ -71,19 +71,8 @@ export function Navbar() {
               创作者
             </Link>
           </li>
-          <li>
-            <Link href={ROUTES.discover} aria-label="搜索作品" className="flex size-11 items-center justify-center rounded-full hover:bg-ink-100 hover:text-ink-900">
-              <Search aria-hidden className="size-4" />
-            </Link>
-          </li>
           {!loading && session ? (
             <>
-              <li className="hidden lg:block">
-                <span className="flex h-11 items-center gap-2 px-3 text-ink-500">
-                  <UserRound aria-hidden className="size-4" />
-                  {session.user.displayName}
-                </span>
-              </li>
               {session.user.role === "USER" ? (
                 <li>
                   <Link href={ROUTES.creatorApply} className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900">
@@ -95,6 +84,12 @@ export function Navbar() {
               <li><Link href={ROUTES.follows} className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900">关注</Link></li>
               <li><Link href={ROUTES.orders} className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900">订单</Link></li>
               <li><Link href={ROUTES.notifications} className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900">通知</Link></li>
+              <li className="hidden lg:block">
+                <span className="flex h-11 items-center gap-2 px-3 text-ink-500">
+                  <UserRound aria-hidden className="size-4" />
+                  {session.user.displayName}
+                </span>
+              </li>
               <li>
                 <button type="button" className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900" onClick={() => void logout()}>
                   注销
