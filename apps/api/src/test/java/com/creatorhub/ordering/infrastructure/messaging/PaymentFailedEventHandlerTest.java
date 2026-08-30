@@ -2,6 +2,7 @@ package com.creatorhub.ordering.infrastructure.messaging;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -54,6 +55,26 @@ class PaymentFailedEventHandlerTest {
     assertThatThrownBy(() -> handler.handle(event(order)))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Payment event order not found");
+  }
+
+  @Test
+  void repeatedFailureEventDoesNotChangeOrderState() {
+    Order order = order();
+    when(orders.findById(order.id().value())).thenReturn(Optional.of(order));
+    when(consumptions.recordPaymentFailed(
+            org.mockito.ArgumentMatchers.any(),
+            eq(order.id().value()),
+            org.mockito.ArgumentMatchers.any()))
+        .thenReturn(false);
+
+    handler.handle(event(order));
+
+    assertThat(order.status()).isEqualTo(OrderStatus.PENDING_PAYMENT);
+    verify(consumptions)
+        .recordPaymentFailed(
+            org.mockito.ArgumentMatchers.any(),
+            eq(order.id().value()),
+            org.mockito.ArgumentMatchers.any());
   }
 
   private static Order order() {

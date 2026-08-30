@@ -25,7 +25,7 @@
 | `StockReleased` v1 | 集成事件 | Ordering | Catalog | `orderId`、`artworkId`、`quantity` | 已返还订单不重复增加库存 |
 | `OrderCreated` v1 | 集成事件 | Ordering | Payment、Notification | `orderId`、`buyerId`、`total`、`currency` | 同一订单只初始化一次下游状态 |
 | `PaymentSucceeded` v1 | 集成事件 | Payment | Ordering、Notification | `paymentId`、`orderId`、`amount`、`currency` | 已支付订单保持 `PAID`，不重复迁移 |
-| `PaymentFailed` v1 | 集成事件 | Payment | Ordering | `paymentId`、`orderId`、`reasonCode` | 不回退已支付订单 |
+| `PaymentFailed` v1 | 集成事件 | Payment | Ordering | `paymentId`、`orderId`、`reasonCode` | 按 `eventId + orderId` 持久化消费记录；不回退已支付订单 |
 | `OrderStatusChanged` v1 | 集成事件 | Ordering | Notification | `orderId`、`fromStatus`、`toStatus` | 每个订单版本只通知一次 |
 | `DigitalEntitlementRequested` v1 | 集成事件 | Ordering | Digital Delivery | `orderId`、`artworkId`、`assetVersionId`、`buyerId` | 同一订单只创建一次购买授权 |
 | `DigitalEntitlementGranted` v1 | 集成事件 | Digital Delivery | Ordering、Notification | `orderId`、`assetVersionId`、`entitlementId` | 已授权订单不重复创建下载权限 |

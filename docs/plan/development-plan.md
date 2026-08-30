@@ -301,6 +301,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - 已完成：PaymentSucceeded v1 的 Ordering Outbox 消费者，校验订单号、金额和币种，并通过状态机守卫推进 `PENDING_PAYMENT → PAID`。
 - 已完成：V21 `ordering_payment_event_consumptions` 事件消费记录表，使用 `event_id + order_id` 幂等约束，消费记录与订单状态更新在同一事务中提交。
 - 已完成：PaymentFailed v1 的 Ordering Outbox 消费者，记录失败事件消费幂等事实且不回退或修改订单状态。
+- 已完成：PaymentFailed 消费测试覆盖未知订单拒绝、重复投递和订单状态不变。
 - 当前剩余：Outbox 其余业务事件接入，以及实体/数字双履约的完整业务验收。
 - 数字产品验收新增：地址不落库、数字订单不扣实体库存、授权幂等、下载越权和撤销授权测试。
 
