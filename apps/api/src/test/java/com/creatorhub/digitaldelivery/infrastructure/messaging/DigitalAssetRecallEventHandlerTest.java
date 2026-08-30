@@ -1,7 +1,9 @@
 package com.creatorhub.digitaldelivery.infrastructure.messaging;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.creatorhub.digitaldelivery.application.port.out.DownloadGrantRepository;
@@ -39,5 +41,67 @@ class DigitalAssetRecallEventHandlerTest {
     verify(entitlements)
         .revokeAvailableByAssetVersion(eq(assetVersionId), eq("content update"), eq(occurredAt));
     verify(grants).revokeByAssetVersion(eq(assetVersionId), eq(occurredAt));
+  }
+
+  @Test
+  void ignoresUnsupportedEventVersion() {
+    EntitlementRepository entitlements = mock(EntitlementRepository.class);
+    DownloadGrantRepository grants = mock(DownloadGrantRepository.class);
+    DigitalAssetRecallEventHandler handler =
+        new DigitalAssetRecallEventHandler(entitlements, grants);
+
+    handler.handle(
+        OutboxEvent.pending(
+            UUID.randomUUID(),
+            "DigitalAssetRecalled",
+            2,
+            "DigitalAsset",
+            UUID.randomUUID(),
+            1,
+            Instant.parse("2026-08-29T00:00:00Z"),
+            UUID.randomUUID(),
+            Map.of()));
+
+    verify(entitlements, never())
+        .revokeAvailableByAssetVersion(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any());
+    verify(grants, never())
+        .revokeByAssetVersion(
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+  }
+
+  @Test
+  void rejectsMissingReasonCodeBeforeRevoking() {
+    EntitlementRepository entitlements = mock(EntitlementRepository.class);
+    DownloadGrantRepository grants = mock(DownloadGrantRepository.class);
+    DigitalAssetRecallEventHandler handler =
+        new DigitalAssetRecallEventHandler(entitlements, grants);
+
+    assertThatThrownBy(
+            () ->
+                handler.handle(
+                    OutboxEvent.pending(
+                        UUID.randomUUID(),
+                        "DigitalAssetRecalled",
+                        1,
+                        "DigitalAsset",
+                        UUID.randomUUID(),
+                        1,
+                        Instant.parse("2026-08-29T00:00:00Z"),
+                        UUID.randomUUID(),
+                        Map.of("assetVersionId", UUID.randomUUID().toString()))))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Digital asset recall payload missing reasonCode");
+
+    verify(entitlements, never())
+        .revokeAvailableByAssetVersion(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any());
+    verify(grants, never())
+        .revokeByAssetVersion(
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
   }
 }

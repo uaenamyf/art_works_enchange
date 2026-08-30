@@ -29,7 +29,7 @@
 | `OrderStatusChanged` v1 | 集成事件 | Ordering | Notification | `orderId`、`fromStatus`、`toStatus` | 每个订单版本只通知一次 |
 | `DigitalEntitlementRequested` v1 | 集成事件 | Ordering | Digital Delivery | `orderId`、`artworkId`、`assetVersionId`、`buyerId` | 同一订单只创建一次购买授权 |
 | `DigitalEntitlementGranted` v1 | 集成事件 | Digital Delivery | Ordering、Notification | `orderId`、`assetVersionId`、`entitlementId` | 已授权订单不重复创建下载权限 |
-| `DigitalAssetRecalled` v1 | 集成事件 | Catalog/Digital Delivery | Ordering、Notification | `artworkId`、`assetVersionId`、`reasonCode` | 撤销授权后不能继续签发下载凭证 |
+| `DigitalAssetRecalled` v1 | 集成事件 | Catalog/Digital Delivery | Ordering、Notification | `artworkId`、`assetVersionId`、`reasonCode` | 撤回消费者按资产版本撤销授权并失效下载凭证；重复/未知版本无副作用 |
 
 ## 演进规则
 
