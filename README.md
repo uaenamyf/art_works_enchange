@@ -68,7 +68,7 @@ pnpm web:test
 docker compose -f infra/compose.yaml config
 ```
 
-## 当前里程碑：Week 3 Identity + Creator
+## 当前里程碑：Week 12 安全、E2E 与联调收尾
 
 已完成：
 
@@ -87,10 +87,18 @@ docker compose -f infra/compose.yaml config
 - PostgreSQL Flyway V1/V2、MyBatis-Plus Repository Adapter、显式 UUID TypeHandler 与 Refresh Token `FOR UPDATE` Mapper XML。
 - 前端真实登录/注册、内存 Access Token + HttpOnly Cookie 恢复会话、Creator 申请表单。
 - OpenAPI TypeScript 契约类型生成：`pnpm web:api:generate`，生成文件位于 `apps/web/src/lib/api/schema.gen.ts`。
+- Catalog：作品发布、公开搜索、分类筛选、媒体短期 URL 和 Studio 作品管理。
+- Collection/Follow：收藏、关注、游标分页、认证用户状态与乐观更新。
+- Ordering：订单创建、价格快照、库存预占/释放、幂等、取消、物流履约和订单详情。
+- Payment/Outbox：统一 Provider 端口、可信 `PaymentSucceeded` 事件、Ordering 消费幂等和 V21 消费记录表。
+- Studio：Dashboard、作品列表、订单履约和物流状态推进。
+- Web：TanStack Query、Checkout 实体/数字产品分流、订单兼容响应层和认证用户订单入口。
+- E2E：Playwright Discover 三档响应式流程，以及环境变量驱动的实体购买流程。
 
-未完成（Week 3 收尾 / 后续周）：
+未完成（Week 12 收尾 / 后续周）：
 
-- 登录/注册/Creator 申请 Playwright 浏览器 E2E（当前后端/组件/集成测试已覆盖）。
-- TanStack Query 接入（OpenAPI 类型已生成，查询与变更 Hook 仍待接入）。
-- Catalog 等后续上下文的 Flyway migration 与数据库集成测试。
+- 数字购买、Creator Publish、Creator Fulfillment Playwright E2E。
+- 后端订单 REST 响应正式收敛到 OpenAPI 的嵌套 `OrderDetail`，当前 Web 通过兼容层读取扁平响应。
+- PaymentFailed 消费、数字资产撤回业务事件和部分通知业务载荷接入。
+- Stripe/微信/支付宝真实 Provider、Webhook 和沙箱联调按范围调整进入后续迭代。
 - GitHub Actions CI 工作流（已按要求跳过）。

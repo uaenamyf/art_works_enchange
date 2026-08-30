@@ -298,7 +298,9 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - 相同幂等键同请求重放同一订单，不同请求摘要返回 `409 IDEMPOTENCY_KEY_REUSED`，并发请求只允许一个执行。
 - 订单超期返还库存幂等。
 - PostgreSQL Testcontainers 覆盖条件更新失败、并发预占、缓存降级、超时返还和事务回滚；Redis Testcontainers 覆盖 Lua 原子脚本。
-- 当前剩余：Outbox 其余业务事件接入，以及实体/数字双履约的完整业务验收。
+- 已完成：PaymentSucceeded v1 的 Ordering Outbox 消费者，校验订单号、金额和币种，并通过状态机守卫推进 `PENDING_PAYMENT → PAID`。
+- 已完成：V21 `ordering_payment_event_consumptions` 事件消费记录表，使用 `event_id + order_id` 幂等约束，消费记录与订单状态更新在同一事务中提交。
+- 当前剩余：PaymentFailed 消费、Outbox 其余业务事件接入，以及实体/数字双履约的完整业务验收。
 - 数字产品验收新增：地址不落库、数字订单不扣实体库存、授权幂等、下载越权和撤销授权测试。
 
 ---
@@ -316,7 +318,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - 微信支付适配器：**暂停**。API v3 请求签名、平台证书验签、AES-GCM 解密、查单、关单和退款进入暂停队列。
 - 支付宝适配器：**暂停**。RSA2 签名、交易查询/关闭/退款和异步通知验签进入暂停队列。
 - Provider 配置、证书和密钥只从环境变量或 Secret 注入；第三方 SDK 类型只存在 infrastructure 适配器。
-- 应用服务：保留 `MarkPaymentSucceeded`/`MarkPaymentFailed` 的事件边界，具体 Provider 会话创建延后。
+- 已完成事件边界：Ordering 通过内部 Outbox handler 消费可信 `PaymentSucceeded` v1；具体 Provider 会话创建仍延后。
 - 集成事件：`PaymentSucceeded`、`PaymentFailed` → Outbox；当前使用测试事件适配器验证下游，不伪造真实支付成功。
 - API：保留 `POST /orders/{id}/payment-session` 契约，但在 Provider 未接入前不作为本阶段验收入口。
 - 统一返回 `PaymentSession`，允许 Provider-specific `clientPayload`：Stripe `clientSecret`、微信 `prepayId`/调起参数、支付宝支付表单或交易号，不强行把三者建模成同一字段。
@@ -375,6 +377,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - 已完成本地 Outbox Publisher 到 Notification handler 的可替换消费骨架；重复事件通过事件 ID 幂等。
 - 已完成可替换的邮件投递端口和脱敏 Console stub；当前不接入真实 SMTP。
 - 已接入订单创建 `OrderCreated`、作品发布 `ArtworkPublished`、主动/超时取消产生的 `OrderStatusChanged`，以及可信支付成功后的 `DigitalEntitlementGranted` 事件；数字资产撤回事件仍待接入业务事务。
+- 已完成 PaymentSucceeded 在 Ordering 侧的持久化消费幂等；数字资产撤回事件和 PaymentFailed 业务消费者仍待接入。
 - 业务上下文尚未统一补齐各事件的通知收件人和脱敏文案载荷，真实业务事件接入与邮件触发保持待办，不将日志记录视为通知发送成功。
 
 ---
@@ -392,13 +395,13 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 
 **前端**
 
-- `app/studio/layout.tsx`：侧边栏 + 信息密度布局（当前尚未实现，现有页面暂复用全站 AppShell）。
+- `app/studio/layout.tsx`：侧边栏 + 信息密度布局，已实现并覆盖 Studio 入口。
 - Dashboard：4 个核心数字卡。
-- 作品列表/编辑/发布：乐观锁版本号，字段错误展示；当前已完成新建、编辑和审核提交，Studio 作品列表待补。
+- 作品列表/编辑/发布：乐观锁版本号，字段错误展示；新建、编辑、审核提交和 Studio 作品列表已完成。
 - 订单列表/详情/履约：状态推进按钮。
 - 数字产品工作流：创建数字产品 → 上传私有资产 → 病毒扫描/哈希校验 → 发布不可变资产版本 → 查看数字订单与下载统计；Studio 不读取买家下载 Token。
 - 新增数据模型：`digital_assets`、`digital_asset_versions`、`entitlements`、`download_grants`。替换文件必须创建新版本，保留旧版本审计记录。
-- 当前优先级：完善数字资产版本管理和下载审计；不等待微信/支付宝接入。
+- 当前优先级：完善数字资产版本管理、下载审计和 Creator Fulfillment E2E；不等待微信/支付宝接入。
 
 **Week 10 验收**
 
@@ -413,17 +416,17 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 
 **前端**
 
-- Checkout：地址表单（React Hook Form + Zod）、订单摘要、Stripe Element、错误展示。
+- Checkout：地址表单（React Hook Form + Zod）、订单摘要和错误展示已完成；Stripe Element 等真实 Provider 组件按范围调整暂缓。
 - Checkout 根据产品类型选择地址表单；数字产品不收集地址，并显示支付完成后的交付说明。
 - Order Result：成功/失败/待处理三态。
-- Order History：分页、状态筛选、空态。
+- Order History：列表、分页基础结构、空态和认证导航入口已完成；状态筛选仍待补齐买家端交互。
 - Digital Delivery：订单详情展示授权状态、文件名、大小和版本；只有授权有效时才能申请短期下载链接，过期后重新申请。
 - Mobile responsive：375 / 768 / 1440。
 - 动效：160–240ms，遵守 `prefers-reduced-motion`。
 
 **后端补强**
 
-- Order 详情返回最新状态和支付信息。
+- Order 详情已返回最新订单状态、收货信息和物流字段；当前前端通过兼容层支持后端扁平响应，嵌套 `OrderDetail` REST DTO 仍待后端正式收敛。
 - 幂等与错误响应在所有写接口完整。
 - 数字交付接口：`GET /orders/{id}/entitlement`、`POST /orders/{id}/download-grants`；仅已支付且授权有效的买家可调用，长期权限与短期下载凭证分离。
 - 数字订单验收可使用受信任支付事件测试替身；不得把测试替身暴露为生产支付入口。
@@ -463,7 +466,8 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 
 **Week 12 验收**
 
-- 4 条 E2E 全绿。
+- Discover E2E 已完成并在 375 / 768 / 1440 三档 Chromium 视口通过；实体购买 E2E 已完成并支持环境变量注入测试账号。
+- 当前仍未完成：数字购买、Creator Publish、Creator Fulfillment 三条完整 E2E，以及真实支付 Provider 联调。
 - OWASP ASVS L1 检查清单通过。
 - 没有高危 CVE。
 
