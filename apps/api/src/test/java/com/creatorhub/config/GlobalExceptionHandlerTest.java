@@ -26,4 +26,12 @@ class GlobalExceptionHandlerTest {
 
     assertThat(response.getStatusCode().value()).isEqualTo(503);
   }
+
+  @Test
+  void digitalEntitlementNotFoundMapsTo404() {
+    var response =
+        handler.handleBusiness(new BusinessError("DIGITAL_ENTITLEMENT_NOT_FOUND", "missing"));
+
+    assertThat(response.getStatusCode().value()).isEqualTo(404);
+  }
 }

@@ -476,6 +476,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - 订单详情已补齐服务端状态结果态文案，覆盖待支付、支付/履约中、完成、取消和退款状态，不伪造支付成功。
 - 买家订单历史已补齐 `REFUNDING` 和 `REFUNDED` 状态筛选，与 OpenAPI 订单状态枚举保持一致。
 - 数字交付已补齐 `GET /orders/{id}/entitlement` 授权状态查询，服务端按买家归属返回脱敏投影，订单详情据此门禁下载操作。
+- 数字授权不存在时已映射为 RFC 9457 `404 DIGITAL_ENTITLEMENT_NOT_FOUND`，与 OpenAPI 错误响应保持一致。
 - 浏览器认证联调已补齐 Access Token 过期续期和并发 refresh 去重，订单页刷新后可恢复查询，不再因内存 Token 过期直接显示 401。
 - 通用 Webhook HMAC-SHA256 原始载荷验签边界已固定，支持 Provider 常见 `sha256=<hex>` 格式，并可通过时间戳窗口防止重放；具体 Provider 接入仍待后续联调。
 - 当前仍未完成：数字购买、Creator Publish、Creator Fulfillment 三条完整 E2E，正式 OrderDetail 后端 DTO，Week 13 云部署/监控落地，以及真实支付 Provider 联调。

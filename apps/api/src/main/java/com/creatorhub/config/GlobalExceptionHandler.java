@@ -40,6 +40,7 @@ public class GlobalExceptionHandler {
           case "ARTWORK_VERSION_CONFLICT", "ORDER_CONFLICT" -> HttpStatus.CONFLICT;
           case "ORDER_FORBIDDEN" -> HttpStatus.FORBIDDEN;
           case "ORDER_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+          case "DIGITAL_ENTITLEMENT_NOT_FOUND" -> HttpStatus.NOT_FOUND;
           default -> HttpStatus.BAD_REQUEST;
         };
     ProblemDetail detail = ProblemDetail.forStatusAndDetail(status, ex.getMessage());

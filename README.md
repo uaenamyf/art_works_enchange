@@ -100,6 +100,7 @@ docker compose -f infra/compose.yaml config
 - 订单详情：已补齐待支付、履约、完成、取消和退款结果态展示，支付成功仍只由服务端状态决定。
 - 订单历史：已补齐退款中和已退款状态筛选，筛选值通过 URL 传递给服务端。
 - 数字交付：订单详情已查询并展示授权状态，只有已支付且授权可用时才允许申请短期下载链接。
+- 数字授权查询缺失时返回明确的 404 Problem Details，不将资源不存在误报为 400。
 - 认证联调：Access Token 过期时自动使用 HttpOnly Refresh Cookie 续期并重试一次，并发请求共享同一次 refresh。
 - Webhook 安全边界：已补充基于原始请求体的通用 HMAC-SHA256 验签和时间戳窗口防重放组件，具体支付 Provider 仍未接入。
 - 工程质量：已加入 GitHub Actions CI，覆盖 Maven、pnpm、OpenAPI 生成漂移、Docker 构建和 Compose 校验；Dependabot 已配置 npm/Maven 周期更新。
