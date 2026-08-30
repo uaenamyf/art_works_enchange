@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSessionState] = useState<AuthSession | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function refresh(): Promise<AuthSession | null> {
+  const refresh = useCallback(async function refresh(): Promise<AuthSession | null> {
     try {
       const restored = await apiFetch<AuthSession>("/api/v1/auth/refresh", { method: "POST" });
       setSessionState(restored);
@@ -34,11 +34,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSessionState(null);
       return null;
     }
-  }
+  }, []);
 
   useEffect(() => {
     void refresh().finally(() => setLoading(false));
-  }, []);
+  }, [refresh]);
 
   async function logout() {
     await apiFetch<void>("/api/v1/auth/logout", { method: "POST" });
@@ -49,11 +49,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!session?.accessToken) {
       throw new Error("Authentication is required");
     }
-    return apiFetch<T>(path, {
-      ...options,
-      headers: { ...options.headers, Authorization: `Bearer ${session.accessToken}` }
-    });
-  }, [session]);
+    try {
+      return await apiFetch<T>(path, {
+        ...options,
+        headers: { ...options.headers, Authorization: `Bearer ${session.accessToken}` }
+      });
+    } catch (error) {
+      if (!(error instanceof Error && "status" in error && error.status === 401)) throw error;
+      const restored = await refresh();
+      if (!restored) throw error;
+      return apiFetch<T>(path, {
+        ...options,
+        headers: { ...options.headers, Authorization: `Bearer ${restored.accessToken}` }
+      });
+    }
+  }, [refresh, session]);
 
   return (
     <AuthContext.Provider
