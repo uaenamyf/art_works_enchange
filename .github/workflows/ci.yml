@@ -1,0 +1,81 @@
+name: CreatorHub CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Test
+        run: mvn -B -ntp test
+      - name: Check formatting
+        run: mvn -B -ntp spotless:check
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: pnpm web:typecheck
+      - name: Lint
+        run: pnpm web:lint
+      - name: Test
+        run: pnpm web:test
+      - name: Build
+        run: pnpm web:build
+
+  contract:
+    name: OpenAPI Contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - name: Validate OpenAPI
+        run: pnpm dlx @redocly/cli lint docs/openapi.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm web:api:generate
+      - run: git diff --exit-code -- apps/web/src/lib/api/schema.gen.ts
+
+  containers:
+    name: Container Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API image
+        run: docker build -f infra/api.Dockerfile -t creatorhub-api:ci .
+      - name: Build Web image
+        run: docker build -f infra/web.Dockerfile -t creatorhub-web:ci .
+      - name: Validate middleware Compose
+        run: docker compose -f infra/compose.yaml config

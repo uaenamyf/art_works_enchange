@@ -87,7 +87,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - `infra/compose.yaml`：`postgres`、`redis`、`minio`、`api`、`web`、健康检查、共享网络、卷。
 - `infra/env.example`，不含真实密钥。
 - Dockerfile（多阶段）。
-- GitHub Actions：`backend-ci`（Maven 测试 + ArchUnit）、`frontend-ci`（pnpm lint/typecheck/test）、`contract-ci`（redocly lint）、`docker-ci`（镜像构建）。
+- GitHub Actions：已补齐统一 CI（Maven 测试/格式、pnpm 类型/lint/测试/构建、OpenAPI lint 与生成类型漂移检查、Docker 镜像构建和 Compose 校验）；Dependabot 已配置 npm 与 Maven 每周更新。
 
 **Week 1 验收**
 
@@ -378,8 +378,8 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - 已完成 Notification 表、事件去重表、游标列表、未读筛选和标记已读接口。
 - 已完成本地 Outbox Publisher 到 Notification handler 的可替换消费骨架；重复事件通过事件 ID 幂等。
 - 已完成可替换的邮件投递端口和脱敏 Console stub；当前不接入真实 SMTP。
-- 已接入订单创建 `OrderCreated`、作品发布 `ArtworkPublished`、主动/超时取消产生的 `OrderStatusChanged`，以及可信支付成功后的 `DigitalEntitlementGranted` 事件；数字资产撤回事件仍待接入业务事务。
-- 已完成 PaymentSucceeded 和 PaymentFailed 在 Ordering 侧的持久化消费幂等；数字资产撤回事件仍待接入业务事务。
+- 已接入订单创建 `OrderCreated`、作品发布 `ArtworkPublished`、主动/超时取消产生的 `OrderStatusChanged`，以及可信支付成功后的 `DigitalEntitlementGranted` 事件。
+- 已完成 PaymentSucceeded、PaymentFailed 和 DigitalAssetRecalled 的消费边界与幂等；数字资产撤回应用服务已在同一事务中更新资产并写入 Outbox。
 - 已完成 DigitalAssetRecalled 消费者边界测试：成功撤回、未知版本忽略和缺失 reasonCode 拒绝均已覆盖。
 - 业务上下文尚未统一补齐各事件的通知收件人和脱敏文案载荷，真实业务事件接入与邮件触发保持待办，不将日志记录视为通知发送成功。
 
@@ -478,7 +478,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - 数字交付已补齐 `GET /orders/{id}/entitlement` 授权状态查询，服务端按买家归属返回脱敏投影，订单详情据此门禁下载操作。
 - 浏览器认证联调已补齐 Access Token 过期续期和并发 refresh 去重，订单页刷新后可恢复查询，不再因内存 Token 过期直接显示 401。
 - 通用 Webhook HMAC-SHA256 原始载荷验签边界已固定，支持 Provider 常见 `sha256=<hex>` 格式，并可通过时间戳窗口防止重放；具体 Provider 接入仍待后续联调。
-- 当前仍未完成：数字购买、Creator Publish、Creator Fulfillment 三条完整 E2E，以及真实支付 Provider 联调。
+- 当前仍未完成：数字购买、Creator Publish、Creator Fulfillment 三条完整 E2E，正式 OrderDetail 后端 DTO，Week 13 云部署/监控落地，以及真实支付 Provider 联调。
 - OWASP ASVS L1 检查清单通过。
 - 没有高危 CVE。
 
@@ -512,6 +512,10 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - `docker compose build` 全绿。
 - 部署脚本在 staging 演练成功并能回滚。
 - 监控仪表盘上线，至少 6 个告警规则。
+
+**当前状态**
+
+- CI 已覆盖后端、前端、OpenAPI 生成漂移、Docker 镜像和 Compose 配置；AWS 部署脚本、Sentry/CloudWatch 告警和备份恢复演练仍待真实环境配置。
 
 ---
 

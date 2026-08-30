@@ -102,6 +102,7 @@ docker compose -f infra/compose.yaml config
 - 数字交付：订单详情已查询并展示授权状态，只有已支付且授权可用时才允许申请短期下载链接。
 - 认证联调：Access Token 过期时自动使用 HttpOnly Refresh Cookie 续期并重试一次，并发请求共享同一次 refresh。
 - Webhook 安全边界：已补充基于原始请求体的通用 HMAC-SHA256 验签和时间戳窗口防重放组件，具体支付 Provider 仍未接入。
+- 工程质量：已加入 GitHub Actions CI，覆盖 Maven、pnpm、OpenAPI 生成漂移、Docker 构建和 Compose 校验；Dependabot 已配置 npm/Maven 周期更新。
 
 未完成（Week 12 收尾 / 后续周）：
 
