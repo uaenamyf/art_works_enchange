@@ -595,14 +595,14 @@ sharedkernel
 ## 7. 关键风险与缓解
 
 | 风险 | 缓解 |
-+| --- | --- |
-+| 库存超卖 | Week 7 高并发测试 + 条件更新 + Outbox |
-+| Stripe Webhook 重复 | Week 8 幂等测试 + 事件 ID 唯一索引 + 状态机守卫 |
-+| 上下文边界退化 | ArchUnit 在 CI 卡口，违反即失败 |
-+| 前端接口漂移 | OpenAPI 强制生成客户端 |
+| --- | --- |
+| 库存超卖 | Week 7 高并发测试 + 条件更新 + Outbox |
+| Stripe Webhook 重复 | Week 8 幂等测试 + 事件 ID 唯一索引 + 状态机守卫 |
+| 上下文边界退化 | ArchUnit 在 CI 卡口，违反即失败 |
+| 前端接口漂移 | OpenAPI 强制生成客户端 |
 | 工具链不稳定 | 锁定 Node 22、pnpm 11、Java 21、Maven 3.9 |
-+| 进度失控 | 每周五 scope review；超额需求强制进 Icebox |
-+| Creator 冷启动 | Week 14 前 1 周开始 BD 邀约 |
+| 进度失控 | 每周五 scope review；超额需求强制进 Icebox |
+| Creator 冷启动 | Week 14 前 1 周开始 BD 邀约 |
 
 ## 8. 文档与 ADR
 
