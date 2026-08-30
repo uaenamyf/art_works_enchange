@@ -3,6 +3,8 @@ package com.creatorhub.webhook.security;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 /** 验证原始 Webhook 载荷的签名成功、格式兼容和失败即拒绝边界。 */
@@ -47,5 +49,42 @@ class HmacWebhookVerifierTest {
     assertThatThrownBy(() -> HmacWebhookVerifier.verify(PAYLOAD, "sha256=00", " "))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("secret is required");
+  }
+
+  @Test
+  void acceptsTimestampedSignatureInsideTolerance() {
+    Instant now = Instant.parse("2026-08-30T00:00:00Z");
+    String signature =
+        HmacWebhookVerifier.timestampedSignatureFor(PAYLOAD, SECRET, now.getEpochSecond());
+
+    HmacWebhookVerifier.verifyTimestamped(PAYLOAD, signature, SECRET, now, Duration.ofMinutes(5));
+  }
+
+  @Test
+  void rejectsTimestampedSignatureOutsideToleranceOrWithChangedPayload() {
+    Instant now = Instant.parse("2026-08-30T00:00:00Z");
+    String signature =
+        HmacWebhookVerifier.timestampedSignatureFor(
+            PAYLOAD, SECRET, now.minusSeconds(301).getEpochSecond());
+
+    assertThatThrownBy(
+            () ->
+                HmacWebhookVerifier.verifyTimestamped(
+                    PAYLOAD, signature, SECRET, now, Duration.ofMinutes(5)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("signature is expired");
+
+    String validSignature =
+        HmacWebhookVerifier.timestampedSignatureFor(PAYLOAD, SECRET, now.getEpochSecond());
+    assertThatThrownBy(
+            () ->
+                HmacWebhookVerifier.verifyTimestamped(
+                    "changed".getBytes(StandardCharsets.UTF_8),
+                    validSignature,
+                    SECRET,
+                    now,
+                    Duration.ofMinutes(5)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("signature is invalid");
   }
 }
