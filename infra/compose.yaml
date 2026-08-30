@@ -53,6 +53,7 @@ services:
       retries: 10
 
   api:
+    image: ${CREATORHUB_API_IMAGE:-creatorhub-api:local}
     build:
       context: ..
       dockerfile: infra/api.Dockerfile
@@ -83,6 +84,7 @@ services:
       retries: 12
 
   web:
+    image: ${CREATORHUB_WEB_IMAGE:-creatorhub-web:local}
     build:
       context: ..
       dockerfile: infra/web.Dockerfile

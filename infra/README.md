@@ -45,6 +45,26 @@ mvn -B -ntp -f apps/api/pom.xml spring-boot:run -Dspring-boot.run.profiles=local
 pnpm web:dev
 ```
 
+## 镜像部署与回滚
+
+部署脚本使用显式镜像标签，适合 staging 或单机演练；不会自动连接 AWS，也不会删除数据库卷。
+
+```bash
+CREATORHUB_API_IMAGE=registry.example/creatorhub-api:2026-08-30 \
+CREATORHUB_WEB_IMAGE=registry.example/creatorhub-web:2026-08-30 \
+sh infra/deploy/deploy.sh
+```
+
+回滚必须显式提供上一版本镜像，避免误回滚到未知版本：
+
+```bash
+CREATORHUB_ROLLBACK_API_IMAGE=registry.example/creatorhub-api:previous \
+CREATORHUB_ROLLBACK_WEB_IMAGE=registry.example/creatorhub-web:previous \
+sh infra/deploy/rollback.sh
+```
+
+脚本依赖 Docker Compose v2 的 `--wait` 健康检查；运行前应准备生产环境变量和私有镜像凭据。
+
 查看日志：
 
 ```powershell

@@ -492,7 +492,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 
 - `web`、`api` 多阶段生产镜像，非 root、只读根文件、健康检查。
 - 部署目标：AWS ECS/Fargate + RDS + ElastiCache + S3 + CloudFront。
-- 部署脚本：`infra/deploy/` 下的 `deploy.sh`、`rollback.sh`。
+- 部署脚本：已补齐 `infra/deploy/deploy.sh`、`rollback.sh`，通过显式镜像标签执行部署和回滚；AWS 资源编排仍不在仓库内自动完成。
 - 密钥：AWS Secrets Manager 或 Parameter Store。
 
 **备份与恢复**
@@ -515,7 +515,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 
 **当前状态**
 
-- CI 已覆盖后端、前端、OpenAPI 生成漂移、Docker 镜像和 Compose 配置；本地完整 Compose 编排已配置；AWS 部署脚本、Sentry/CloudWatch 告警和备份恢复演练仍待真实环境配置。
+- CI 已覆盖后端、前端、OpenAPI 生成漂移、Docker 镜像和 Compose 配置；本地完整 Compose 编排及镜像部署/回滚脚本已配置；AWS 资源、Sentry/CloudWatch 告警和备份恢复演练仍待真实环境配置。
 
 ---
 
