@@ -474,6 +474,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - 数字 Checkout E2E 已加入，使用 `CREATORHUB_E2E_DIGITAL_ARTWORK_ID` 注入固定数字作品；当前本地无数字作品时自动跳过。
 - Creator Studio 履约 E2E 已加入，使用 `CREATORHUB_E2E_PAID_ORDER_ID` 注入已支付订单，覆盖 `PAID -> PROCESSING -> SHIPPED`；缺少测试数据时自动跳过。
 - 订单详情已补齐服务端状态结果态文案，覆盖待支付、支付/履约中、完成、取消和退款状态，不伪造支付成功。
+- 买家订单历史已补齐 `REFUNDING` 和 `REFUNDED` 状态筛选，与 OpenAPI 订单状态枚举保持一致。
 - 浏览器认证联调已补齐 Access Token 过期续期和并发 refresh 去重，订单页刷新后可恢复查询，不再因内存 Token 过期直接显示 401。
 - 通用 Webhook HMAC-SHA256 原始载荷验签边界已固定，支持 Provider 常见 `sha256=<hex>` 格式，并可通过时间戳窗口防止重放；具体 Provider 接入仍待后续联调。
 - 当前仍未完成：数字购买、Creator Publish、Creator Fulfillment 三条完整 E2E，以及真实支付 Provider 联调。

@@ -19,7 +19,9 @@ const statuses: Array<{ label: string; value?: OrderStatus }> = [
   { label: "处理中", value: "PROCESSING" },
   { label: "已发货", value: "SHIPPED" },
   { label: "已完成", value: "COMPLETED" },
-  { label: "已取消", value: "CANCELLED" }
+  { label: "已取消", value: "CANCELLED" },
+  { label: "退款中", value: "REFUNDING" },
+  { label: "已退款", value: "REFUNDED" }
 ];
 
 /** 买家订单历史：订单状态完全以服务端响应为准。 */
