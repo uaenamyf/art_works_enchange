@@ -1,7 +1,7 @@
 services:
   # 本仓库 Compose 现阶段只跑中间件（postgres / redis / minio）。
   # API 与 Web 通过本机进程启动：Web 用 `pnpm dev` / `pnpm start`，
-  # API 用 Gradle（待 wrapper jar 补齐后 `./gradlew bootRun`）。
+  # API 用 Maven（`mvn spring-boot:run`）。
   # 端口已 publish 到主机，本机 API / Web 用 localhost 直连即可。
   postgres:
     image: postgres:17-alpine

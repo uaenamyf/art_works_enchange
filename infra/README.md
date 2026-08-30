@@ -81,7 +81,7 @@ docker compose -f infra/compose.yaml down -v         # 同时清理卷
 | 端口 | 服务 |
 | --- | --- |
 | 3000 | web |
-| 5432 | postgres |
+| 15432 | postgres（宿主机映射端口） |
 | 6379 | redis |
 | 8080 | api |
 | 9000 | minio api |
