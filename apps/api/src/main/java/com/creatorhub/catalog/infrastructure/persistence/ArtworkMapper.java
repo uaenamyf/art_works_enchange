@@ -48,6 +48,7 @@ interface ArtworkMapper extends BaseMapper<ArtworkPersistenceRow> {
                     AND (title ILIKE CONCAT('%', #{query}, '%') OR description ILIKE CONCAT('%', #{query}, '%'))
                 </if>
                 <if test='category != null and category != ""'>AND category = #{category}</if>
+                <if test='productType != null'>AND product_type = #{productType}</if>
                 <if test='creatorId != null'>AND creator_id = #{creatorId}</if>
                 <if test='beforeCreatedAt != null'>
                     AND (created_at, id) &lt; (#{beforeCreatedAt}, #{beforeId})
@@ -59,6 +60,7 @@ interface ArtworkMapper extends BaseMapper<ArtworkPersistenceRow> {
   List<ArtworkPersistenceRow> findPublishedPage(
       @Param("query") String query,
       @Param("category") String category,
+      @Param("productType") com.creatorhub.catalog.domain.model.ProductType productType,
       @Param("creatorId") UUID creatorId,
       @Param("beforeCreatedAt") Instant beforeCreatedAt,
       @Param("beforeId") UUID beforeId,

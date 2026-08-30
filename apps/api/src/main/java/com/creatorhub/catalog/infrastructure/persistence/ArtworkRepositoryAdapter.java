@@ -57,6 +57,7 @@ public class ArtworkRepositoryAdapter
         .findPublishedPage(
             query.query(),
             query.category(),
+            query.productType(),
             query.creatorId(),
             query.beforeCreatedAt(),
             query.beforeId() == null ? null : query.beforeId().value(),

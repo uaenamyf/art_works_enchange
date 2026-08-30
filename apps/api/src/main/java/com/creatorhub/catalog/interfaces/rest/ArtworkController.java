@@ -45,13 +45,15 @@ public class ArtworkController {
   ResponseEntity<ArtworkUseCases.ArtworkPage> list(
       @RequestParam(required = false) String query,
       @RequestParam(required = false) String category,
+      @RequestParam(required = false) ProductType productType,
       @RequestParam(required = false) UUID creatorId,
       @RequestParam(defaultValue = "LATEST") String sort,
       @RequestParam(required = false) String cursor,
       @RequestParam(defaultValue = "20") int limit,
       @AuthenticationPrincipal UUID userId) {
     return ResponseEntity.ok(
-        artworks.listPublished(query, category, creatorId, sort, cursor, limit, userId));
+        artworks.listPublished(
+            query, category, productType, creatorId, sort, cursor, limit, userId));
   }
 
   /** 公开详情只读取审核通过并已发布的作品，未发布状态统一按不存在处理。 */

@@ -15,6 +15,7 @@ import com.creatorhub.catalog.application.port.in.ArtworkReviewUseCases;
 import com.creatorhub.catalog.application.port.in.ArtworkUseCases;
 import com.creatorhub.catalog.application.port.in.ArtworkUseCases.ArtworkView;
 import com.creatorhub.catalog.domain.model.ArtworkStatus;
+import com.creatorhub.catalog.domain.model.ProductType;
 import com.creatorhub.config.GlobalExceptionHandler;
 import com.creatorhub.config.SecurityConfig;
 import com.creatorhub.identity.infrastructure.security.CookieOriginValidationFilter;
@@ -129,7 +130,7 @@ class ArtworkControllerTest {
 
   @Test
   void anonymousUserCanListPublishedArtworks() throws Exception {
-    when(artworks.listPublished(null, null, null, "LATEST", null, 20, null))
+    when(artworks.listPublished(null, null, null, null, "LATEST", null, 20, null))
         .thenReturn(new ArtworkUseCases.ArtworkPage(List.of(), null, false));
 
     mvc.perform(get("/api/v1/artworks").param("sort", "LATEST"))
@@ -137,7 +138,19 @@ class ArtworkControllerTest {
         .andExpect(jsonPath("$.items").isArray())
         .andExpect(jsonPath("$.hasMore").value(false));
 
-    verify(artworks).listPublished(null, null, null, "LATEST", null, 20, null);
+    verify(artworks).listPublished(null, null, null, null, "LATEST", null, 20, null);
+  }
+
+  @Test
+  void anonymousUserCanFilterPublishedArtworksByProductType() throws Exception {
+    when(artworks.listPublished(null, null, ProductType.DIGITAL, null, "LATEST", null, 20, null))
+        .thenReturn(new ArtworkUseCases.ArtworkPage(List.of(), null, false));
+
+    mvc.perform(get("/api/v1/artworks").param("productType", "DIGITAL"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items").isArray());
+
+    verify(artworks).listPublished(null, null, ProductType.DIGITAL, null, "LATEST", null, 20, null);
   }
 
   @Test

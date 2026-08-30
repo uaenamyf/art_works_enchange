@@ -349,6 +349,10 @@ paths:
           in: query
           schema:
             $ref: '#/components/schemas/ArtworkCategory'
+        - name: productType
+          in: query
+          schema:
+            $ref: '#/components/schemas/ProductType'
         - name: creatorId
           in: query
           schema:

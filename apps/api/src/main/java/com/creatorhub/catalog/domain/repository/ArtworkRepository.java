@@ -2,6 +2,7 @@ package com.creatorhub.catalog.domain.repository;
 
 import com.creatorhub.catalog.domain.model.Artwork;
 import com.creatorhub.catalog.domain.model.ArtworkId;
+import com.creatorhub.catalog.domain.model.ProductType;
 import com.creatorhub.sharedkernel.UserId;
 import java.time.Instant;
 import java.util.List;
@@ -25,6 +26,7 @@ public interface ArtworkRepository {
   record PublishedPageQuery(
       String query,
       String category,
+      ProductType productType,
       UUID creatorId,
       Instant beforeCreatedAt,
       ArtworkId beforeId,

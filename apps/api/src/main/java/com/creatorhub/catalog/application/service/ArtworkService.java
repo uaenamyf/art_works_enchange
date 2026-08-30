@@ -152,7 +152,7 @@ public class ArtworkService implements ArtworkUseCases {
   @Transactional(readOnly = true)
   public ArtworkPage listPublished(
       String query, String category, UUID creatorId, String sort, String cursor, int limit) {
-    return listPublished(query, category, creatorId, sort, cursor, limit, null);
+    return listPublished(query, category, null, creatorId, sort, cursor, limit, null);
   }
 
   @Override
@@ -160,6 +160,7 @@ public class ArtworkService implements ArtworkUseCases {
   public ArtworkPage listPublished(
       String query,
       String category,
+      com.creatorhub.catalog.domain.model.ProductType productType,
       UUID creatorId,
       String sort,
       String cursor,
@@ -172,6 +173,7 @@ public class ArtworkService implements ArtworkUseCases {
             new ArtworkRepository.PublishedPageQuery(
                 blankToNull(query),
                 blankToNull(category),
+                productType,
                 creatorId,
                 decoded.createdAt(),
                 decoded.id(),

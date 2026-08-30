@@ -4,18 +4,7 @@ import Link from "next/link";
 import { ChevronDown, Search, UserRound } from "lucide-react";
 import { APP_NAME, ROUTES } from "@/lib/config";
 import { useAuth } from "@/features/auth/AuthProvider";
-
-const artworkCategories = [
-  ["艺术品", "ART"],
-  ["摄影", "PHOTOGRAPHY"],
-  ["陶艺", "CERAMICS"],
-  ["木制品", "WOODWORK"],
-  ["皮具", "LEATHER"],
-  ["珠宝", "JEWELRY"],
-  ["时装", "FASHION"],
-  ["数字作品", "DIGITAL"],
-  ["收藏品", "COLLECTIBLES"]
-] as const;
+import { productSections } from "@/features/artworks/artworkCatalog";
 
 /**
  * 全站导航根据内存认证状态显示用户、Creator 入口与注销动作。
@@ -27,7 +16,7 @@ export function Navbar() {
     <header className="sticky top-0 z-30 border-b border-ink-300 bg-white/90 backdrop-blur">
       <nav
         aria-label="主导航"
-        className="mx-auto flex h-16 w-full max-w-[1280px] items-center justify-between px-5 lg:px-8"
+        className="mx-auto flex h-16 w-full min-w-0 max-w-[1280px] items-center justify-between overflow-visible px-5 lg:px-8"
       >
         <Link
           href={ROUTES.home}
@@ -35,7 +24,7 @@ export function Navbar() {
         >
           {APP_NAME}
         </Link>
-        <ul className="flex items-center gap-1 text-sm text-ink-700 md:gap-2">
+        <ul className="flex min-w-0 max-w-[calc(100%-7rem)] items-center justify-end gap-1 overflow-x-auto text-sm text-ink-700 md:gap-2 lg:overflow-visible">
           <li>
             <div className="group relative">
               <Link
@@ -53,17 +42,23 @@ export function Navbar() {
                     <Link href={ROUTES.discover} className="mt-3 block text-xl text-ink-900 hover:text-brand-500">
                       全部作品
                     </Link>
-                    <Link href="/creators" className="mt-2 block text-sm text-ink-700 hover:text-ink-900">
-                      创作者目录
-                    </Link>
                   </div>
                   <div className="sm:col-span-2">
-                    <p className="text-xs uppercase tracking-[0.18em] text-ink-500">按类别浏览</p>
-                    <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
-                      {artworkCategories.map(([label, value]) => (
-                        <Link key={value} href={`/categories/${value}`} className="py-1 text-sm text-ink-700 hover:text-brand-500">
-                          {label}
-                        </Link>
+                    <p className="text-xs uppercase tracking-[0.18em] text-ink-500">按产品类型浏览</p>
+                    <div className="mt-3 grid gap-5 sm:grid-cols-2">
+                      {productSections.map((section) => (
+                        <div key={section.value}>
+                          <Link href={`/categories/${section.categories[0][1]}`} className="text-base text-ink-900 hover:text-brand-500">
+                            {section.label}
+                          </Link>
+                          <div className="mt-2 grid gap-y-1">
+                            {section.categories.map(([label, value]) => (
+                              <Link key={value} href={`/categories/${value}`} className="py-1 text-sm text-ink-700 hover:text-brand-500">
+                                {label}
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>

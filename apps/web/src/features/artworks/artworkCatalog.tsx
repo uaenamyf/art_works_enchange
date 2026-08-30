@@ -15,6 +15,12 @@ export const artworkCategories = [
 ] as const;
 
 export type ArtworkCategory = (typeof artworkCategories)[number][1];
+export type ProductType = "PHYSICAL" | "DIGITAL";
+
+export const productSections = [
+  { label: "实体产品", value: "PHYSICAL" as const, categories: artworkCategories.filter(([, value]) => value !== "DIGITAL") },
+  { label: "数字产品", value: "DIGITAL" as const, categories: artworkCategories.filter(([, value]) => value === "DIGITAL") }
+] as const;
 
 interface ArtworkListResponse {
   items: ArtworkListItem[];
@@ -46,12 +52,14 @@ export function getArtworkCategory(value: string | undefined) {
 
 export async function loadArtworkCards(options: {
   category?: ArtworkCategory;
+  productType?: ProductType;
   query?: string;
   cursor?: string;
   limit?: number;
 }) {
   const params = new URLSearchParams({ sort: "LATEST", limit: String(options.limit ?? 20) });
   if (options.category) params.set("category", options.category);
+  if (options.productType) params.set("productType", options.productType);
   if (options.query) params.set("query", options.query);
   if (options.cursor) params.set("cursor", options.cursor);
   const response = await apiFetch<ArtworkListResponse>(`/api/v1/artworks?${params.toString()}`);
@@ -68,7 +76,7 @@ export function ArtworkRow({ items, nextCursor, query, category, layout = "row" 
   if (items.length === 0) return <div className="border-b border-ink-300 py-12 text-sm text-ink-500">暂无已发布作品</div>;
   return (
     <>
-      <ul className={layout === "grid" ? "grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-3 lg:grid-cols-4" : "flex snap-x gap-4 overflow-x-auto pb-3"}>
+      <ul className={layout === "grid" ? "grid min-w-0 grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-3 lg:grid-cols-4" : "flex min-w-0 snap-x gap-4 overflow-x-auto pb-3"}>
         {items.map((artwork, index) => (
           <li key={artwork.id} className={layout === "grid" ? "min-w-0" : "w-[72vw] shrink-0 snap-start sm:w-[40vw] md:w-[30vw] lg:w-[23vw]"}>
             <ArtworkCard artwork={artwork} priority={index === 0} />

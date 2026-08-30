@@ -31,6 +31,16 @@ public interface ArtworkUseCases {
   ArtworkPage listPublished(
       String query, String category, UUID creatorId, String sort, String cursor, int limit);
 
+  ArtworkPage listPublished(
+      String query,
+      String category,
+      ProductType productType,
+      UUID creatorId,
+      String sort,
+      String cursor,
+      int limit,
+      UUID userId);
+
   /** Studio 作品列表只返回当前 Creator 自己的作品。 */
   StudioArtworkPage listOwned(UUID userId, ArtworkStatus status, String cursor, int limit);
 

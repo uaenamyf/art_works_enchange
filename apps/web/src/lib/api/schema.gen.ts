@@ -1786,6 +1786,7 @@ export interface operations {
                 limit?: components["parameters"]["Limit"];
                 query?: string;
                 category?: components["schemas"]["ArtworkCategory"];
+                productType?: components["schemas"]["ProductType"];
                 creatorId?: string;
                 sort?: "LATEST" | "POPULAR" | "TRENDING";
             };
