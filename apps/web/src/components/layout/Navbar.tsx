@@ -71,47 +71,66 @@ export function Navbar() {
               创作者
             </Link>
           </li>
-          <li>
-            <Link
-              href={!loading && session?.user.role === "USER" ? ROUTES.creatorApply : ROUTES.authRegister}
-              className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900"
-            >
-              成为 Creator
-            </Link>
-          </li>
-          {!loading && session ? (
-            <>
-              {session.user.role === "CREATOR" ? (
-                <li>
-                  <Link href={ROUTES.studio} className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900">
+          <>
+            <li className="group relative flex h-16 items-center">
+                <div className="relative flex h-full items-center">
+                  <button
+                    type="button"
+                    className="flex h-11 items-center gap-1 rounded-full px-4 hover:bg-ink-100 hover:text-ink-900 focus-visible:bg-ink-100"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                  >
                     Creator Studio
-                  </Link>
-                </li>
-              ) : null}
-              {session.user.role === "ADMIN" ? (
-                <li>
-                  <Link href={ROUTES.admin} className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900">
-                    管理后台
-                  </Link>
-                </li>
-              ) : null}
-              <li><Link href={ROUTES.favorites} className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900">收藏</Link></li>
-              <li><Link href={ROUTES.follows} className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900">关注</Link></li>
-              <li><Link href={ROUTES.orders} className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900">订单</Link></li>
-              <li><Link href={ROUTES.notifications} className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900">通知</Link></li>
-              <li className="hidden lg:block">
-                <span className="flex h-11 items-center gap-2 px-3 text-ink-500">
+                    <ChevronDown aria-hidden className="size-3.5 transition-transform group-hover:rotate-180 group-focus-within:rotate-180" />
+                  </button>
+                  <div className="invisible fixed left-5 right-5 top-16 w-auto translate-y-2 border-t border-ink-300 bg-white px-6 py-6 opacity-0 shadow-pop transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 lg:absolute lg:left-1/2 lg:right-auto lg:top-full lg:w-72 lg:-translate-x-1/2">
+                    <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Creator Studio</p>
+                    <div className="mt-3 grid gap-1">
+                      <Link href={session?.user.role === "USER" ? ROUTES.creatorApply : ROUTES.authRegister} className="flex min-h-11 items-center rounded-token bg-ink-900 px-3 text-sm text-white hover:bg-ink-700">成为 Creator</Link>
+                      {session ? <>
+                        <Link href="/studio/dashboard" className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">概览</Link>
+                        <Link href="/studio/artworks" className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">作品管理</Link>
+                        <Link href="/studio/artworks/new" className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">上架作品</Link>
+                        <Link href="/studio/orders" className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">订单履约</Link>
+                        <Link href="/studio/settings/payments" className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">收款方式</Link>
+                      </> : <p className="mt-3 border-t border-ink-300 pt-4 text-sm text-ink-500">登录后即可进入 Creator Studio 工作台。</p>}
+                    </div>
+                  </div>
+                </div>
+              </li>
+              {session ? <li className="group relative flex h-16 items-center">
+                <div className="relative flex h-full items-center">
+                <button
+                  type="button"
+                  className="flex h-11 items-center gap-2 rounded-full px-4 hover:bg-ink-100 hover:text-ink-900 focus-visible:bg-ink-100"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                >
                   <UserRound aria-hidden className="size-4" />
-                  {session.user.displayName}
-                </span>
-              </li>
-              <li>
-                <button type="button" className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900" onClick={() => void logout()}>
-                  注销
+                  <span className="max-w-32 truncate">{session.user.displayName}</span>
+                  <ChevronDown aria-hidden className="size-3.5 transition-transform group-hover:rotate-180 group-focus-within:rotate-180" />
                 </button>
-              </li>
-            </>
-          ) : !loading ? (
+                <div className="invisible fixed left-5 right-5 top-16 w-auto translate-y-2 border-t border-ink-300 bg-white px-6 py-6 opacity-0 shadow-pop transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 lg:absolute lg:left-auto lg:right-0 lg:top-full lg:w-72 lg:translate-x-0">
+                  <div className="border-b border-ink-300 pb-4">
+                    <p className="text-xs uppercase tracking-[0.18em] text-ink-500">账户</p>
+                    <p className="mt-2 truncate text-base text-ink-900">{session.user.displayName}</p>
+                  </div>
+                  <div className="grid gap-1 border-b border-ink-300 py-4">
+                    <p className="px-3 pb-1 text-xs text-ink-500">我的空间</p>
+                    <Link href={ROUTES.orders} className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">订单</Link>
+                    <Link href={ROUTES.favorites} className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">收藏</Link>
+                    <Link href={ROUTES.follows} className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">关注</Link>
+                    <Link href={ROUTES.notifications} className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">通知</Link>
+                  </div>
+                  {session.user.role === "ADMIN" ? <div className="border-b border-ink-300 py-4"><p className="px-3 pb-1 text-xs text-ink-500">管理</p><Link href={ROUTES.admin} className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">管理后台</Link></div> : null}
+                  <button type="button" className="mt-4 flex min-h-11 w-full items-center rounded-token px-3 text-left text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900" onClick={() => void logout()}>
+                    注销
+                  </button>
+                </div>
+              </div>
+              </li> : null}
+          </>
+          {!loading && !session ? (
             <>
               <li>
                 <Link href={ROUTES.authLogin} className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900">

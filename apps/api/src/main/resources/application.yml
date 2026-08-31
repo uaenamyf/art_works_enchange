@@ -51,6 +51,9 @@ springdoc:
     operations-sorter: method
 
 creatorhub:
+  catalog:
+    # true：提交作品后进入 Admin 审核；false：满足发布门禁后直接上架。
+    artwork-review-enabled: ${ARTWORK_REVIEW_ENABLED:true}
   security:
     jwt:
       # 占位：通过 ENV 注入；至少 32 字节

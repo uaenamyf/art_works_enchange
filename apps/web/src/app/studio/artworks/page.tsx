@@ -24,9 +24,10 @@ export default function StudioArtworksPage() {
   const query = searchParams.get("status") ?? "";
   const cursor = searchParams.get("cursor");
   const status = statuses.find((item) => item.value === query)?.value;
+  const isCreator = session?.user.role === "CREATOR";
   const artworks = useQuery<ArtworkPage, Error>({
     queryKey: ["studio-artworks", { status }],
-    enabled: Boolean(session) && !loading,
+    enabled: isCreator && !loading,
     queryFn: () => {
       const params = new URLSearchParams({ limit: "20" });
       if (status) params.set("status", status);
@@ -37,6 +38,7 @@ export default function StudioArtworksPage() {
 
   if (loading) return <Message text="正在加载账户..." />;
   if (!session) return <Message text="请先登录并完成创作者申请。" alert />;
+  if (!isCreator) return <Message text="完成 Creator 入驻后即可在这里上传和管理作品。" href="/studio/creator/apply" />;
   if (artworks.isError) return <Message text={artworks.error instanceof ApiError ? artworks.error.problem.detail ?? "作品加载失败" : "作品加载失败"} alert />;
   if (artworks.isPending) return <Message text="正在加载作品..." />;
 
@@ -44,8 +46,21 @@ export default function StudioArtworksPage() {
     <main>
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-ink-300 pb-6">
         <div><p className="text-xs uppercase tracking-[0.18em] text-brand-600">Works</p><h1 className="mt-2 font-serif text-4xl text-ink-900">作品管理</h1><p className="mt-3 text-sm text-ink-500">管理草稿、审核和已发布作品。</p></div>
-        <Link href="/studio/artworks/new" className="inline-flex min-h-11 items-center rounded-token bg-ink-900 px-5 text-sm text-white">添加作品</Link>
+        <Link href="/studio/artworks/new" className="inline-flex min-h-11 items-center rounded-token bg-ink-900 px-5 text-sm text-white">上架新作品</Link>
       </header>
+      <ol aria-label="作品上架流程" className="grid gap-3 border-b border-ink-300 py-5 sm:grid-cols-4">
+        {[
+          ["01", "创建草稿"],
+          ["02", "上传素材"],
+          ["03", "提交作品"],
+          ["04", "审核通过后发布或直接上架"]
+        ].map(([number, label]) => (
+          <li key={number} className="flex items-center gap-3 text-sm text-ink-700">
+            <span className="text-xs text-brand-600">{number}</span>
+            <span>{label}</span>
+          </li>
+        ))}
+      </ol>
       <nav aria-label="作品状态筛选" className="flex gap-2 overflow-x-auto border-b border-ink-300 py-4">
         {statuses.map((item) => <Link key={item.label} href={item.value ? `/studio/artworks?status=${item.value}` : "/studio/artworks"} aria-current={item.value === status || (!item.value && !status) ? "page" : undefined} className="min-h-11 shrink-0 rounded-token border border-ink-300 px-4 py-2 text-sm text-ink-700 hover:border-ink-900 hover:text-ink-900">{item.label}</Link>)}
       </nav>
@@ -55,6 +70,6 @@ export default function StudioArtworksPage() {
   );
 }
 
-function Message({ text, alert = false }: { text: string; alert?: boolean }) {
-  return <main className="py-12"><p role={alert ? "alert" : undefined} className={alert ? "text-error" : "text-ink-500"}>{text}</p></main>;
+function Message({ text, alert = false, href }: { text: string; alert?: boolean; href?: string }) {
+  return <main className="py-12"><p role={alert ? "alert" : undefined} className={alert ? "text-error" : "text-ink-500"}>{text}</p>{href ? <Link href={href} className="mt-5 inline-flex min-h-11 items-center rounded-token bg-ink-900 px-4 text-sm text-white">申请成为 Creator</Link> : null}</main>;
 }

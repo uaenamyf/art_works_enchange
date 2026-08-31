@@ -3,6 +3,10 @@
 Docker Compose 默认启动 CreatorHub 完整本地栈：API、Web、PostgreSQL、Redis 和 MinIO。
 只需要中间件时可以显式指定 `postgres redis minio` 服务。
 
+数据库环境隔离：开发使用 `creatorhub` 和 `postgres_data`；E2E 使用独立的
+`creatorhub_e2e`、端口 `15433` 和 `postgres_e2e_data`；生产使用独立的
+`postgres_prod_data`，并默认不向宿主机暴露 PostgreSQL 端口。Compose 项目名也按环境区分。
+
 ## compose.yaml
 
 包含以下服务：
@@ -26,6 +30,28 @@ docker compose -f infra/compose.yaml ps
 如果镜像构建因 Docker Hub 或 npm registry 网络不可用失败，修复网络后重新执行同一命令即可；镜像构建不会修改数据库卷。
 
 Linux / macOS 使用 `cp infra/env.example .env`。
+
+## E2E 环境
+
+E2E 必须使用独立 Compose 项目和端口，不能连接开发栈的 `creatorhub` 数据库：
+
+```powershell
+$env:E2E_DB_PASSWORD = "creatorhub_e2e_password"
+docker compose -p creatorhub-e2e -f infra/compose.yaml -f infra/compose.e2e.yaml up -d --build
+```
+
+E2E Web 地址为 `http://localhost:3001`，API 地址为 `http://localhost:8081`。
+
+## 生产环境
+
+生产必须使用独立项目名、生产变量和生产卷，不得复用开发 `.env`：
+
+```powershell
+docker compose -p creatorhub-prod -f infra/compose.yaml -f infra/compose.prod.yaml up -d --build --wait
+```
+
+生产 `.env` 至少需要显式设置 `DB_NAME`、`DB_USER`、`DB_PASSWORD`、`JWT_SECRET`、
+`CORS_ALLOWED_ORIGINS`、`S3_ACCESS_KEY`、`S3_SECRET_KEY` 和 `NEXT_PUBLIC_API_BASE_URL`。
 
 镜像职责：
 

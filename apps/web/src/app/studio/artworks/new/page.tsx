@@ -7,7 +7,7 @@ export default function NewStudioArtworkPage() {
       <header className="mb-8 max-w-2xl">
         <p className="text-sm uppercase tracking-[0.18em] text-brand-600">Creator Studio</p>
         <h1 className="mt-2 font-serif text-4xl text-ink-900">添加一件作品</h1>
-        <p className="mt-3 text-ink-500">完成作品信息和图片上传后，作品会进入审核队列。</p>
+        <p className="mt-3 text-ink-500">完成作品信息和素材上传后，作品会按平台审核设置进入审核或直接上架。</p>
       </header>
       <StudioArtworkForm />
     </main>

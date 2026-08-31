@@ -245,6 +245,18 @@ public final class Artwork extends AggregateRoot<ArtworkId> {
     touch(now);
   }
 
+  /** 审核关闭时，Creator 仍必须满足媒体、价格和实体库存门禁后才能直接上架。 */
+  public void publishWithoutReview(Instant now) {
+    requireStatus(ArtworkStatus.DRAFT, ArtworkStatus.REJECTED);
+    if (mediaIds.isEmpty()
+        || !price.isPositive()
+        || (productType == ProductType.PHYSICAL && stock <= 0)) {
+      throw new IllegalStateException("Artwork is not ready to publish");
+    }
+    status = ArtworkStatus.PUBLISHED;
+    touch(now);
+  }
+
   /** 已发布作品可以下架归档，归档后不可重新发布。 */
   public void archive(Instant now) {
     requireStatus(ArtworkStatus.PUBLISHED, ArtworkStatus.SOLD_OUT);

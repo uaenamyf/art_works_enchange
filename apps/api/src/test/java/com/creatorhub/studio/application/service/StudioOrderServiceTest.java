@@ -14,12 +14,15 @@ import com.creatorhub.ordering.domain.model.OrderLine;
 import com.creatorhub.ordering.domain.model.OrderStatus;
 import com.creatorhub.ordering.domain.model.ShippingAddress;
 import com.creatorhub.ordering.domain.repository.OrderRepository;
+import com.creatorhub.outbox.domain.model.OutboxEvent;
+import com.creatorhub.outbox.domain.repository.OutboxRepository;
 import com.creatorhub.sharedkernel.UserId;
 import com.creatorhub.sharedkernel.domain.Money;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 /** 验证 Studio 订单应用服务的 owner 隔离和合法履约状态迁移。 */
 class StudioOrderServiceTest {
@@ -27,6 +30,7 @@ class StudioOrderServiceTest {
   @Test
   void creatorCanStartProcessingOwnedOrder() {
     OrderRepository orders = mock(OrderRepository.class);
+    OutboxRepository outbox = mock(OutboxRepository.class);
     UUID sellerId = UUID.randomUUID();
     UUID orderId = UUID.randomUUID();
     Order order = order(orderId, UUID.randomUUID(), sellerId);
@@ -36,11 +40,17 @@ class StudioOrderServiceTest {
     order.markPaid(Instant.parse("2026-08-29T00:01:00Z"));
 
     var result =
-        new StudioOrderService(orders)
+        new StudioOrderService(orders, outbox)
             .updateStatus(sellerId, orderId, OrderStatus.PROCESSING, null, null);
 
     assertThat(result.status()).isEqualTo(OrderStatus.PROCESSING);
     verify(orders).save(order);
+    ArgumentCaptor<OutboxEvent> event = ArgumentCaptor.forClass(OutboxEvent.class);
+    verify(outbox).append(event.capture());
+    assertThat(event.getValue().eventType()).isEqualTo("OrderStatusChanged");
+    assertThat(event.getValue().payload().get("toStatus")).isEqualTo("PROCESSING");
+    assertThat(event.getValue().payload().get("recipientId"))
+        .isEqualTo(order.buyerId().value().toString());
   }
 
   @Test

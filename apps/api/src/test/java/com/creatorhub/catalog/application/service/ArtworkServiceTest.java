@@ -100,6 +100,26 @@ class ArtworkServiceTest {
   }
 
   @Test
+  void publishesDirectlyWhenReviewIsDisabled() {
+    ArtworkRepository repository = mock(ArtworkRepository.class);
+    CreatorUseCases creators = mock(CreatorUseCases.class);
+    OutboxRepository outbox = mock(OutboxRepository.class);
+    UUID ownerId = UUID.randomUUID();
+    Artwork artwork = draftArtwork(ownerId, "direct publish");
+    when(repository.findByOwnerId(UserId.of(ownerId), artwork.id()))
+        .thenReturn(java.util.Optional.of(artwork));
+    when(repository.save(artwork)).thenReturn(artwork);
+
+    ArtworkService service =
+        new ArtworkService(repository, creators, favoriteStats(), outbox, false);
+
+    ArtworkUseCases.ArtworkView result = service.submitForReview(ownerId, artwork.id().value());
+
+    assertThat(result.status()).isEqualTo(ArtworkStatus.PUBLISHED);
+    verify(outbox).append(any(OutboxEvent.class));
+  }
+
+  @Test
   void listsOwnedArtworksWithStatusAndStableCursor() {
     ArtworkRepository repository = mock(ArtworkRepository.class);
     CreatorUseCases creators = mock(CreatorUseCases.class);
@@ -144,6 +164,20 @@ class ArtworkServiceTest {
 
   private static Artwork approvedArtwork(String title) {
     return approvedArtwork(UUID.randomUUID(), title);
+  }
+
+  private static Artwork draftArtwork(UUID ownerId, String title) {
+    return Artwork.draft(
+        ArtworkId.random(),
+        UserId.of(ownerId),
+        UUID.randomUUID(),
+        title,
+        "A sufficiently long description for an artwork.",
+        "ART",
+        Money.of("99.00", "USD"),
+        2,
+        List.of(UUID.randomUUID()),
+        CREATED_AT);
   }
 
   private static Artwork approvedArtwork(UUID ownerId, String title) {

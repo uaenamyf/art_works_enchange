@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,12 +33,21 @@ public class ArtworkService implements ArtworkUseCases {
   private final CreatorUseCases creators;
   private final FavoriteUseCases.ReadPort favoriteStats;
   private final OutboxRepository outbox;
+  private final boolean reviewEnabled;
 
   public ArtworkService(
       ArtworkRepository artworks,
       CreatorUseCases creators,
       FavoriteUseCases.ReadPort favoriteStats) {
-    this(artworks, creators, favoriteStats, null);
+    this(artworks, creators, favoriteStats, null, true);
+  }
+
+  public ArtworkService(
+      ArtworkRepository artworks,
+      CreatorUseCases creators,
+      FavoriteUseCases.ReadPort favoriteStats,
+      OutboxRepository outbox) {
+    this(artworks, creators, favoriteStats, outbox, true);
   }
 
   @Autowired
@@ -45,11 +55,13 @@ public class ArtworkService implements ArtworkUseCases {
       ArtworkRepository artworks,
       CreatorUseCases creators,
       FavoriteUseCases.ReadPort favoriteStats,
-      OutboxRepository outbox) {
+      OutboxRepository outbox,
+      @Value("${creatorhub.catalog.artwork-review-enabled:true}") boolean reviewEnabled) {
     this.artworks = artworks;
     this.creators = creators;
     this.favoriteStats = favoriteStats;
     this.outbox = outbox;
+    this.reviewEnabled = reviewEnabled;
   }
 
   @Override
@@ -112,14 +124,22 @@ public class ArtworkService implements ArtworkUseCases {
   @Override
   public ArtworkView submitForReview(UUID userId, UUID artworkId) {
     Artwork artwork = owned(userId, artworkId);
-    artwork.submitForReview(AppClock.now());
-    return view(artworks.save(artwork));
+    if (reviewEnabled) {
+      artwork.submitForReview(AppClock.now());
+      return view(artworks.save(artwork));
+    }
+    artwork.publishWithoutReview(AppClock.now());
+    return publishSaved(artwork);
   }
 
   @Override
   public ArtworkView publish(UUID userId, UUID artworkId) {
     Artwork artwork = owned(userId, artworkId);
     artwork.publish(AppClock.now());
+    return publishSaved(artwork);
+  }
+
+  private ArtworkView publishSaved(Artwork artwork) {
     Artwork saved = artworks.save(artwork);
     if (outbox != null) {
       outbox.append(

@@ -5,6 +5,8 @@ import com.creatorhub.ordering.application.port.in.OrderUseCases.OrderView;
 import com.creatorhub.ordering.domain.model.Order;
 import com.creatorhub.ordering.domain.model.OrderStatus;
 import com.creatorhub.ordering.domain.repository.OrderRepository;
+import com.creatorhub.outbox.domain.model.OutboxEvent;
+import com.creatorhub.outbox.domain.repository.OutboxRepository;
 import com.creatorhub.sharedkernel.error.BusinessError;
 import com.creatorhub.studio.application.port.in.StudioOrderUseCase;
 import java.nio.charset.StandardCharsets;
@@ -12,6 +14,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,9 +24,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class StudioOrderService implements StudioOrderUseCase {
 
   private final OrderRepository orders;
+  private final OutboxRepository outbox;
 
   public StudioOrderService(OrderRepository orders) {
+    this(orders, null);
+  }
+
+  @Autowired
+  public StudioOrderService(OrderRepository orders, OutboxRepository outbox) {
     this.orders = orders;
+    this.outbox = outbox;
   }
 
   @Override
@@ -51,12 +61,37 @@ public class StudioOrderService implements StudioOrderUseCase {
     if (orders.findByIdAndSeller(orderId, sellerUserId).isEmpty()) {
       throw new BusinessError("ORDER_FORBIDDEN", "Order does not belong to creator");
     }
+    OrderStatus previousStatus = order.status();
     if (status == OrderStatus.PROCESSING) order.startProcessing(Instant.now());
     else if (status == OrderStatus.SHIPPED)
       order.markShipped(Instant.now(), trackingNumber, carrier);
     else throw new BusinessError("ORDER_STATUS_INVALID", "Unsupported fulfillment status");
     orders.save(order);
+    appendStatusChanged(order, previousStatus);
     return view(order);
+  }
+
+  /** 履约状态落库后写入 Outbox，避免通知发送失败影响订单事务。 */
+  private void appendStatusChanged(Order order, OrderStatus previousStatus) {
+    if (outbox == null) return;
+    String body = order.status() == OrderStatus.PROCESSING ? "创作者已开始处理你的订单。" : "你的订单已发货，请留意物流信息。";
+    outbox.append(
+        OutboxEvent.pending(
+            UUID.randomUUID(),
+            "OrderStatusChanged",
+            1,
+            "Order",
+            order.id().value(),
+            order.version(),
+            order.updatedAt(),
+            UUID.randomUUID(),
+            java.util.Map.of(
+                "recipientId", order.buyerId().value().toString(),
+                "orderId", order.id().value().toString(),
+                "fromStatus", previousStatus.name(),
+                "toStatus", order.status().name(),
+                "title", "订单状态已更新",
+                "body", body)));
   }
 
   private static OrderView view(Order order) {

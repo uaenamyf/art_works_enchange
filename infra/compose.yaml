@@ -2,26 +2,24 @@ services:
   # 默认启动完整本地栈；只想运行中间件时可使用 `docker compose up postgres redis minio`。
   postgres:
     image: postgres:17-alpine
-    container_name: creatorhub-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: creatorhub
-      POSTGRES_USER: creatorhub
-      POSTGRES_PASSWORD: creatorhub
+      POSTGRES_DB: ${DB_NAME:-creatorhub}
+      POSTGRES_USER: ${DB_USER:-creatorhub}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-creatorhub}
     ports:
       # 5432 被宿主机 PostgreSQL 占用；15432 专用于本 Compose 数据库。
       - "15432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U creatorhub -d creatorhub"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   redis:
     image: redis:8-alpine
-    container_name: creatorhub-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
@@ -35,7 +33,6 @@ services:
 
   minio:
     image: minio/minio:latest
-    container_name: creatorhub-minio
     restart: unless-stopped
     environment:
       MINIO_ROOT_USER: creatorhub
@@ -57,9 +54,11 @@ services:
     build:
       context: ..
       dockerfile: infra/api.Dockerfile
-    container_name: creatorhub-api
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      DB_NAME: ${DB_NAME:-creatorhub}
+      DB_USER: ${DB_USER:-creatorhub}
+      DB_PASSWORD: ${DB_PASSWORD:-creatorhub}
       JWT_SECRET: ${JWT_SECRET:-change-me-please-change-me-please-32bytes}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
       S3_ENDPOINT: http://minio:9000
@@ -91,7 +90,6 @@ services:
       args:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080}
         NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
-    container_name: creatorhub-web
     environment:
       API_INTERNAL_BASE_URL: http://api:8080
     ports:
