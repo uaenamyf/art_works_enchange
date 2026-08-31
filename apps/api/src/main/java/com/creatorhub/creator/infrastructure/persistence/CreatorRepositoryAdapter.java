@@ -76,6 +76,7 @@ public class CreatorRepositoryAdapter implements CreatorRepository {
     row.setCategory(creator.category());
     row.setBio(creator.bio());
     row.setLocation(creator.location());
+    row.setPaypalMerchantId(creator.payPalMerchantId());
     row.setCreatedAt(creator.createdAt());
     row.setUpdatedAt(AppClock.now());
     if (inserting) {
@@ -87,14 +88,17 @@ public class CreatorRepositoryAdapter implements CreatorRepository {
   }
 
   private static Creator toDomain(CreatorPersistenceRow row) {
-    return Creator.reconstitute(
-        CreatorId.of(row.getId()),
-        UserId.of(row.getUserId()),
-        row.getSlug(),
-        row.getDisplayName(),
-        row.getCategory(),
-        row.getBio(),
-        row.getLocation(),
-        row.getCreatedAt());
+    Creator creator =
+        Creator.reconstitute(
+            CreatorId.of(row.getId()),
+            UserId.of(row.getUserId()),
+            row.getSlug(),
+            row.getDisplayName(),
+            row.getCategory(),
+            row.getBio(),
+            row.getLocation(),
+            row.getCreatedAt());
+    if (row.getPaypalMerchantId() != null) creator.updatePayPalAccount(row.getPaypalMerchantId());
+    return creator;
   }
 }

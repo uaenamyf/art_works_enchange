@@ -27,6 +27,7 @@ class CreatorPersistenceRow {
   private boolean verified;
   private String avatarUrl;
   private String coverUrl;
+  private String paypalMerchantId;
   @Version private long version;
   private Instant createdAt;
   private Instant updatedAt;
@@ -109,6 +110,14 @@ class CreatorPersistenceRow {
 
   public void setCoverUrl(String coverUrl) {
     this.coverUrl = coverUrl;
+  }
+
+  public String getPaypalMerchantId() {
+    return paypalMerchantId;
+  }
+
+  public void setPaypalMerchantId(String paypalMerchantId) {
+    this.paypalMerchantId = paypalMerchantId;
   }
 
   public long getVersion() {

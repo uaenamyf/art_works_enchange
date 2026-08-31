@@ -20,12 +20,13 @@ public class StudioDashboardQueryAdapter implements StudioDashboardQuery {
   public DashboardView findByUserId(UUID userId) {
     StudioDashboardMapper.StudioDashboardRow row = mapper.findByUserId(userId);
     if (row == null) {
-      return new DashboardView(Money.zero(java.util.Currency.getInstance("CNY")), 0, 0, 0);
+      return new DashboardView(Money.zero(java.util.Currency.getInstance("CNY")), 0, 0, 0, 0);
     }
     return new DashboardView(
         Money.of(row.revenue().toPlainString(), row.currency()),
         row.orderCount(),
         row.publishedArtworkCount(),
-        row.followerCount());
+        row.followerCount(),
+        row.digitalDownloadCount());
   }
 }

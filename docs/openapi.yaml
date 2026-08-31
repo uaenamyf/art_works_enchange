@@ -217,6 +217,52 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /me/creator/paypal-account:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    put:
+      tags: [Creators]
+      operationId: updateMyPayPalAccount
+      summary: 更新 Creator 的 PayPal 收款账户
+      description: 仅保存 PayPal Multiparty 入驻返回的 merchant_id，不接受邮箱、密码、Access Token 或 Client Secret。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayPalAccountRequest'
+      responses:
+        '200':
+          description: PayPal 收款账户状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayPalAccount'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    get:
+      tags: [Creators]
+      operationId: getMyPayPalAccount
+      summary: 查询 Creator 的 PayPal 收款账户状态
+      responses:
+        '200':
+          description: PayPal 收款账户状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayPalAccount'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /creators:
     parameters:
       - $ref: '#/components/parameters/RequestId'
@@ -999,6 +1045,69 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+  /orders/{orderId}/payment/session:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      tags: [Payments]
+      operationId: createOrderPaymentSession
+      summary: 为订单创建 PayPal 支付会话
+      description: 服务端根据订单价格和 Creator 已绑定的 PayPal merchant_id 创建会话；客户端不得据此直接修改订单状态。
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentSessionRequest'
+      responses:
+        '200':
+          description: PayPal 客户端调起参数
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /orders/{orderId}/payment/capture:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      tags: [Payments]
+      operationId: captureOrderPayment
+      summary: 捕获 PayPal 支付会话
+      description: 捕获结果仅表示 Provider 返回结果；订单最终 PAID 状态必须由经过验签的 PayPal Webhook 驱动。
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CapturePaymentRequest'
+      responses:
+        '200':
+          description: PayPal 捕获结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /payments/webhooks/stripe:
     parameters:
       - $ref: '#/components/parameters/RequestId'
@@ -1024,6 +1133,31 @@ paths:
       responses:
         '200':
           description: 事件已处理或已幂等忽略
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /payments/webhooks/paypal:
+    post:
+      tags: [Webhooks]
+      operationId: handlePayPalWebhook
+      summary: 接收 PayPal Webhook
+      description: 使用 PayPal 官方 verify-webhook-signature API 验签；只处理白名单支付事件。
+      security: []
+      parameters:
+        - {name: Paypal-Transmission-Id, in: header, required: true, schema: {type: string}}
+        - {name: Paypal-Transmission-Time, in: header, required: true, schema: {type: string}}
+        - {name: Paypal-Transmission-Sig, in: header, required: true, schema: {type: string}}
+        - {name: Paypal-Cert-Url, in: header, required: true, schema: {type: string, format: uri}}
+        - {name: Paypal-Auth-Algo, in: header, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Webhook 已接收
         '400':
           $ref: '#/components/responses/BadRequest'
   /studio/dashboard:
@@ -1085,6 +1219,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ArtworkDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /studio/artworks/{artworkId}/reviews:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+      - $ref: '#/components/parameters/ArtworkId'
+    get:
+      tags: [Studio]
+      operationId: listStudioArtworkReviews
+      summary: 查询自己作品的审核历史
+      responses:
+        '200':
+          description: 审核历史
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReviewRecord'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -1193,6 +1350,91 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+  /admin/artworks/review-queue:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      tags: [Admin]
+      operationId: listAdminArtworkReviewQueue
+      summary: 查询待审核作品队列
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: 待审核作品分页
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminReviewQueuePage'
+              '400':
+                $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /admin/artworks/review-queue/{artworkId}:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+      - $ref: '#/components/parameters/ArtworkId'
+    get:
+      tags: [Admin]
+      operationId: getAdminArtworkReview
+      summary: 查询待审核作品详情
+      responses:
+        '200':
+          description: 待审核作品详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminReviewQueueItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /admin/artworks/review-history:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      tags: [Admin]
+      operationId: listAdminArtworkReviewHistory
+      summary: 查询作品审核历史
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: 审核历史分页
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminReviewHistoryPage'
+              '400':
+                $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /admin/dashboard:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      tags: [Admin]
+      operationId: getAdminDashboard
+      summary: 查询平台只读运营指标
+      responses:
+        '200':
+          description: 平台运营指标
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDashboard'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 components:
   securitySchemes:
     bearerAuth:
@@ -1444,6 +1686,23 @@ components:
           items:
             type: string
             format: uri
+    PayPalAccountRequest:
+      type: object
+      required: [merchantId]
+      properties:
+        merchantId:
+          type: string
+          maxLength: 64
+          pattern: '^[A-Za-z0-9_-]+$'
+    PayPalAccount:
+      type: object
+      required: [configured]
+      properties:
+        configured:
+          type: boolean
+        merchantId:
+          type: [string, 'null']
+          maxLength: 64
     ArtworkCategory:
       type: string
       enum: [ART, PHOTOGRAPHY, CERAMICS, WOODWORK, LEATHER, JEWELRY, FASHION, DIGITAL, COLLECTIBLES]
@@ -1554,7 +1813,7 @@ components:
         productType:
           $ref: '#/components/schemas/ProductType'
         creator:
-          $ref: '#/components/schemas/CreatorSummary'
+          $ref: '#/components/schemas/AdminCreatorSnapshot'
         cover:
           $ref: '#/components/schemas/Media'
         publishedAt:
@@ -1690,6 +1949,19 @@ components:
         updatedAt:
           type: string
           format: date-time
+    AdminCreatorSnapshot:
+      type: object
+      required: [id, slug, displayName, category]
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        displayName:
+          type: string
+        category:
+          $ref: '#/components/schemas/ArtworkCategory'
         favoriteCount:
           type: integer
           minimum: 0
@@ -1962,6 +2234,27 @@ components:
           type: string
           minLength: 1
           maxLength: 2000
+    ReviewRecord:
+      type: object
+      required: [id, artworkId, reviewerId, decision, reason, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        artworkId:
+          type: string
+          format: uuid
+        reviewerId:
+          type: string
+          format: uuid
+        decision:
+          type: string
+          enum: [APPROVED, REJECTED]
+        reason:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
     AddressInput:
       type: object
       required: [recipientName, line1, city, postalCode, countryCode, phone]
@@ -2096,13 +2389,21 @@ components:
           type: string
     PaymentProvider:
       type: string
-      enum: [STRIPE, WECHAT, ALIPAY]
+      enum: [PAYPAL, STRIPE, WECHAT, ALIPAY]
     CreatePaymentSessionRequest:
       type: object
       required: [provider]
       properties:
         provider:
           $ref: '#/components/schemas/PaymentProvider'
+    CapturePaymentRequest:
+      type: object
+      required: [providerOrderId]
+      properties:
+        providerOrderId:
+          type: string
+          minLength: 1
+          maxLength: 128
     PaymentSession:
       type: object
       required: [paymentId, orderId, provider, status, clientPayload]
@@ -2137,7 +2438,7 @@ components:
           maxLength: 100
     StudioDashboard:
       type: object
-      required: [revenue, orderCount, publishedArtworkCount, followerCount]
+      required: [revenue, orderCount, publishedArtworkCount, followerCount, digitalDownloadCount]
       properties:
         revenue:
           $ref: '#/components/schemas/Money'
@@ -2150,6 +2451,121 @@ components:
         followerCount:
           type: integer
           minimum: 0
+        digitalDownloadCount:
+          type: integer
+          minimum: 0
+    AdminReviewQueuePage:
+      type: object
+      required: [items, hasMore]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminReviewQueueItem'
+        nextCursor:
+          type: [string, 'null']
+        hasMore:
+          type: boolean
+    AdminReviewQueueItem:
+      type: object
+      required: [id, title, description, category, productType, priceAmount, priceCurrency, stock, creator, mediaIds, status, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          $ref: '#/components/schemas/ArtworkCategory'
+        productType:
+          $ref: '#/components/schemas/ProductType'
+        priceAmount:
+          type: string
+          pattern: '^\d+(\.\d{1,2})?$'
+        priceCurrency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        stock:
+          type: integer
+          minimum: 0
+        creator:
+          $ref: '#/components/schemas/CreatorSummary'
+        mediaIds:
+          type: array
+          maxItems: 12
+          items:
+            type: string
+            format: uuid
+        status:
+          $ref: '#/components/schemas/ArtworkStatus'
+        updatedAt:
+          type: string
+          format: date-time
+    AdminReviewHistoryPage:
+      type: object
+      required: [items, hasMore]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminReviewHistoryItem'
+        nextCursor:
+          type: [string, 'null']
+        hasMore:
+          type: boolean
+    AdminReviewHistoryItem:
+      type: object
+      required: [id, artworkId, artworkTitle, creator, reviewerId, decision, reason, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        artworkId:
+          type: string
+          format: uuid
+        artworkTitle:
+          type: string
+        creator:
+          $ref: '#/components/schemas/CreatorSummary'
+        reviewerId:
+          type: string
+          format: uuid
+        decision:
+          type: string
+          enum: [APPROVED, REJECTED]
+        reason:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    AdminDashboard:
+      type: object
+      required: [userCount, creatorCount, publishedArtworkCount, pendingReviewArtworkCount, artworkCountByStatus, orderCountByStatus]
+      properties:
+        userCount:
+          type: integer
+          minimum: 0
+        creatorCount:
+          type: integer
+          minimum: 0
+        publishedArtworkCount:
+          type: integer
+          minimum: 0
+        pendingReviewArtworkCount:
+          type: integer
+          minimum: 0
+        artworkCountByStatus:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+        orderCountByStatus:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
     Notification:
       type: object
       required: [id, type, title, body, readAt, createdAt]
@@ -2159,7 +2575,7 @@ components:
           format: uuid
         type:
           type: string
-          enum: [ARTWORK_PUBLISHED, ORDER_CREATED, ORDER_STATUS_CHANGED, PAYMENT_SUCCEEDED, PAYMENT_FAILED, DIGITAL_ENTITLEMENT_GRANTED, DIGITAL_ASSET_RECALLED]
+          enum: [ARTWORK_PUBLISHED, ORDER_CREATED, ORDER_STATUS_CHANGED, PAYMENT_SUCCEEDED, PAYMENT_FAILED, DIGITAL_ENTITLEMENT_GRANTED, DIGITAL_ASSET_RECALLED, ARTWORK_REVIEW_APPROVED, ARTWORK_REVIEW_REJECTED]
         title:
           type: string
         body:

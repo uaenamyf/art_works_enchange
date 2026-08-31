@@ -26,7 +26,8 @@ export default function StudioDashboardPage() {
     ["累计收入", `${dashboard.data.revenue.amount} ${dashboard.data.revenue.currency}`],
     ["订单数", dashboard.data.orderCount],
     ["已发布作品", dashboard.data.publishedArtworkCount],
-    ["关注者", dashboard.data.followerCount]
+    ["关注者", dashboard.data.followerCount],
+    ["数字下载", dashboard.data.digitalDownloadCount]
   ] as const;
   return (
     <main>

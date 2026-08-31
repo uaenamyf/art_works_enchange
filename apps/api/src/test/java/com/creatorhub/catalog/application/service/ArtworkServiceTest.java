@@ -55,6 +55,28 @@ class ArtworkServiceTest {
   }
 
   @Test
+  void includesFavoriteCountAndCurrentUserFavoriteState() {
+    ArtworkRepository repository = mock(ArtworkRepository.class);
+    CreatorUseCases creators = mock(CreatorUseCases.class);
+    FavoriteUseCases.ReadPort favorites = mock(FavoriteUseCases.ReadPort.class);
+    ArtworkService service = new ArtworkService(repository, creators, favorites);
+    Artwork artwork = publishedArtwork("featured");
+    UUID userId = UUID.randomUUID();
+    when(repository.findPublishedPage(any())).thenReturn(List.of(artwork));
+    when(favorites.countByArtworkId(artwork.id().value())).thenReturn(7L);
+    when(favorites.isFavorited(userId, artwork.id().value())).thenReturn(true);
+
+    ArtworkUseCases.ArtworkPage page =
+        service.listPublished(null, null, null, null, "LATEST", null, 20, userId);
+
+    assertThat(page.items()).hasSize(1);
+    assertThat(page.items().get(0).favoriteCount()).isEqualTo(7);
+    assertThat(page.items().get(0).favoritedByMe()).isTrue();
+    verify(favorites).countByArtworkId(artwork.id().value());
+    verify(favorites).isFavorited(userId, artwork.id().value());
+  }
+
+  @Test
   void publishesArtworkPublishedEventForOwnerWithoutSensitiveFields() {
     ArtworkRepository repository = mock(ArtworkRepository.class);
     CreatorUseCases creators = mock(CreatorUseCases.class);

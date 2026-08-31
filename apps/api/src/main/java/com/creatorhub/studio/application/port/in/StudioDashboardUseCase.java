@@ -9,5 +9,9 @@ public interface StudioDashboardUseCase {
   DashboardView get(UUID userId);
 
   record DashboardView(
-      Money revenue, long orderCount, long publishedArtworkCount, long followerCount) {}
+      Money revenue,
+      long orderCount,
+      long publishedArtworkCount,
+      long followerCount,
+      long digitalDownloadCount) {}
 }

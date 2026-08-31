@@ -5,6 +5,55 @@
 > 现状：仓库仅含 `apps/web`、`apps/api` 空目录骨架与文档基线。
 > 目标：以最小范围在 14 周内跑通“发现 → 关注/收藏 → 下单 → 支付 → 实体或数字履约 → Studio”核心闭环，并具备生产部署与基础监控能力。
 
+## 0.1 当前闭环审计（2026-08-30）
+
+本节以代码和可执行验收为准，优先级高于下文早期的周计划描述。当前不把真实支付 Provider 接入作为非支付功能的前置条件，但也不把“支付占位”表述为真实支付已完成。
+
+### 已具备的业务链
+
+- 消费者：Discover、分类筛选、作品详情、Creator 主页、收藏、关注、创建订单和订单查询。
+- Creator 入驻：普通用户注册后可申请 Creator，服务端创建 Creator 档案并提升角色。
+- Creator 上架基础链：创建 `DRAFT`、上传并确认图片、上传并确认数字资产、更新作品、提交审核。
+- Creator 履约基础链：查看自己的销售订单，并在服务端对象级权限和状态机约束下推进履约状态。
+- 数字交付基础链：数字订单授权查询、下载凭证申请和买家归属校验；真实支付成功仍由受信事件边界驱动。
+- 安全与工程：Access Token 刷新、Refresh Token HttpOnly Cookie、幂等、Outbox、HMAC 通用验签、CI 和 Compose 校验。
+
+### 当前不能算闭环的缺口
+
+1. **Creator 发布验收**：后端 `APPROVED -> PUBLISHED`、Studio 发布按钮和消费者可见的跨角色 E2E 均已通过。
+2. **Admin 审核工作台**：已完成待审核队列、审核详情、理由表单、批准/拒绝动作、Admin 前端路由和 Creator 审核历史读取。
+3. **Admin 运营视图**：已完成用户数、Creator 数、已发布数、待审核数、作品状态和订单状态只读指标；暂不扩展用户封禁、退款和结算。
+4. **Creator 反馈**：已完成审核历史读取、拒绝理由在 Studio 回显、关注/审核 Outbox 通知和跨角色发布 E2E；通知文案细化仍待补。
+5. **端到端验收数据**：Creator 发布测试已通过真实 API 动态准备 Creator 和待审核作品；数字购买、Creator 履约仍待补可重复 Fixture，不得用伪造 `PAID` 订单绕过支付边界。
+6. **生产运营**：AWS 资源、Sentry/CloudWatch、备份恢复演练和 Beta 运营尚未在真实环境完成。
+
+### 闭环完成定义
+
+非支付 MVP 至少必须通过以下流程：
+
+```text
+USER 注册
+	-> 申请 Creator
+	-> 创建作品草稿
+	-> 上传并确认图片/数字资产
+	-> 提交审核
+	-> ADMIN 在审核队列批准或拒绝
+	-> Creator 查看结果并在 APPROVED 状态点击发布
+	-> 消费者在公开 Discover/详情页看到作品
+	-> 消费者创建订单
+	-> Creator 查看订单并完成实体或数字履约
+```
+
+真实支付、退款、分账和 Provider Webhook 不属于本轮非支付闭环的完成条件，但任何测试替身都不能暴露为生产支付成功入口。
+
+### 后续实施顺序
+
+1. 增加可重复的本地角色 Fixture，覆盖 Creator 提交 → Admin 审核 → Creator 发布。
+2. 已用跨角色 Playwright 验证批准后的作品在公共详情页可见；后续继续验证实体和数字履约。
+3. Admin 审核历史分页、专门前端组件测试和数据库查询集成测试已完成，已验证分页、状态过滤、Creator 快照和对象脱敏。
+4. 细化审核和关注通知文案，并验证重复 Outbox 投递不会重复通知。
+5. 最后处理正式 `OrderDetail` DTO、真实支付 Provider、云资源、监控、备份和 Beta 验收。
+
 ## 0. 战略不动摇
 
 - **架构**：DDD Modular Monolith + Contract First + Domain First。
@@ -220,7 +269,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 
 **Week 5 验收**
 
-- 页面路由链路已具备：分类搜索 → 作品列表 → 详情 → Creator Profile → 返回；Playwright 端到端测试待补。
+- 页面路由链路已具备：分类搜索 → 作品列表 → 详情 → Creator Profile → 返回；Discover Playwright 端到端测试已覆盖首页、详情、返回、分类和搜索。
 - Lighthouse 移动端基线（无障碍 ≥ 90，性能 ≥ 80）。
 - 不引入 ML 推荐。
 
@@ -237,14 +286,14 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - 聚合：`FavoriteCollection`。
 - API：`PUT/DELETE /favorites/{artworkId}`、`GET /me/favorites`。
 - 已完成：`GET /me/favorites`、收藏列表游标分页，以及收藏页的认证、空态、错误态和成功态。
-- 待补强：作品列表/详情中的真实 `favoriteCount` 与 `favoritedByMe` 投影。
+- 已完成：作品列表/详情返回真实 `favoriteCount` 与认证用户的 `favoritedByMe` 投影。
 
 **Creator Follow**
 
 - 已完成：同一上下文内的 `Follow` 关系、V7 迁移及幂等关注/取消关注。
 - 已完成 API：`PUT/DELETE /creators/{id}/follow`、`GET /creators/{id}/followers`、`GET /me/follows`。
 - 已完成投影：Creator 列表/详情返回真实 `followerCount` 和认证用户的 `followedByMe`。
-- 待补强：关注列表和粉丝列表的前端页面，以及完整 E2E 测试。
+- 已完成：我的关注页和 Creator 公开主页的粉丝列表页，均支持加载、空态、错误态和游标加载；完整 E2E 测试仍待补。
 
 **前端**
 
@@ -378,10 +427,10 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - 已完成 Notification 表、事件去重表、游标列表、未读筛选和标记已读接口。
 - 已完成本地 Outbox Publisher 到 Notification handler 的可替换消费骨架；重复事件通过事件 ID 幂等。
 - 已完成可替换的邮件投递端口和脱敏 Console stub；当前不接入真实 SMTP。
-- 已接入订单创建 `OrderCreated`、作品发布 `ArtworkPublished`、主动/超时取消产生的 `OrderStatusChanged`，以及可信支付成功后的 `DigitalEntitlementGranted` 事件。
+- 已接入订单创建 `OrderCreated`、作品发布 `ArtworkPublished`、主动/超时取消产生的 `OrderStatusChanged`、Creator 关注 `CreatorFollowed`，以及可信支付成功后的 `DigitalEntitlementGranted` 事件。
 - 已完成 PaymentSucceeded、PaymentFailed 和 DigitalAssetRecalled 的消费边界与幂等；数字资产撤回应用服务已在同一事务中更新资产并写入 Outbox。
 - 已完成 DigitalAssetRecalled 消费者边界测试：成功撤回、未知版本忽略和缺失 reasonCode 拒绝均已覆盖。
-- 业务上下文尚未统一补齐各事件的通知收件人和脱敏文案载荷，真实业务事件接入与邮件触发保持待办，不将日志记录视为通知发送成功。
+- 订单、作品、关注、审核和数字资产事件已统一补齐站内通知收件人、脱敏文案载荷和相对链接；真实 SMTP 邮件触发仍待接入，不将日志记录视为邮件发送成功。
 
 ---
 
@@ -404,7 +453,7 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 - 订单列表/详情/履约：状态推进按钮。
 - 数字产品工作流：创建数字产品 → 上传私有资产 → 病毒扫描/哈希校验 → 发布不可变资产版本 → 查看数字订单与下载统计；Studio 不读取买家下载 Token。
 - 新增数据模型：`digital_assets`、`digital_asset_versions`、`entitlements`、`download_grants`。替换文件必须创建新版本，保留旧版本审计记录。
-- 当前优先级：完善数字资产版本管理、下载审计和 Creator Fulfillment E2E；不等待微信/支付宝接入。
+- 当前优先级：完善数字资产版本管理查询和 Creator Fulfillment E2E；下载凭证摘要、请求来源哈希、有效期、一次性核销、资产撤回失效和 Studio 已核销下载统计边界已完成，不等待微信/支付宝接入。
 
 **Week 10 验收**
 
@@ -471,16 +520,18 @@ CreatorHub 支持实体和数字两种履约类型，共用发现、Creator、�
 
 - Discover E2E 已完成并在 375 / 768 / 1440 三档 Chromium 视口通过；实体购买 E2E 已完成并支持环境变量注入测试账号。
 - 认证通知页 E2E 已完成，覆盖登录、通知页访问和未读筛选切换。
-- 数字 Checkout E2E 已加入，使用 `CREATORHUB_E2E_DIGITAL_ARTWORK_ID` 注入固定数字作品；当前本地无数字作品时自动跳过。
-- Creator Studio 履约 E2E 已加入，使用 `CREATORHUB_E2E_PAID_ORDER_ID` 注入已支付订单，覆盖 `PAID -> PROCESSING -> SHIPPED`；缺少测试数据时自动跳过。
+- 数字 Checkout E2E 前置测试已加入，使用 `CREATORHUB_E2E_DIGITAL_ARTWORK_ID` 注入固定数字作品，验证无地址结算并创建 `PENDING_PAYMENT` 订单；数字订单数量限制、无地址和不预占实体库存已有服务层回归测试，完整支付授权闭环仍需可信支付事件。
+- Creator Studio 履约状态推进测试已加入，使用 `CREATORHUB_E2E_PAID_ORDER_ID` 注入已支付订单，覆盖 `PAID -> PROCESSING -> SHIPPED`；服务层和 HTTP 层已覆盖 Creator 归属、未支付订单拒绝和物流字段转发，缺少可信支付测试数据时完整跨角色 E2E 仍自动跳过。
+- Creator → Admin → Creator 发布跨角色测试已通过，需要真实 Admin 账号；Creator 账号和待审核作品由测试通过真实注册、申请、上传和提交流程动态准备。
+- 跨角色 Fixture 不写入 Flyway 或生产启动流程；测试不创建订单、不伪造 `PAID` 状态。
 - 订单详情已补齐服务端状态结果态文案，覆盖待支付、支付/履约中、完成、取消和退款状态，不伪造支付成功。
 - 买家订单历史已补齐 `REFUNDING` 和 `REFUNDED` 状态筛选，与 OpenAPI 订单状态枚举保持一致。
 - 数字交付已补齐 `GET /orders/{id}/entitlement` 授权状态查询，服务端按买家归属返回脱敏投影，订单详情据此门禁下载操作。
-- 数字授权不存在时已映射为 RFC 9457 `404 DIGITAL_ENTITLEMENT_NOT_FOUND`，与 OpenAPI 错误响应保持一致。
+- 数字授权不存在或买家归属不匹配时已统一映射为 RFC 9457 `404 DIGITAL_ENTITLEMENT_NOT_FOUND`，下载服务和 HTTP 层均覆盖越权拒绝、短期链接和私有字段脱敏；完整支付授权 E2E 仍需可信支付事件。
 - Discover 已增加实体/数字产品分区，公开作品列表支持 `productType` 服务端过滤；发现下拉菜单按两个产品板块展示对应分类，创作者入口统一由顶部导航提供。
 - 浏览器认证联调已补齐 Access Token 过期续期和并发 refresh 去重，订单页刷新后可恢复查询，不再因内存 Token 过期直接显示 401。
 - 通用 Webhook HMAC-SHA256 原始载荷验签边界已固定，支持 Provider 常见 `sha256=<hex>` 格式，并可通过时间戳窗口防止重放；具体 Provider 接入仍待后续联调。
-- 当前仍未完成：数字购买、Creator Publish、Creator Fulfillment 三条完整 E2E，正式 OrderDetail 后端 DTO，Week 13 云部署/监控落地，以及真实支付 Provider 联调。
+- 当前仍未完成：数字购买和 Creator Fulfillment 两条完整 E2E，正式 OrderDetail 后端 DTO，Week 13 云部署/监控落地，以及真实支付 Provider 联调；Creator Publish 跨角色 E2E 已通过，收藏/关注页面和作品收藏投影已完成。
 - OWASP ASVS L1 检查清单通过。
 - 没有高危 CVE。
 

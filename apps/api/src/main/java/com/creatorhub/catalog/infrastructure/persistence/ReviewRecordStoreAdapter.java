@@ -3,6 +3,7 @@ package com.creatorhub.catalog.infrastructure.persistence;
 import com.creatorhub.catalog.application.port.out.ReviewRecordStore;
 import com.creatorhub.catalog.domain.model.ArtworkStatus;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
 
@@ -29,5 +30,20 @@ public class ReviewRecordStoreAdapter implements ReviewRecordStore {
     if (mapper.insert(row) != 1) {
       throw new IllegalStateException("Review record was not persisted");
     }
+  }
+
+  @Override
+  public List<ReviewRecord> findByArtworkId(UUID artworkId) {
+    return mapper.findByArtworkId(artworkId).stream()
+        .map(
+            row ->
+                new ReviewRecord(
+                    row.getId(),
+                    row.getArtworkId(),
+                    row.getReviewerId(),
+                    row.getDecision(),
+                    row.getReason(),
+                    row.getCreatedAt()))
+        .toList();
   }
 }

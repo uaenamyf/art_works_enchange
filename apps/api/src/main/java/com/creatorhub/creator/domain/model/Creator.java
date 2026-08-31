@@ -21,6 +21,7 @@ public final class Creator extends AggregateRoot<CreatorId> {
   private String category;
   private String bio;
   private String location;
+  private String payPalMerchantId;
   private final Instant createdAt;
 
   private Creator(
@@ -63,6 +64,14 @@ public final class Creator extends AggregateRoot<CreatorId> {
       String location,
       Instant createdAt) {
     return new Creator(id, userId, slug, displayName, category, bio, location, createdAt);
+  }
+
+  public void updatePayPalAccount(String merchantId) {
+    this.payPalMerchantId = requirePayPalMerchantId(merchantId);
+  }
+
+  public String payPalMerchantId() {
+    return payPalMerchantId;
   }
 
   /** 更新可变公开档案；slug 和 owner 创建后保持不变。 */
@@ -124,6 +133,14 @@ public final class Creator extends AggregateRoot<CreatorId> {
     String normalized = value.trim();
     if (normalized.length() > max) {
       throw new IllegalArgumentException("location length is invalid");
+    }
+    return normalized;
+  }
+
+  private static String requirePayPalMerchantId(String value) {
+    String normalized = Objects.requireNonNull(value, "merchantId").trim();
+    if (normalized.isEmpty() || normalized.length() > 64 || !normalized.matches("[A-Za-z0-9_-]+")) {
+      throw new IllegalArgumentException("PayPal merchantId is invalid");
     }
     return normalized;
   }

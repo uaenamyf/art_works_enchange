@@ -1,6 +1,7 @@
 package com.creatorhub.digitaldelivery.application.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -9,7 +10,9 @@ import com.creatorhub.digitaldelivery.domain.model.Entitlement;
 import com.creatorhub.digitaldelivery.domain.repository.EntitlementRepository;
 import com.creatorhub.outbox.domain.model.OutboxEvent;
 import com.creatorhub.outbox.domain.repository.OutboxRepository;
+import com.creatorhub.sharedkernel.error.BusinessError;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -53,6 +56,22 @@ class DigitalEntitlementServiceTest {
                 Instant.now());
 
     assertThat(result.id()).isEqualTo(existing.id());
+  }
+
+  @Test
+  void nonBuyerCannotReadEntitlementAndGetsNotFound() {
+    EntitlementRepository repository = mock(EntitlementRepository.class);
+    Entitlement existing = entitlement();
+    UUID anotherBuyerId = UUID.randomUUID();
+    when(repository.findByOrderId(existing.orderId())).thenReturn(Optional.of(existing));
+
+    assertThatThrownBy(
+            () ->
+                new DigitalEntitlementService(repository)
+                    .getForBuyer(anotherBuyerId, existing.orderId()))
+        .isInstanceOf(BusinessError.class)
+        .extracting(error -> ((BusinessError) error).code())
+        .isEqualTo("DIGITAL_ENTITLEMENT_NOT_FOUND");
   }
 
   @Test

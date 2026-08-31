@@ -19,7 +19,7 @@
 
 | 事件 | 类型 | 发布上下文 | 消费上下文 | 关键载荷 | 幂等效果 |
 | --- | --- | --- | --- | --- | --- |
-| `CreatorFollowed` v1 | 集成事件 | Creator | Notification | `userId`、`creatorId` | 同一关注只生成一次通知 |
+| `CreatorFollowed` v1 | 集成事件 | Creator | Notification | `recipientId`、`creatorId`、`title`、`body` | 同一 Outbox event 只生成一次 Creator 通知 |
 | `ArtworkPublished` v1 | 集成事件 | Catalog | Notification | `artworkId`、`creatorId`、`title` | 同一作品版本只通知一次 |
 | `StockReserved` v1 | 领域事件 | Catalog | Catalog 内部 | `artworkId`、`orderId`、`quantity` | 重复订单预占不再次扣减 |
 | `StockReleased` v1 | 集成事件 | Ordering | Catalog | `orderId`、`artworkId`、`quantity` | 已返还订单不重复增加库存 |
@@ -30,6 +30,8 @@
 | `DigitalEntitlementRequested` v1 | 集成事件 | Ordering | Digital Delivery | `orderId`、`artworkId`、`assetVersionId`、`buyerId` | 同一订单只创建一次购买授权 |
 | `DigitalEntitlementGranted` v1 | 集成事件 | Digital Delivery | Ordering、Notification | `orderId`、`assetVersionId`、`entitlementId` | 已授权订单不重复创建下载权限 |
 | `DigitalAssetRecalled` v1 | 集成事件 | Catalog/Digital Delivery | Ordering、Notification | `artworkId`、`assetVersionId`、`reasonCode` | 撤回消费者按资产版本撤销授权并失效下载凭证；重复/未知版本无副作用 |
+| `ArtworkReviewApproved` v1 | 集成事件 | Catalog | Notification | `recipientId`、`artworkId`、`title`、`body` | 同一 Outbox event 只生成一次 Creator 通知 |
+| `ArtworkReviewRejected` v1 | 集成事件 | Catalog | Notification | `recipientId`、`artworkId`、`title`、`body`（审核理由） | 同一 Outbox event 只生成一次 Creator 通知 |
 
 ## 演进规则
 

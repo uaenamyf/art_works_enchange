@@ -10,10 +10,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.creatorhub.config.GlobalExceptionHandler;
 import com.creatorhub.config.SecurityConfig;
-import com.creatorhub.digitaldelivery.application.service.DigitalDownloadService;
-import com.creatorhub.digitaldelivery.application.service.DigitalDownloadService.DownloadView;
 import com.creatorhub.digitaldelivery.application.port.in.DigitalEntitlementUseCases;
 import com.creatorhub.digitaldelivery.application.port.in.DigitalEntitlementUseCases.EntitlementView;
+import com.creatorhub.digitaldelivery.application.service.DigitalDownloadService;
+import com.creatorhub.digitaldelivery.application.service.DigitalDownloadService.DownloadView;
 import com.creatorhub.identity.infrastructure.security.CookieOriginValidationFilter;
 import com.creatorhub.identity.infrastructure.security.JwtAuthenticationFilter;
 import java.time.Instant;
@@ -114,6 +114,25 @@ class DigitalDownloadControllerTest {
         .andExpect(jsonPath("$.status").value("AVAILABLE"))
         .andExpect(jsonPath("$.objectKey").doesNotExist())
         .andExpect(jsonPath("$.downloadUrl").doesNotExist());
+
+    verify(entitlements).getForBuyer(buyerId, orderId);
+  }
+
+  @Test
+  void nonBuyerReceivesNotFoundWhenReadingEntitlement() throws Exception {
+    UUID buyerId = UUID.randomUUID();
+    UUID orderId = UUID.randomUUID();
+    when(entitlements.getForBuyer(buyerId, orderId))
+        .thenThrow(
+            new com.creatorhub.sharedkernel.error.BusinessError(
+                "DIGITAL_ENTITLEMENT_NOT_FOUND", "Digital entitlement was not found"));
+
+    mvc.perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(
+                    "/api/v1/orders/{orderId}/entitlement", orderId)
+                .with(authentication(user(buyerId))))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("DIGITAL_ENTITLEMENT_NOT_FOUND"));
 
     verify(entitlements).getForBuyer(buyerId, orderId);
   }

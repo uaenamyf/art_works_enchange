@@ -48,7 +48,8 @@ class StudioDashboardControllerTest {
   void creatorCanReadDashboard() throws Exception {
     UUID userId = UUID.randomUUID();
     when(dashboard.get(userId))
-        .thenReturn(new StudioDashboardUseCase.DashboardView(Money.of("120.00", "CNY"), 3, 2, 8));
+        .thenReturn(
+            new StudioDashboardUseCase.DashboardView(Money.of("120.00", "CNY"), 3, 2, 8, 12));
 
     mvc.perform(get("/api/v1/studio/dashboard").with(authentication(user(userId, "CREATOR"))))
         .andExpect(status().isOk())
@@ -56,7 +57,8 @@ class StudioDashboardControllerTest {
         .andExpect(jsonPath("$.revenue.currency").value("CNY"))
         .andExpect(jsonPath("$.orderCount").value(3))
         .andExpect(jsonPath("$.publishedArtworkCount").value(2))
-        .andExpect(jsonPath("$.followerCount").value(8));
+        .andExpect(jsonPath("$.followerCount").value(8))
+        .andExpect(jsonPath("$.digitalDownloadCount").value(12));
 
     verify(dashboard).get(eq(userId));
   }

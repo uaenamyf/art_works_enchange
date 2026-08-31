@@ -101,6 +101,11 @@ class ArtworkReviewServiceTest {
         UUID artworkId, UUID reviewerId, ArtworkStatus decision, String reason, Instant createdAt) {
       entries.add(new Entry(artworkId, reviewerId, decision, reason));
     }
+
+    @Override
+    public List<ReviewRecord> findByArtworkId(UUID artworkId) {
+      return List.of();
+    }
   }
 
   private static final class InMemoryArtworkRepository implements ArtworkRepository {

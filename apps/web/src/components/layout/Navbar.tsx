@@ -71,12 +71,27 @@ export function Navbar() {
               创作者
             </Link>
           </li>
+          <li>
+            <Link
+              href={!loading && session?.user.role === "USER" ? ROUTES.creatorApply : ROUTES.authRegister}
+              className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900"
+            >
+              成为 Creator
+            </Link>
+          </li>
           {!loading && session ? (
             <>
-              {session.user.role === "USER" ? (
+              {session.user.role === "CREATOR" ? (
                 <li>
-                  <Link href={ROUTES.creatorApply} className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900">
-                    申请 Creator
+                  <Link href={ROUTES.studio} className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900">
+                    Creator Studio
+                  </Link>
+                </li>
+              ) : null}
+              {session.user.role === "ADMIN" ? (
+                <li>
+                  <Link href={ROUTES.admin} className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900">
+                    管理后台
                   </Link>
                 </li>
               ) : null}

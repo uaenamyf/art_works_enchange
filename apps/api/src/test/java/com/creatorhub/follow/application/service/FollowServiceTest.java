@@ -2,6 +2,7 @@ package com.creatorhub.follow.application.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -9,8 +10,11 @@ import com.creatorhub.creator.application.port.in.CreatorUseCases;
 import com.creatorhub.follow.application.port.in.FollowUseCases.FollowState;
 import com.creatorhub.follow.domain.repository.FollowRepository;
 import com.creatorhub.identity.application.port.in.GetCurrentUserUseCase;
+import com.creatorhub.outbox.domain.model.OutboxEvent;
+import com.creatorhub.outbox.domain.repository.OutboxRepository;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 /** 验证关注前必须确认 Creator 存在，并返回服务端计算的关注数。 */
 class FollowServiceTest {
@@ -45,5 +49,52 @@ class FollowServiceTest {
     assertThat(result).isEqualTo(new FollowState(false, 2L));
     verify(creators).get(creatorId);
     verify(follows).remove(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+  }
+
+  @Test
+  void publishesFollowEventToCreatorOwner() {
+    FollowRepository follows = mock(FollowRepository.class);
+    CreatorUseCases creators = mock(CreatorUseCases.class);
+    OutboxRepository outbox = mock(OutboxRepository.class);
+    UUID followerId = UUID.randomUUID();
+    UUID creatorId = UUID.randomUUID();
+    UUID creatorOwnerId = UUID.randomUUID();
+    when(follows.add(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+        .thenReturn(true);
+    when(creators.get(creatorId))
+        .thenReturn(
+            new CreatorUseCases.CreatorView(
+                creatorId, creatorOwnerId, "alice", "Alice Studio", "ART", "Bio", null));
+    when(follows.countByCreatorId(org.mockito.ArgumentMatchers.any())).thenReturn(4L);
+
+    new FollowService(follows, creators, mock(GetCurrentUserUseCase.class), outbox)
+        .follow(followerId, creatorId);
+
+    ArgumentCaptor<OutboxEvent> event = ArgumentCaptor.forClass(OutboxEvent.class);
+    verify(outbox).append(event.capture());
+    assertThat(event.getValue().eventType()).isEqualTo("CreatorFollowed");
+    assertThat(event.getValue().payload().get("recipientId")).isEqualTo(creatorOwnerId.toString());
+    assertThat(event.getValue().payload().get("creatorId")).isEqualTo(creatorId.toString());
+  }
+
+  @Test
+  void repeatedFollowDoesNotPublishDuplicateEvent() {
+    FollowRepository follows = mock(FollowRepository.class);
+    CreatorUseCases creators = mock(CreatorUseCases.class);
+    OutboxRepository outbox = mock(OutboxRepository.class);
+    UUID followerId = UUID.randomUUID();
+    UUID creatorId = UUID.randomUUID();
+    UUID creatorOwnerId = UUID.randomUUID();
+    when(follows.add(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+        .thenReturn(false);
+    when(creators.get(creatorId))
+        .thenReturn(
+            new CreatorUseCases.CreatorView(
+                creatorId, creatorOwnerId, "alice", "Alice Studio", "ART", "Bio", null));
+
+    new FollowService(follows, creators, mock(GetCurrentUserUseCase.class), outbox)
+        .follow(followerId, creatorId);
+
+    verify(outbox, never()).append(org.mockito.ArgumentMatchers.any(OutboxEvent.class));
   }
 }

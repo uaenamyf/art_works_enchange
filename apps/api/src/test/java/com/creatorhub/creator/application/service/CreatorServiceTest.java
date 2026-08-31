@@ -3,6 +3,7 @@ package com.creatorhub.creator.application.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.creatorhub.creator.application.port.in.CreatorUseCases;
 import com.creatorhub.creator.application.port.in.CreatorUseCases.ApplyCommand;
 import com.creatorhub.creator.domain.model.Creator;
 import com.creatorhub.creator.domain.model.CreatorId;
@@ -53,6 +54,34 @@ class CreatorServiceTest {
         .isInstanceOf(BusinessError.class)
         .extracting(error -> ((BusinessError) error).code())
         .isEqualTo("CREATOR_ALREADY_EXISTS");
+  }
+
+  @Test
+  void updatesPayPalMerchantAccountForCurrentCreator() {
+    InMemoryCreators creators = new InMemoryCreators();
+    CreatorService service = new CreatorService(creators, userId -> {}, followStats());
+    UUID userId = UUID.randomUUID();
+    service.apply(
+        userId, new ApplyCommand("Alice Studio", "alice-studio", "ILLUSTRATION", "Bio", null));
+
+    var result = service.updatePayPalAccount(userId, "merchant-123");
+
+    assertThat(result).isEqualTo(new CreatorUseCases.PayPalAccountView(true, "merchant-123"));
+    assertThat(creators.findByUserId(UserId.of(userId)).orElseThrow().payPalMerchantId())
+        .isEqualTo("merchant-123");
+  }
+
+  @Test
+  void rejectsInvalidPayPalMerchantAccount() {
+    InMemoryCreators creators = new InMemoryCreators();
+    CreatorService service = new CreatorService(creators, userId -> {}, followStats());
+    UUID userId = UUID.randomUUID();
+    service.apply(
+        userId, new ApplyCommand("Alice Studio", "alice-studio", "ILLUSTRATION", "Bio", null));
+
+    assertThatThrownBy(() -> service.updatePayPalAccount(userId, "paypal@example.com"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("PayPal merchantId is invalid");
   }
 
   private static final class RecordingPromotion implements PromoteUserToCreatorUseCase {

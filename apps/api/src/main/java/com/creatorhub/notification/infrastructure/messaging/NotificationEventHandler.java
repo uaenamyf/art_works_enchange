@@ -24,13 +24,16 @@ public class NotificationEventHandler implements OutboxEventHandler {
   public boolean supports(String eventType, int eventVersion) {
     return eventVersion == 1
         && switch (eventType) {
-          case "ArtworkPublished",
+          case "CreatorFollowed",
+                  "ArtworkPublished",
                   "OrderCreated",
                   "OrderStatusChanged",
                   "PaymentSucceeded",
                   "PaymentFailed",
                   "DigitalEntitlementGranted",
-                  "DigitalAssetRecalled" ->
+                  "DigitalAssetRecalled",
+                  "ArtworkReviewApproved",
+                  "ArtworkReviewRejected" ->
               true;
           default -> false;
         };
@@ -64,6 +67,7 @@ public class NotificationEventHandler implements OutboxEventHandler {
 
   private static String toNotificationType(String eventType) {
     return switch (eventType) {
+      case "CreatorFollowed" -> "CREATOR_FOLLOWED";
       case "ArtworkPublished" -> "ARTWORK_PUBLISHED";
       case "OrderCreated" -> "ORDER_CREATED";
       case "OrderStatusChanged" -> "ORDER_STATUS_CHANGED";
@@ -71,6 +75,8 @@ public class NotificationEventHandler implements OutboxEventHandler {
       case "PaymentFailed" -> "PAYMENT_FAILED";
       case "DigitalEntitlementGranted" -> "DIGITAL_ENTITLEMENT_GRANTED";
       case "DigitalAssetRecalled" -> "DIGITAL_ASSET_RECALLED";
+      case "ArtworkReviewApproved" -> "ARTWORK_REVIEW_APPROVED";
+      case "ArtworkReviewRejected" -> "ARTWORK_REVIEW_REJECTED";
       default -> throw new IllegalArgumentException("Unsupported notification event");
     };
   }
@@ -85,6 +91,7 @@ public class NotificationEventHandler implements OutboxEventHandler {
 
   private static String relativeLink(OutboxEvent event) {
     return switch (event.eventType()) {
+      case "CreatorFollowed" -> "/creators/" + text(event, "creatorId");
       case "OrderCreated",
               "OrderStatusChanged",
               "PaymentSucceeded",
@@ -92,6 +99,8 @@ public class NotificationEventHandler implements OutboxEventHandler {
               "DigitalEntitlementGranted" ->
           "/orders/" + text(event, "orderId");
       case "ArtworkPublished", "DigitalAssetRecalled" -> "/artworks/" + text(event, "artworkId");
+      case "ArtworkReviewApproved", "ArtworkReviewRejected" ->
+          "/studio/artworks/" + text(event, "artworkId");
       default -> throw new IllegalArgumentException("Unsupported notification event");
     };
   }

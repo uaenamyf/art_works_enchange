@@ -19,6 +19,8 @@ export const ROUTES = {
   authLogin: "/auth/login",
   authRegister: "/auth/register",
   creatorApply: "/studio/creator/apply",
+  studio: "/studio/artworks",
+  admin: "/admin",
   favorites: "/me/favorites",
   follows: "/me/follows",
   orders: "/orders",

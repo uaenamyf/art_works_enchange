@@ -15,6 +15,7 @@ export default function StudioLayout({ children }: { children: ReactNode }) {
           <Link href="/studio/artworks" className="flex min-h-11 shrink-0 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">作品管理</Link>
           <Link href="/studio/artworks/new" className="flex min-h-11 shrink-0 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">添加作品</Link>
           <Link href="/studio/orders" className="flex min-h-11 shrink-0 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">订单履约</Link>
+          <Link href="/studio/settings/payments" className="flex min-h-11 shrink-0 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">收款方式</Link>
         </nav>
       </aside>
       <div className="min-w-0 flex-1">{children}</div>

@@ -89,3 +89,10 @@ creatorhub:
     access-key: ${S3_ACCESS_KEY:creatorhub}
     secret-key: ${S3_SECRET_KEY:creatorhub-secret}
     upload-url-ttl-seconds: 900
+  payment:
+    paypal:
+      base-url: ${PAYPAL_BASE_URL:https://api-m.sandbox.paypal.com}
+      client-id: ${PAYPAL_CLIENT_ID:}
+      client-secret: ${PAYPAL_CLIENT_SECRET:}
+      partner-attribution-id: ${PAYPAL_PARTNER_ATTRIBUTION_ID:}
+      webhook-id: ${PAYPAL_WEBHOOK_ID:}

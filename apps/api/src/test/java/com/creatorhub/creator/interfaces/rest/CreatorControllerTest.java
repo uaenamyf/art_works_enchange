@@ -114,8 +114,62 @@ class CreatorControllerTest {
         .andExpect(status().isUnauthorized());
   }
 
+  @Test
+  void creatorCanUpdateOwnPayPalMerchantAccount() throws Exception {
+    UUID userId = UUID.randomUUID();
+    when(creators.updatePayPalAccount(userId, "merchant-123"))
+        .thenReturn(new CreatorUseCases.PayPalAccountView(true, "merchant-123"));
+
+    mvc.perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(
+                    "/api/v1/me/creator/paypal-account")
+                .with(authentication(user(userId, "CREATOR")))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"merchantId\":\"merchant-123\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.configured").value(true))
+        .andExpect(jsonPath("$.merchantId").value("merchant-123"));
+
+    verify(creators).updatePayPalAccount(userId, "merchant-123");
+  }
+
+  @Test
+  void ordinaryUserCannotUpdatePayPalMerchantAccount() throws Exception {
+    mvc.perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(
+                    "/api/v1/me/creator/paypal-account")
+                .with(authentication(user(UUID.randomUUID(), "USER")))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"merchantId\":\"merchant-123\"}"))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void creatorCanReadOwnPayPalMerchantAccountStatus() throws Exception {
+    UUID userId = UUID.randomUUID();
+    when(creators.getPayPalAccount(userId))
+        .thenReturn(new CreatorUseCases.PayPalAccountView(true, "merchant-123"));
+
+    mvc.perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(
+                    "/api/v1/me/creator/paypal-account")
+                .with(authentication(user(userId, "CREATOR"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.configured").value(true))
+        .andExpect(jsonPath("$.merchantId").value("merchant-123"));
+
+    verify(creators).getPayPalAccount(userId);
+  }
+
   private static CreatorView view(UUID creatorId, UUID userId) {
     return new CreatorView(
         creatorId, userId, "alice-studio", "Alice Studio", "ILLUSTRATION", "Bio", "Shanghai");
+  }
+
+  private static UsernamePasswordAuthenticationToken user(UUID userId, String role) {
+    return new UsernamePasswordAuthenticationToken(
+        userId, null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
   }
 }

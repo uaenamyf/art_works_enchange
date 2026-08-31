@@ -95,6 +95,27 @@ public class CreatorService implements CreatorUseCases {
   }
 
   @Override
+  public PayPalAccountView updatePayPalAccount(UUID userId, String merchantId) {
+    Creator creator =
+        creators
+            .findByUserId(UserId.of(userId))
+            .orElseThrow(() -> new BusinessError("CREATOR_NOT_FOUND", "Creator profile not found"));
+    creator.updatePayPalAccount(merchantId);
+    Creator saved = creators.save(creator);
+    return new PayPalAccountView(saved.payPalMerchantId() != null, saved.payPalMerchantId());
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public PayPalAccountView getPayPalAccount(UUID userId) {
+    Creator creator =
+        creators
+            .findByUserId(UserId.of(userId))
+            .orElseThrow(() -> new BusinessError("CREATOR_NOT_FOUND", "Creator profile not found"));
+    return new PayPalAccountView(creator.payPalMerchantId() != null, creator.payPalMerchantId());
+  }
+
+  @Override
   @Transactional(readOnly = true)
   public CreatorPage list(String category, String cursor, int limit) {
     int pageSize = Math.min(Math.max(limit, 1), 50);

@@ -14,6 +14,10 @@ public interface CreatorUseCases {
 
   CreatorView getByUserId(UUID userId);
 
+  PayPalAccountView updatePayPalAccount(UUID userId, String merchantId);
+
+  PayPalAccountView getPayPalAccount(UUID userId);
+
   CreatorPage list(String category, String cursor, int limit);
 
   /** 申请命令中的 owner 始终来自认证上下文，不允许客户端传入。 */
@@ -31,6 +35,9 @@ public interface CreatorUseCases {
       String category,
       String bio,
       String location) {}
+
+  /** Creator 可见的 PayPal 收款账户状态，不回传任何 PayPal 秘密凭据。 */
+  record PayPalAccountView(boolean configured, String merchantId) {}
 
   record CreatorPage(List<CreatorSummaryView> items, String nextCursor, boolean hasMore) {}
 

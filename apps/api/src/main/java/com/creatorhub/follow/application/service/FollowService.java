@@ -6,12 +6,15 @@ import com.creatorhub.creator.domain.model.CreatorId;
 import com.creatorhub.follow.application.port.in.FollowUseCases;
 import com.creatorhub.follow.domain.repository.FollowRepository;
 import com.creatorhub.identity.application.port.in.GetCurrentUserUseCase;
+import com.creatorhub.outbox.domain.model.OutboxEvent;
+import com.creatorhub.outbox.domain.repository.OutboxRepository;
 import com.creatorhub.sharedkernel.UserId;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,19 +26,31 @@ public class FollowService implements FollowUseCases {
   private final FollowRepository follows;
   private final CreatorUseCases creators;
   private final GetCurrentUserUseCase users;
+  private final OutboxRepository outbox;
 
   public FollowService(
       FollowRepository follows, CreatorUseCases creators, GetCurrentUserUseCase users) {
+    this(follows, creators, users, null);
+  }
+
+  @Autowired
+  public FollowService(
+      FollowRepository follows,
+      CreatorUseCases creators,
+      GetCurrentUserUseCase users,
+      OutboxRepository outbox) {
     this.follows = follows;
     this.creators = creators;
     this.users = users;
+    this.outbox = outbox;
   }
 
   @Override
   public FollowState follow(UUID userId, UUID creatorId) {
     CreatorId id = CreatorId.of(creatorId);
-    creators.get(creatorId);
-    follows.add(UserId.of(userId), id);
+    var creator = creators.get(creatorId);
+    boolean added = follows.add(UserId.of(userId), id);
+    if (added) publishFollowEvent(userId, creator);
     return new FollowState(true, follows.countByCreatorId(id));
   }
 
@@ -91,6 +106,29 @@ public class FollowService implements FollowUseCases {
         false,
         follows.countByCreatorId(CreatorId.of(creatorId)),
         follows.exists(UserId.of(userId), CreatorId.of(creatorId)));
+  }
+
+  private void publishFollowEvent(UUID followerId, CreatorUseCases.CreatorView creator) {
+    if (outbox == null || creator.userId().equals(followerId)) return;
+    outbox.append(
+        OutboxEvent.pending(
+            UUID.randomUUID(),
+            "CreatorFollowed",
+            1,
+            "Creator",
+            creator.id(),
+            0,
+            Instant.now(),
+            UUID.randomUUID(),
+            java.util.Map.of(
+                "recipientId",
+                creator.userId().toString(),
+                "creatorId",
+                creator.id().toString(),
+                "title",
+                "你有新的关注者",
+                "body",
+                "有人关注了你的 Creator 主页。")));
   }
 
   private record Cursor(Instant createdAt, CreatorId creatorId, UserId userId) {

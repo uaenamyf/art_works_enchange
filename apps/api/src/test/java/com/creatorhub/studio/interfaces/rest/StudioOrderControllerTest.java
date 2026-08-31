@@ -81,6 +81,34 @@ class StudioOrderControllerTest {
         .andExpect(status().isForbidden());
   }
 
+  @Test
+  void creatorCanMarkOrderShippedWithTrackingDetails() throws Exception {
+    UUID userId = UUID.randomUUID();
+    UUID orderId = UUID.randomUUID();
+    mvc.perform(
+            patch("/api/v1/studio/orders/{orderId}/status", orderId)
+                .with(authentication(user(userId, "CREATOR")))
+                .with(csrf())
+                .contentType("application/json")
+                .content(
+                    "{\"status\":\"SHIPPED\",\"trackingNumber\":\"SF123\",\"carrier\":\"顺丰\"}"))
+        .andExpect(status().isOk());
+
+    verify(orders)
+        .updateStatus(eq(userId), eq(orderId), eq(OrderStatus.SHIPPED), eq("SF123"), eq("顺丰"));
+  }
+
+  @Test
+  void ordinaryUserCannotUpdateStudioOrderStatus() throws Exception {
+    mvc.perform(
+            patch("/api/v1/studio/orders/{orderId}/status", UUID.randomUUID())
+                .with(authentication(user(UUID.randomUUID(), "USER")))
+                .with(csrf())
+                .contentType("application/json")
+                .content("{\"status\":\"PROCESSING\"}"))
+        .andExpect(status().isForbidden());
+  }
+
   private static UsernamePasswordAuthenticationToken user(UUID userId, String role) {
     return new UsernamePasswordAuthenticationToken(
         userId, null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));

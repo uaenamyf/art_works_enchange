@@ -1,7 +1,9 @@
 package com.creatorhub.studio.application.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -51,6 +53,45 @@ class StudioOrderServiceTest {
 
     assertThat(result.items()).isEmpty();
     verify(orders).findBySeller(sellerId, OrderStatus.PAID, null, null, 21);
+  }
+
+  @Test
+  void creatorCannotUpdateAnotherCreatorsOrder() {
+    OrderRepository orders = mock(OrderRepository.class);
+    UUID sellerId = UUID.randomUUID();
+    UUID otherSellerId = UUID.randomUUID();
+    UUID orderId = UUID.randomUUID();
+    Order order = order(orderId, UUID.randomUUID(), otherSellerId);
+    when(orders.findById(orderId)).thenReturn(java.util.Optional.of(order));
+    when(orders.findByIdAndSeller(orderId, sellerId)).thenReturn(java.util.Optional.empty());
+
+    assertThatThrownBy(
+            () ->
+                new StudioOrderService(orders)
+                    .updateStatus(sellerId, orderId, OrderStatus.PROCESSING, null, null))
+        .isInstanceOf(com.creatorhub.sharedkernel.error.BusinessError.class)
+        .hasMessage("Order does not belong to creator");
+
+    verify(orders, never()).save(order);
+  }
+
+  @Test
+  void creatorCannotStartProcessingUnpaidOrder() {
+    OrderRepository orders = mock(OrderRepository.class);
+    UUID sellerId = UUID.randomUUID();
+    UUID orderId = UUID.randomUUID();
+    Order order = order(orderId, UUID.randomUUID(), sellerId);
+    when(orders.findById(orderId)).thenReturn(java.util.Optional.of(order));
+    when(orders.findByIdAndSeller(orderId, sellerId)).thenReturn(java.util.Optional.of(order));
+
+    assertThatThrownBy(
+            () ->
+                new StudioOrderService(orders)
+                    .updateStatus(sellerId, orderId, OrderStatus.PROCESSING, null, null))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("cannot transition");
+
+    verify(orders, never()).save(order);
   }
 
   private static Order order(UUID orderId, UUID buyerId, UUID sellerId) {

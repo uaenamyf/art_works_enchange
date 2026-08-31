@@ -21,6 +21,7 @@ import com.creatorhub.config.SecurityConfig;
 import com.creatorhub.identity.infrastructure.security.CookieOriginValidationFilter;
 import com.creatorhub.identity.infrastructure.security.JwtAuthenticationFilter;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -191,6 +192,41 @@ class ArtworkControllerTest {
   void ordinaryUserCannotListStudioArtworks() throws Exception {
     mvc.perform(
             get("/api/v1/studio/artworks").with(authentication(user(UUID.randomUUID(), "USER"))))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void creatorCanReadOwnedArtworkReviewHistory() throws Exception {
+    UUID userId = UUID.randomUUID();
+    UUID artworkId = UUID.randomUUID();
+    UUID reviewId = UUID.randomUUID();
+    when(reviews.listForOwner(userId, artworkId))
+        .thenReturn(
+            List.of(
+                new ArtworkReviewUseCases.ReviewView(
+                    reviewId,
+                    artworkId,
+                    UUID.randomUUID(),
+                    ArtworkStatus.REJECTED,
+                    "请补充作品信息。",
+                    Instant.parse("2026-08-31T00:00:00Z"))));
+
+    mvc.perform(
+            get("/api/v1/studio/artworks/{artworkId}/reviews", artworkId)
+                .with(authentication(user(userId, "CREATOR"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].id").value(reviewId.toString()))
+        .andExpect(jsonPath("$[0].decision").value("REJECTED"))
+        .andExpect(jsonPath("$[0].reason").value("请补充作品信息。"));
+
+    verify(reviews).listForOwner(userId, artworkId);
+  }
+
+  @Test
+  void ordinaryUserCannotReadStudioArtworkReviewHistory() throws Exception {
+    mvc.perform(
+            get("/api/v1/studio/artworks/{artworkId}/reviews", UUID.randomUUID())
+                .with(authentication(user(UUID.randomUUID(), "USER"))))
         .andExpect(status().isForbidden());
   }
 

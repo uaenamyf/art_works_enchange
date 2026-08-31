@@ -79,6 +79,22 @@ public class CreatorController {
     return ResponseEntity.ok(CreatorDetailResponse.from(updated));
   }
 
+  /** 保存当前 Creator 已完成 PayPal 入驻后获得的 merchant_id。 */
+  @PutMapping("/me/creator/paypal-account")
+  @PreAuthorize("hasRole('CREATOR')")
+  ResponseEntity<CreatorUseCases.PayPalAccountView> updatePayPalAccount(
+      @AuthenticationPrincipal UUID userId, @Valid @RequestBody PayPalAccountRequest request) {
+    return ResponseEntity.ok(creators.updatePayPalAccount(userId, request.merchantId()));
+  }
+
+  /** 返回当前 Creator 的 PayPal 收款绑定状态，不返回任何 PayPal 秘密凭据。 */
+  @GetMapping("/me/creator/paypal-account")
+  @PreAuthorize("hasRole('CREATOR')")
+  ResponseEntity<CreatorUseCases.PayPalAccountView> getPayPalAccount(
+      @AuthenticationPrincipal UUID userId) {
+    return ResponseEntity.ok(creators.getPayPalAccount(userId));
+  }
+
   /** 获取公开 Creator 详情；关注数从 Follow 查询端口读取，关注状态对匿名请求保持 false。 */
   @GetMapping("/creators/{creatorId}")
   ResponseEntity<CreatorDetailResponse> get(
@@ -104,6 +120,9 @@ public class CreatorController {
       @NotBlank @Size(min = 2, max = 50) String displayName,
       @NotBlank @Size(max = 2000) String bio,
       @Size(max = 100) String location) {}
+
+  record PayPalAccountRequest(
+      @NotBlank @Size(max = 64) @Pattern(regexp = "[A-Za-z0-9_-]+") String merchantId) {}
 
   /** CreatorDetail 占位投影；Follow/Catalog 接入后替换计数字段。 */
   record CreatorDetailResponse(

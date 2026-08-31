@@ -20,7 +20,7 @@ public class StudioDashboardController {
     this.dashboard = dashboard;
   }
 
-  /** 读取当前 Creator 的四项 Dashboard 指标。 */
+  /** 读取当前 Creator 的作品、订单、关注者和数字下载只读指标。 */
   @GetMapping
   @PreAuthorize("hasRole('CREATOR')")
   ResponseEntity<DashboardResponse> get(@AuthenticationPrincipal UUID userId) {
@@ -29,14 +29,19 @@ public class StudioDashboardController {
 
   /** API 金额 DTO；禁止直接暴露领域 Money 的辅助行为方法。 */
   record DashboardResponse(
-      MoneyResponse revenue, long orderCount, long publishedArtworkCount, long followerCount) {
+      MoneyResponse revenue,
+      long orderCount,
+      long publishedArtworkCount,
+      long followerCount,
+      long digitalDownloadCount) {
     static DashboardResponse from(StudioDashboardUseCase.DashboardView view) {
       return new DashboardResponse(
           new MoneyResponse(
               view.revenue().amount().toPlainString(), view.revenue().currency().getCurrencyCode()),
           view.orderCount(),
           view.publishedArtworkCount(),
-          view.followerCount());
+          view.followerCount(),
+          view.digitalDownloadCount());
     }
   }
 

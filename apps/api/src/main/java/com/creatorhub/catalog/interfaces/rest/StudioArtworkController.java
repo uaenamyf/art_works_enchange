@@ -1,8 +1,10 @@
 package com.creatorhub.catalog.interfaces.rest;
 
+import com.creatorhub.catalog.application.port.in.ArtworkReviewUseCases;
 import com.creatorhub.catalog.application.port.in.ArtworkUseCases;
 import com.creatorhub.catalog.application.port.in.ArtworkUseCases.ArtworkView;
 import com.creatorhub.catalog.domain.model.ArtworkStatus;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,9 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class StudioArtworkController {
 
   private final ArtworkUseCases artworks;
+  private final ArtworkReviewUseCases reviews;
 
-  public StudioArtworkController(ArtworkUseCases artworks) {
+  public StudioArtworkController(ArtworkUseCases artworks, ArtworkReviewUseCases reviews) {
     this.artworks = artworks;
+    this.reviews = reviews;
   }
 
   /** 读取编辑视图；对象级归属校验由应用服务通过认证用户 ID 完成。 */
@@ -41,5 +45,13 @@ public class StudioArtworkController {
       @RequestParam(required = false) String cursor,
       @RequestParam(defaultValue = "20") int limit) {
     return ResponseEntity.ok(artworks.listOwned(userId, status, cursor, limit));
+  }
+
+  /** Creator 只能读取自己作品的审核记录，拒绝理由用于指导作品修改。 */
+  @GetMapping("/{artworkId}/reviews")
+  @PreAuthorize("hasRole('CREATOR')")
+  ResponseEntity<List<ArtworkReviewUseCases.ReviewView>> listReviews(
+      @AuthenticationPrincipal UUID userId, @PathVariable UUID artworkId) {
+    return ResponseEntity.ok(reviews.listForOwner(userId, artworkId));
   }
 }

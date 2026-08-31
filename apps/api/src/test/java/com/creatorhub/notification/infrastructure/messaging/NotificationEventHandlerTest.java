@@ -75,6 +75,32 @@ class NotificationEventHandlerTest {
   }
 
   @Test
+  void consumesCreatorFollowedForCreatorOwner() {
+    UUID creatorOwnerId = UUID.randomUUID();
+    when(notifications.recordEvent(any(), any(), any(Integer.class), any())).thenReturn(true);
+
+    handler.handle(
+        event(
+            UUID.randomUUID(),
+            "CreatorFollowed",
+            Map.of(
+                "recipientId",
+                creatorOwnerId.toString(),
+                "creatorId",
+                UUID.randomUUID().toString(),
+                "title",
+                "你有新的关注者",
+                "body",
+                "有人关注了你的 Creator 主页。")));
+
+    ArgumentCaptor<Notification> saved = ArgumentCaptor.forClass(Notification.class);
+    verify(notifications).save(saved.capture());
+    assertThat(saved.getValue().userId()).isEqualTo(creatorOwnerId);
+    assertThat(saved.getValue().type().name()).isEqualTo("CREATOR_FOLLOWED");
+    assertThat(saved.getValue().link()).startsWith("/creators/");
+  }
+
+  @Test
   void consumesAssetRecallForOwnerWithoutDownloadSecrets() {
     UUID ownerId = UUID.randomUUID();
     when(notifications.recordEvent(any(), any(), any(Integer.class), any())).thenReturn(true);
@@ -105,6 +131,58 @@ class NotificationEventHandlerTest {
     assertThat(saved.getValue().type().name()).isEqualTo("DIGITAL_ASSET_RECALLED");
     assertThat(saved.getValue().link()).startsWith("/artworks/");
     assertThat(saved.getValue().body()).doesNotContain("private.example", "download");
+  }
+
+  @Test
+  void consumesArtworkReviewRejectedForCreator() {
+    UUID creatorId = UUID.randomUUID();
+    when(notifications.recordEvent(any(), any(), any(Integer.class), any())).thenReturn(true);
+
+    handler.handle(
+        event(
+            UUID.randomUUID(),
+            "ArtworkReviewRejected",
+            Map.of(
+                "recipientId",
+                creatorId.toString(),
+                "artworkId",
+                UUID.randomUUID().toString(),
+                "title",
+                "作品需要修改",
+                "body",
+                "请补充作品信息后重新提交。")));
+
+    ArgumentCaptor<Notification> saved = ArgumentCaptor.forClass(Notification.class);
+    verify(notifications).save(saved.capture());
+    assertThat(saved.getValue().userId()).isEqualTo(creatorId);
+    assertThat(saved.getValue().type().name()).isEqualTo("ARTWORK_REVIEW_REJECTED");
+    assertThat(saved.getValue().link()).startsWith("/studio/artworks/");
+  }
+
+  @Test
+  void consumesArtworkReviewApprovedForCreator() {
+    UUID creatorId = UUID.randomUUID();
+    when(notifications.recordEvent(any(), any(), any(Integer.class), any())).thenReturn(true);
+
+    handler.handle(
+        event(
+            UUID.randomUUID(),
+            "ArtworkReviewApproved",
+            Map.of(
+                "recipientId",
+                creatorId.toString(),
+                "artworkId",
+                UUID.randomUUID().toString(),
+                "title",
+                "作品审核通过",
+                "body",
+                "请前往 Studio 发布作品。")));
+
+    ArgumentCaptor<Notification> saved = ArgumentCaptor.forClass(Notification.class);
+    verify(notifications).save(saved.capture());
+    assertThat(saved.getValue().userId()).isEqualTo(creatorId);
+    assertThat(saved.getValue().type().name()).isEqualTo("ARTWORK_REVIEW_APPROVED");
+    assertThat(saved.getValue().link()).startsWith("/studio/artworks/");
   }
 
   @Test

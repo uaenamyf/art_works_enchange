@@ -42,4 +42,40 @@ class DownloadGrantTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("tokenDigest must be a hexadecimal digest");
   }
+
+  @Test
+  void usedGrantIsUnavailable() {
+    Instant createdAt = Instant.parse("2026-08-28T00:00:00Z");
+    DownloadGrant grant =
+        new DownloadGrant(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            "a".repeat(64),
+            createdAt.plusSeconds(300),
+            createdAt.plusSeconds(1),
+            null,
+            null,
+            null,
+            createdAt);
+
+    assertThat(grant.usableAt(createdAt.plusSeconds(2))).isFalse();
+  }
+
+  @Test
+  void revokedGrantIsUnavailable() {
+    Instant createdAt = Instant.parse("2026-08-28T00:00:00Z");
+    DownloadGrant grant =
+        new DownloadGrant(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            "a".repeat(64),
+            createdAt.plusSeconds(300),
+            null,
+            createdAt.plusSeconds(1),
+            null,
+            null,
+            createdAt);
+
+    assertThat(grant.usableAt(createdAt.plusSeconds(2))).isFalse();
+  }
 }

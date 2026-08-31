@@ -42,11 +42,26 @@ class StudioDashboardQueryAdapterIntegrationTest {
   private UUID ownerId;
   private UUID creatorId;
   private UUID artworkId;
+  private UUID digitalArtworkId;
   private UUID buyerId;
+  private UUID digitalOrderId;
+  private UUID entitlementId;
+  private UUID assetId;
+  private UUID versionId;
+  private UUID grantId;
 
   @AfterEach
   void cleanUp() {
     if (artworkId != null) jdbc.update("DELETE FROM orders WHERE artwork_id = ?", artworkId);
+    if (grantId != null) jdbc.update("DELETE FROM digital_download_grants WHERE id = ?", grantId);
+    if (entitlementId != null)
+      jdbc.update("DELETE FROM digital_entitlements WHERE id = ?", entitlementId);
+    if (digitalOrderId != null) jdbc.update("DELETE FROM orders WHERE id = ?", digitalOrderId);
+    if (versionId != null)
+      jdbc.update("DELETE FROM digital_asset_versions WHERE id = ?", versionId);
+    if (assetId != null) jdbc.update("DELETE FROM digital_assets WHERE id = ?", assetId);
+    if (digitalArtworkId != null)
+      jdbc.update("DELETE FROM artworks WHERE id = ?", digitalArtworkId);
     if (ownerId != null) jdbc.update("DELETE FROM creator_follows WHERE creator_id = ?", creatorId);
     if (artworkId != null) jdbc.update("DELETE FROM artworks WHERE id = ?", artworkId);
     if (creatorId != null) jdbc.update("DELETE FROM creator_profiles WHERE id = ?", creatorId);
@@ -60,11 +75,12 @@ class StudioDashboardQueryAdapterIntegrationTest {
 
     var view = dashboard.findByUserId(ownerId);
 
-    assertThat(view.revenue().amount()).isEqualByComparingTo("20.00");
+    assertThat(view.revenue().amount()).isEqualByComparingTo("30.00");
     assertThat(view.revenue().currency().getCurrencyCode()).isEqualTo("CNY");
-    assertThat(view.orderCount()).isEqualTo(1);
-    assertThat(view.publishedArtworkCount()).isEqualTo(1);
+    assertThat(view.orderCount()).isEqualTo(2);
+    assertThat(view.publishedArtworkCount()).isEqualTo(2);
     assertThat(view.followerCount()).isEqualTo(1);
+    assertThat(view.digitalDownloadCount()).isEqualTo(1);
   }
 
   private void createFixture() {
@@ -135,6 +151,66 @@ class StudioDashboardQueryAdapterIntegrationTest {
         "{}",
         Timestamp.from(instant.plusSeconds(1800)),
         now,
+        now);
+    createDigitalDownloadFixture(instant, now);
+  }
+
+  private void createDigitalDownloadFixture(Instant instant, Timestamp now) {
+    digitalArtworkId = UUID.randomUUID();
+    digitalOrderId = UUID.randomUUID();
+    assetId = UUID.randomUUID();
+    versionId = UUID.randomUUID();
+    entitlementId = UUID.randomUUID();
+    grantId = UUID.randomUUID();
+    jdbc.update(
+        "INSERT INTO artworks (id, owner_id, creator_id, title, description, category, price_amount, price_currency, stock, status, product_type, created_at, updated_at) VALUES (?, ?, ?, 'Digital Work', 'Digital dashboard artwork', 'DIGITAL', 10.00, 'CNY', 0, 'PUBLISHED', 'DIGITAL', ?, ?)",
+        digitalArtworkId,
+        ownerId,
+        creatorId,
+        now,
+        now);
+    jdbc.update(
+        "INSERT INTO digital_assets (id, artwork_id, owner_id, status, current_version, created_at, updated_at) VALUES (?, ?, ?, 'READY', 1, ?, ?)",
+        assetId,
+        digitalArtworkId,
+        ownerId,
+        now,
+        now);
+    jdbc.update(
+        "INSERT INTO digital_asset_versions (id, digital_asset_id, version, file_name, object_key, content_type, size_bytes, sha256, scan_status, created_at) VALUES (?, ?, 1, 'asset.zip', ?, 'application/zip', 1024, ?, 'READY', ?)",
+        versionId,
+        assetId,
+        "private/dashboard-" + versionId,
+        "a".repeat(64),
+        now);
+    jdbc.update(
+        "INSERT INTO orders (id, order_number, buyer_id, artwork_id, title, unit_price, currency, quantity, subtotal, status, fulfillment_type, shipping_address, expires_at, created_at, updated_at) VALUES (?, ?, ?, ?, 'Digital Work', 10.00, 'CNY', 1, 10.00, 'PAID', 'DIGITAL', NULL, ?, ?, ?)",
+        digitalOrderId,
+        "CH" + digitalOrderId.toString().replace("-", "").substring(0, 18),
+        buyerId,
+        digitalArtworkId,
+        Timestamp.from(instant.plusSeconds(1800)),
+        now,
+        now);
+    jdbc.update(
+        "INSERT INTO digital_entitlements (id, order_id, buyer_id, artwork_id, asset_version_id, status, granted_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'AVAILABLE', ?, ?, ?)",
+        entitlementId,
+        digitalOrderId,
+        buyerId,
+        digitalArtworkId,
+        versionId,
+        now,
+        now,
+        now);
+    jdbc.update(
+        "INSERT INTO digital_download_grants (id, entitlement_id, token_digest, expires_at, used_at, request_ip_hash, user_agent_hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        grantId,
+        entitlementId,
+        "b".repeat(64),
+        Timestamp.from(instant.plusSeconds(300)),
+        Timestamp.from(instant.plusSeconds(10)),
+        "c".repeat(64),
+        "d".repeat(64),
         now);
   }
 

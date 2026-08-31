@@ -19,7 +19,7 @@ class StudioDashboardServiceTest {
     StudioDashboardQuery query = mock(StudioDashboardQuery.class);
     UUID userId = UUID.randomUUID();
     StudioDashboardUseCase.DashboardView expected =
-        new StudioDashboardUseCase.DashboardView(Money.of("120.00", "CNY"), 3, 2, 8);
+        new StudioDashboardUseCase.DashboardView(Money.of("120.00", "CNY"), 3, 2, 8, 0);
     when(query.findByUserId(userId)).thenReturn(expected);
 
     StudioDashboardUseCase.DashboardView actual = new StudioDashboardService(query).get(userId);

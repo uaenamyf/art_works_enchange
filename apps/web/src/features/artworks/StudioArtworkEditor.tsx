@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ApiError } from "@/lib/api/fetcher";
 import { useAuth } from "@/features/auth/AuthProvider";
+import type { components } from "@/lib/api/schema.gen";
 
 const categories = [
   "ART",
@@ -43,6 +45,7 @@ type ArtworkDetail = {
   status: string;
   version: number;
 };
+type ReviewRecord = components["schemas"]["ReviewRecord"];
 
 /** Studio 编辑器：按最新版本更新作品，并只允许草稿或被拒绝作品再次提交审核。 */
 export function StudioArtworkEditor({ artworkId }: { artworkId: string }) {
@@ -53,6 +56,12 @@ export function StudioArtworkEditor({ artworkId }: { artworkId: string }) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [published, setPublished] = useState(false);
+  const reviews = useQuery<ReviewRecord[], Error>({
+    queryKey: ["studio-artwork-reviews", artworkId],
+    enabled: Boolean(session) && !loading,
+    queryFn: () => authenticatedFetchRef.current<ReviewRecord[]>(`/api/v1/studio/artworks/${artworkId}/reviews`)
+  });
   const {
     register,
     reset,
@@ -115,12 +124,28 @@ export function StudioArtworkEditor({ artworkId }: { artworkId: string }) {
     }
   }
 
+  async function publish() {
+    if (!artwork || artwork.status !== "APPROVED") return;
+    setFormError(null);
+    setPublished(false);
+    try {
+      const updated = await authenticatedFetch<ArtworkDetail>(`/api/v1/artworks/${artwork.id}/publish`, {
+        method: "POST"
+      });
+      setArtwork(updated);
+      setPublished(true);
+    } catch (error) {
+      setFormError(error instanceof ApiError ? error.problem.detail ?? "发布失败，请刷新后重试" : "发布失败，请检查网络后重试");
+    }
+  }
+
   if (loading) return <p className="text-sm text-ink-500">正在恢复登录状态…</p>;
   if (!session) return <p role="alert" className="text-sm text-error">请先登录并完成 Creator 入驻。</p>;
   if (loadError) return <p role="alert" className="text-sm text-error">{loadError}</p>;
   if (!artwork) return <p role="status" className="text-sm text-ink-500">正在加载作品…</p>;
 
   const editable = artwork.status === "DRAFT" || artwork.status === "REJECTED";
+  const latestRejection = reviews.data?.find((review) => review.decision === "REJECTED");
   return (
     <form className="flex max-w-2xl flex-col gap-5" onSubmit={handleSubmit((values) => save(values))} noValidate>
       <div className="flex items-center justify-between border-b border-ink-300 pb-4">
@@ -130,6 +155,13 @@ export function StudioArtworkEditor({ artworkId }: { artworkId: string }) {
         </div>
         <p className="text-sm text-ink-500">已绑定 {artwork.mediaIds.length} 张图片</p>
       </div>
+      {artwork.status === "APPROVED" ? (
+        <section className="flex flex-wrap items-center justify-between gap-4 border-b border-ink-300 pb-5">
+          <p className="text-sm text-ink-700">作品已通过审核，可以正式上架。</p>
+          <Button type="button" onClick={() => void publish()}>发布作品</Button>
+        </section>
+      ) : null}
+      {latestRejection ? <p className="border-b border-ink-300 pb-5 text-sm text-error">最近一次审核意见：{latestRejection.reason}</p> : null}
       <Input label="作品标题" error={errors.title?.message} disabled={!editable} {...register("title")} />
       <label className="flex flex-col gap-1.5 text-sm text-ink-700">
         作品描述
@@ -149,6 +181,7 @@ export function StudioArtworkEditor({ artworkId }: { artworkId: string }) {
       <Input label="库存" type="number" min="0" step="1" disabled={!editable} error={errors.stock?.message} {...register("stock")} />
       {formError ? <p role="alert" className="text-sm text-error">{formError}</p> : null}
       {saved ? <p role="status" className="text-sm text-success">作品已保存</p> : null}
+      {published ? <p role="status" className="text-sm text-success">作品已发布</p> : null}
       {editable ? (
         <div className="flex flex-wrap gap-3">
           <Button type="submit" loading={isSubmitting}>保存草稿</Button>

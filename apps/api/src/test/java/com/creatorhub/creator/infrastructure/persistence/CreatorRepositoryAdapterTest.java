@@ -66,11 +66,16 @@ class CreatorRepositoryAdapterTest {
 
     creators.save(creator);
 
+    creator.updatePayPalAccount("merchant-123");
+    creators.save(creator);
+
     assertThat(creators.existsByUserId(userId)).isTrue();
     assertThat(creators.existsBySlug("creator-studio")).isTrue();
     assertThat(creators.findById(creator.id()))
         .get()
         .extracting(Creator::displayName)
         .isEqualTo("Creator Studio");
+    assertThat(creators.findById(creator.id()).orElseThrow().payPalMerchantId())
+        .isEqualTo("merchant-123");
   }
 }

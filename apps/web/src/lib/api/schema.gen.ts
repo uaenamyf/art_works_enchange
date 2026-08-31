@@ -145,6 +145,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/creator/paypal-account": {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询 Creator 的 PayPal 收款账户状态 */
+        get: operations["getMyPayPalAccount"];
+        /**
+         * 更新 Creator 的 PayPal 收款账户
+         * @description 仅保存 PayPal Multiparty 入驻返回的 merchant_id，不接受邮箱、密码、Access Token 或 Client Secret。
+         */
+        put: operations["updateMyPayPalAccount"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/creators": {
         parameters: {
             query?: never;
@@ -705,6 +729,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orders/{orderId}/payment/session": {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 为订单创建 PayPal 支付会话
+         * @description 服务端根据订单价格和 Creator 已绑定的 PayPal merchant_id 创建会话；客户端不得据此直接修改订单状态。
+         */
+        post: operations["createOrderPaymentSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/orders/{orderId}/payment/capture": {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 捕获 PayPal 支付会话
+         * @description 捕获结果仅表示 Provider 返回结果；订单最终 PAID 状态必须由经过验签的 PayPal Webhook 驱动。
+         */
+        post: operations["captureOrderPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/payments/webhooks/stripe": {
         parameters: {
             query?: never;
@@ -722,6 +792,26 @@ export interface paths {
          * @description 必须使用原始请求体和 Stripe-Signature 验签。
          */
         post: operations["handleStripeWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payments/webhooks/paypal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 接收 PayPal Webhook
+         * @description 使用 PayPal 官方 verify-webhook-signature API 验签；只处理白名单支付事件。
+         */
+        post: operations["handlePayPalWebhook"];
         delete?: never;
         options?: never;
         head?: never;
@@ -785,6 +875,28 @@ export interface paths {
          * @description 仅返回当前 Creator 自己的作品，包含草稿和审核状态，不能用于公开浏览。
          */
         get: operations["getStudioArtwork"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/studio/artworks/{artworkId}/reviews": {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path: {
+                artworkId: components["parameters"]["ArtworkId"];
+            };
+            cookie?: never;
+        };
+        /** 查询自己作品的审核历史 */
+        get: operations["listStudioArtworkReviews"];
         put?: never;
         post?: never;
         delete?: never;
@@ -873,6 +985,88 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/artworks/review-queue": {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询待审核作品队列 */
+        get: operations["listAdminArtworkReviewQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/artworks/review-queue/{artworkId}": {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path: {
+                artworkId: components["parameters"]["ArtworkId"];
+            };
+            cookie?: never;
+        };
+        /** 查询待审核作品详情 */
+        get: operations["getAdminArtworkReview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/artworks/review-history": {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询作品审核历史 */
+        get: operations["listAdminArtworkReviewHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/dashboard": {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询平台只读运营指标 */
+        get: operations["getAdminDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -928,6 +1122,13 @@ export interface components {
             location?: string | null;
             socialLinks?: string[];
         };
+        PayPalAccountRequest: {
+            merchantId: string;
+        };
+        PayPalAccount: {
+            configured: boolean;
+            merchantId?: string | null;
+        };
         /** @enum {string} */
         ArtworkCategory: "ART" | "PHOTOGRAPHY" | "CERAMICS" | "WOODWORK" | "LEATHER" | "JEWELRY" | "FASHION" | "DIGITAL" | "COLLECTIBLES";
         /** @enum {string} */
@@ -981,7 +1182,7 @@ export interface components {
             status: components["schemas"]["ArtworkStatus"];
             stock: number;
             productType?: components["schemas"]["ProductType"];
-            creator: components["schemas"]["CreatorSummary"];
+            creator: components["schemas"]["AdminCreatorSnapshot"];
             cover: components["schemas"]["Media"];
             /** Format: date-time */
             publishedAt: string;
@@ -1036,6 +1237,13 @@ export interface components {
             productType: components["schemas"]["ProductType"];
             /** Format: date-time */
             updatedAt: string;
+        };
+        AdminCreatorSnapshot: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            displayName: string;
+            category: components["schemas"]["ArtworkCategory"];
             favoriteCount?: number;
             favoritedByMe?: boolean;
         };
@@ -1175,6 +1383,19 @@ export interface components {
         ReviewRequest: {
             reason: string;
         };
+        ReviewRecord: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            artworkId: string;
+            /** Format: uuid */
+            reviewerId: string;
+            /** @enum {string} */
+            decision: "APPROVED" | "REJECTED";
+            reason: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
         AddressInput: {
             recipientName: string;
             line1: string;
@@ -1238,9 +1459,12 @@ export interface components {
             clientSecret: string;
         };
         /** @enum {string} */
-        PaymentProvider: "STRIPE" | "WECHAT" | "ALIPAY";
+        PaymentProvider: "PAYPAL" | "STRIPE" | "WECHAT" | "ALIPAY";
         CreatePaymentSessionRequest: {
             provider: components["schemas"]["PaymentProvider"];
+        };
+        CapturePaymentRequest: {
+            providerOrderId: string;
         };
         PaymentSession: {
             /** Format: uuid */
@@ -1266,12 +1490,66 @@ export interface components {
             orderCount: number;
             publishedArtworkCount: number;
             followerCount: number;
+            digitalDownloadCount: number;
+        };
+        AdminReviewQueuePage: {
+            items: components["schemas"]["AdminReviewQueueItem"][];
+            nextCursor?: string | null;
+            hasMore: boolean;
+        };
+        AdminReviewQueueItem: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            description: string;
+            category: components["schemas"]["ArtworkCategory"];
+            productType: components["schemas"]["ProductType"];
+            priceAmount: string;
+            priceCurrency: string;
+            stock: number;
+            creator: components["schemas"]["CreatorSummary"];
+            mediaIds: string[];
+            status: components["schemas"]["ArtworkStatus"];
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        AdminReviewHistoryPage: {
+            items: components["schemas"]["AdminReviewHistoryItem"][];
+            nextCursor?: string | null;
+            hasMore: boolean;
+        };
+        AdminReviewHistoryItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            artworkId: string;
+            artworkTitle: string;
+            creator: components["schemas"]["CreatorSummary"];
+            /** Format: uuid */
+            reviewerId: string;
+            /** @enum {string} */
+            decision: "APPROVED" | "REJECTED";
+            reason: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AdminDashboard: {
+            userCount: number;
+            creatorCount: number;
+            publishedArtworkCount: number;
+            pendingReviewArtworkCount: number;
+            artworkCountByStatus: {
+                [key: string]: number;
+            };
+            orderCountByStatus: {
+                [key: string]: number;
+            };
         };
         Notification: {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            type: "ARTWORK_PUBLISHED" | "ORDER_CREATED" | "ORDER_STATUS_CHANGED" | "PAYMENT_SUCCEEDED" | "PAYMENT_FAILED" | "DIGITAL_ENTITLEMENT_GRANTED" | "DIGITAL_ASSET_RECALLED";
+            type: "ARTWORK_PUBLISHED" | "ORDER_CREATED" | "ORDER_STATUS_CHANGED" | "PAYMENT_SUCCEEDED" | "PAYMENT_FAILED" | "DIGITAL_ENTITLEMENT_GRANTED" | "DIGITAL_ASSET_RECALLED" | "ARTWORK_REVIEW_APPROVED" | "ARTWORK_REVIEW_REJECTED";
             title: string;
             body: string;
             /** Format: date-time */
@@ -1613,6 +1891,63 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    getMyPayPalAccount: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description PayPal 收款账户状态 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayPalAccount"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateMyPayPalAccount: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayPalAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description PayPal 收款账户状态 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayPalAccount"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     listCreators: {
@@ -2556,6 +2891,74 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
+    createOrderPaymentSession: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+                /** @description UUID 格式的客户端幂等键；同作用域相同 Key 与相同请求摘要重放首次响应，相同 Key 与不同请求摘要返回 409 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePaymentSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description PayPal 客户端调起参数 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentSession"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    captureOrderPayment: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path: {
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CapturePaymentRequest"];
+            };
+        };
+        responses: {
+            /** @description PayPal 捕获结果 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentSession"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
     handleStripeWebhook: {
         parameters: {
             query?: never;
@@ -2576,6 +2979,37 @@ export interface operations {
         };
         responses: {
             /** @description 事件已处理或已幂等忽略 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    handlePayPalWebhook: {
+        parameters: {
+            query?: never;
+            header: {
+                "Paypal-Transmission-Id": string;
+                "Paypal-Transmission-Time": string;
+                "Paypal-Transmission-Sig": string;
+                "Paypal-Cert-Url": string;
+                "Paypal-Auth-Algo": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Webhook 已接收 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2661,6 +3095,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ArtworkDetail"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listStudioArtworkReviews: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path: {
+                artworkId: components["parameters"]["ArtworkId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 审核历史 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewRecord"][];
                 };
             };
             401: components["responses"]["Unauthorized"];
@@ -2784,6 +3246,117 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    listAdminArtworkReviewQueue: {
+        parameters: {
+            query?: {
+                /** @description 上一页返回的不透明游标 */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 待审核作品分页 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminReviewQueuePage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getAdminArtworkReview: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path: {
+                artworkId: components["parameters"]["ArtworkId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 待审核作品详情 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminReviewQueueItem"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listAdminArtworkReviewHistory: {
+        parameters: {
+            query?: {
+                /** @description 上一页返回的不透明游标 */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 审核历史分页 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminReviewHistoryPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getAdminDashboard: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 平台运营指标 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDashboard"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
         };
     };
 }
