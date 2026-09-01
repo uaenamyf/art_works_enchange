@@ -201,6 +201,25 @@ public class OrderService implements OrderUseCases {
 
   @Override
   @Transactional(readOnly = true)
+  public OrderTrackingView getTracking(UUID buyerId, UUID orderId) {
+    Order order =
+        orders
+            .findById(orderId)
+            .filter(candidate -> candidate.buyerId().value().equals(buyerId))
+            .orElseThrow(() -> new BusinessError("ORDER_NOT_FOUND", "Order not found"));
+    return new OrderTrackingView(
+        order.id().value(),
+        order.orderNumber(),
+        order.status(),
+        order.carrier(),
+        order.trackingNumber(),
+        order.status() == OrderStatus.SHIPPED || order.status() == OrderStatus.COMPLETED
+            ? order.updatedAt()
+            : null);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
   public OrderPage list(UUID buyerId, OrderStatus status, String cursor, int limit) {
     int pageSize = Math.min(Math.max(limit, 1), 50);
     Cursor decoded = Cursor.decode(cursor);

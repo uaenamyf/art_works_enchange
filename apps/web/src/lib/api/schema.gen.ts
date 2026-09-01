@@ -620,6 +620,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/orders/{orderId}/tracking": {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询订单物流信息
+         * @description 仅返回平台已保存的承运商、物流单号和发货状态；第三方物流轨迹后续接入。
+         */
+        get: operations["getOrderTracking"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/orders/{orderId}/cancel": {
         parameters: {
             query?: never;
@@ -1445,6 +1468,16 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+        };
+        OrderTracking: {
+            /** Format: uuid */
+            orderId: string;
+            orderNumber: string;
+            orderStatus: components["schemas"]["OrderStatus"];
+            carrier?: string | null;
+            trackingNumber?: string | null;
+            /** Format: date-time */
+            shippedAt?: string | null;
         };
         OrderPage: {
             items: components["schemas"]["OrderDetail"][];
@@ -2735,6 +2768,33 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getOrderTracking: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description 客户端生成的请求追踪 UUID；缺省时由服务端生成，并通过响应头 X-Request-Id 回显 */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path: {
+                orderId: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 物流信息 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderTracking"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
         };
     };

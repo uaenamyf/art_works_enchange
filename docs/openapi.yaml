@@ -914,6 +914,27 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /orders/{orderId}/tracking:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      tags: [Orders]
+      operationId: getOrderTracking
+      summary: 查询订单物流信息
+      description: 仅返回平台已保存的承运商、物流单号和发货状态；第三方物流轨迹后续接入。
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: 物流信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderTracking'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /orders/{orderId}/cancel:
     parameters:
       - $ref: '#/components/parameters/RequestId'
@@ -2362,6 +2383,24 @@ components:
           format: date-time
         updatedAt:
           type: string
+          format: date-time
+    OrderTracking:
+      type: object
+      required: [orderId, orderNumber, orderStatus]
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        orderNumber:
+          type: string
+        orderStatus:
+          $ref: '#/components/schemas/OrderStatus'
+        carrier:
+          type: [string, 'null']
+        trackingNumber:
+          type: [string, 'null']
+        shippedAt:
+          type: [string, 'null']
           format: date-time
     OrderPage:
       type: object

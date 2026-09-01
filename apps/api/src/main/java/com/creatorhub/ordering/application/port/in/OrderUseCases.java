@@ -19,6 +19,8 @@ public interface OrderUseCases {
 
   OrderView get(UUID buyerId, UUID orderId);
 
+  OrderTrackingView getTracking(UUID buyerId, UUID orderId);
+
   OrderPage list(UUID buyerId, OrderStatus status, String cursor, int limit);
 
   record CreateCommand(UUID artworkId, int quantity, ShippingAddress shippingAddress) {}
@@ -78,6 +80,14 @@ public interface OrderUseCases {
   }
 
   record IdempotencyRecord(String requestHash, OrderView response) {}
+
+  record OrderTrackingView(
+      UUID orderId,
+      String orderNumber,
+      OrderStatus orderStatus,
+      String carrier,
+      String trackingNumber,
+      Instant shippedAt) {}
 
   record OrderPage(List<OrderView> items, String nextCursor, boolean hasMore) {}
 }

@@ -71,6 +71,14 @@ public class OrderController {
     return ResponseEntity.ok(orders.get(buyerId, orderId));
   }
 
+  /** 只允许买家查询自己的本地物流信息，第三方轨迹后续由基础设施适配器接入。 */
+  @GetMapping("/{orderId}/tracking")
+  @PreAuthorize("isAuthenticated()")
+  ResponseEntity<OrderUseCases.OrderTrackingView> getTracking(
+      @AuthenticationPrincipal UUID buyerId, @PathVariable UUID orderId) {
+    return ResponseEntity.ok(orders.getTracking(buyerId, orderId));
+  }
+
   record CreateOrderRequest(
       @NotNull UUID artworkId, @Min(1) @Max(99) int quantity, @Valid AddressInput shippingAddress) {
 

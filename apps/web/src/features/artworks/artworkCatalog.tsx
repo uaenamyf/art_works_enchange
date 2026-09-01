@@ -22,6 +22,21 @@ export const productSections = [
   { label: "数字产品", value: "DIGITAL" as const, categories: artworkCategories.filter(([, value]) => value === "DIGITAL") }
 ] as const;
 
+export function getArtworkCategoryLabel(value: string, english: boolean) {
+  const labels: Record<string, string> = {
+    ART: "Artwork",
+    PHOTOGRAPHY: "Photography",
+    CERAMICS: "Ceramics",
+    WOODWORK: "Woodwork",
+    LEATHER: "Leather",
+    JEWELRY: "Jewelry",
+    FASHION: "Fashion",
+    DIGITAL: "Digital works",
+    COLLECTIBLES: "Collectibles"
+  };
+  return english ? labels[value] ?? value : artworkCategories.find(([, category]) => category === value)?.[0] ?? value;
+}
+
 interface ArtworkListResponse {
   items: ArtworkListItem[];
   hasMore: boolean;

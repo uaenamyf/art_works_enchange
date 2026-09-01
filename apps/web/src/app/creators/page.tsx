@@ -2,6 +2,7 @@ import { CreatorCard } from "@/components/domain/CreatorCard";
 import type { CreatorCardData } from "@/components/domain/types";
 import { apiFetch } from "@/lib/api/fetcher";
 import Link from "next/link";
+import { getServerLocale } from "@/features/locale/serverLocale";
 
 const categories = [
   "ART",
@@ -38,6 +39,8 @@ interface CreatorListItem {
 
 /** Creator 浏览页：支持 URL 分类筛选，列表和分页由公开 Creator API 提供。 */
 export default async function CreatorsPage({ searchParams }: PageProps) {
+  const locale = await getServerLocale();
+  const english = locale === "en-US";
   const filters = await searchParams;
   const category = categories.includes(filters.category as (typeof categories)[number])
     ? filters.category
@@ -53,19 +56,19 @@ export default async function CreatorsPage({ searchParams }: PageProps) {
     <main className="mx-auto w-full max-w-gallery px-6 py-16">
       <header className="mb-10 max-w-2xl">
         <p className="text-sm uppercase tracking-[0.18em] text-brand-500">Creators</p>
-        <h1 className="mt-2 text-4xl text-ink-900">认识创作者</h1>
-        <p className="mt-3 text-base text-ink-700">从作品出发，了解正在持续创作的人。</p>
+        <h1 className="mt-2 text-4xl text-ink-900">{english ? "Meet the creators" : "认识创作者"}</h1>
+        <p className="mt-3 text-base text-ink-700">{english ? "Discover the people who keep creating." : "从作品出发，了解正在持续创作的人。"}</p>
       </header>
 
       <nav aria-label="创作者类别" className="mb-8 flex flex-wrap gap-2">
-        <CategoryLink label="全部" value="" active={!category} />
+        <CategoryLink label={english ? "All" : "全部"} value="" active={!category} />
         {categories.map((item) => <CategoryLink key={item} label={item} value={item} active={category === item} />)}
       </nav>
 
       {creators.length === 0 ? (
         <div className="border-y border-ink-300 py-16 text-center">
-          <h2 className="text-xl text-ink-900">暂时没有找到创作者</h2>
-          <p className="mt-2 text-sm text-ink-500">换一个类别再看看。</p>
+          <h2 className="text-xl text-ink-900">{english ? "No creators found" : "暂时没有找到创作者"}</h2>
+          <p className="mt-2 text-sm text-ink-500">{english ? "Try another category." : "换一个类别再看看。"}</p>
         </div>
       ) : (
         <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -78,7 +81,7 @@ export default async function CreatorsPage({ searchParams }: PageProps) {
             href={`/creators?${new URLSearchParams({ ...(category ? { category } : {}), cursor: response.nextCursor }).toString()}`}
             className="inline-flex h-11 items-center rounded-token border border-ink-900 px-5 text-sm text-ink-900 hover:bg-ink-900 hover:text-white"
           >
-            加载更多创作者
+            {english ? "Load more creators" : "加载更多创作者"}
           </Link>
         </div>
       ) : null}

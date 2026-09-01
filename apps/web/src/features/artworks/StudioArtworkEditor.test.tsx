@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { LocaleProvider } from "@/features/locale/LocaleProvider";
 import { StudioArtworkEditor } from "./StudioArtworkEditor";
 
 const authenticatedFetch = vi.fn();
@@ -12,7 +13,7 @@ vi.mock("@/features/auth/AuthProvider", () => ({
 function renderEditor() {
   return render(
     <QueryClientProvider client={new QueryClient()}>
-      <StudioArtworkEditor artworkId="artwork-id" />
+      <LocaleProvider><StudioArtworkEditor artworkId="artwork-id" /></LocaleProvider>
     </QueryClientProvider>
   );
 }

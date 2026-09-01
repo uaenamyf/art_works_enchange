@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { StudioArtworkForm } from "./StudioArtworkForm";
+import { LocaleProvider } from "@/features/locale/LocaleProvider";
 
 const replace = vi.fn();
 const authenticatedFetch = vi.fn();
@@ -11,6 +12,14 @@ vi.mock("@/features/auth/AuthProvider", () => ({
   useAuth: () => ({ session: currentSession, loading: false, authenticatedFetch })
 }));
 
+function renderWithLocale() {
+  return render(
+    <LocaleProvider>
+      <StudioArtworkForm />
+    </LocaleProvider>
+  );
+}
+
 /** 以用户视角验证作品提交前必须选择媒体，避免创建无内容审核任务。 */
 describe("StudioArtworkForm", () => {
   beforeEach(() => {
@@ -20,7 +29,7 @@ describe("StudioArtworkForm", () => {
   });
 
   it("blocks submission when no artwork image is selected", async () => {
-    render(<StudioArtworkForm />);
+    renderWithLocale();
 
     fireEvent.change(screen.getByLabelText("作品标题"), { target: { value: "A new artwork" } });
     fireEvent.change(screen.getByLabelText("作品描述"), {
@@ -47,7 +56,7 @@ describe("StudioArtworkForm", () => {
       contentType: "application/octet-stream",
       versionId: "asset-version-id"
     });
-    render(<StudioArtworkForm />);
+    renderWithLocale();
 
     fireEvent.click(screen.getByDisplayValue("DIGITAL"));
     fireEvent.change(screen.getByLabelText("作品标题"), {

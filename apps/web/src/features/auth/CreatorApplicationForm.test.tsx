@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CreatorApplicationForm } from "./CreatorApplicationForm";
+import { LocaleProvider } from "@/features/locale/LocaleProvider";
 
 const replace = vi.fn();
 const authenticatedFetch = vi.fn();
@@ -17,6 +18,14 @@ vi.mock("./AuthProvider", () => ({
   })
 }));
 
+function renderWithLocale() {
+  return render(
+    <LocaleProvider>
+      <CreatorApplicationForm />
+    </LocaleProvider>
+  );
+}
+
 /** 以用户视角验证 Creator 申请权限提示与提交链路。 */
 describe("CreatorApplicationForm", () => {
   beforeEach(() => {
@@ -27,7 +36,7 @@ describe("CreatorApplicationForm", () => {
   });
 
   it("asks anonymous users to login", () => {
-    render(<CreatorApplicationForm />);
+    renderWithLocale();
     expect(screen.getByRole("alert")).toHaveTextContent("请先登录");
   });
 
@@ -35,7 +44,7 @@ describe("CreatorApplicationForm", () => {
     currentSession = { user: { role: "USER" }, accessToken: "access" };
     authenticatedFetch.mockResolvedValue({ id: "creator-1" });
     refresh.mockResolvedValue({});
-    render(<CreatorApplicationForm />);
+    renderWithLocale();
 
     fireEvent.change(screen.getByLabelText("创作者名称"), { target: { value: "Alice Studio" } });
     fireEvent.change(screen.getByLabelText(/公开 slug/), { target: { value: "alice-studio" } });

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { cn } from "@/components/domain/types";
+import { useLocale } from "@/features/locale/LocaleProvider";
 
 export interface MediaGalleryItem {
   id: string;
@@ -23,11 +24,13 @@ export interface MediaGalleryProps {
  * 只需把 items 替换为远端数据。
  */
 export function MediaGallery({ items, className }: MediaGalleryProps) {
+  const { locale } = useLocale();
+  const english = locale === "en-US";
   const [activeId, setActiveId] = useState<string>(items[0]?.id ?? "");
   const active = items.find((item) => item.id === activeId) ?? items[0];
 
   if (!active) {
-    return <div className={cn("rounded-token bg-ink-100 p-8 text-ink-500", className)}>暂无媒体</div>;
+    return <div className={cn("rounded-token bg-ink-100 p-8 text-ink-500", className)}>{english ? "No media" : "暂无媒体"}</div>;
   }
 
   return (
@@ -54,7 +57,7 @@ export function MediaGallery({ items, className }: MediaGalleryProps) {
                 type="button"
                 onClick={() => setActiveId(item.id)}
                 aria-pressed={selected}
-                aria-label={`查看媒体：${item.alt}`}
+                aria-label={`${english ? "View media" : "查看媒体"}: ${item.alt}`}
                 className={cn(
                   "relative block w-full overflow-hidden rounded-token border",
                   "aspect-square",

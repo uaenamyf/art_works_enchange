@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ApiError } from "@/lib/api/fetcher";
 import { useAuth } from "./AuthProvider";
+import { useLocale } from "@/features/locale/LocaleProvider";
 
 const categories = [
   "ART",
@@ -39,6 +40,8 @@ interface CreatorDetail { id: string }
 export function CreatorApplicationForm() {
   const router = useRouter();
   const { session, loading, authenticatedFetch, refresh } = useAuth();
+  const { locale, t } = useLocale();
+  const english = locale === "en-US";
   const [formError, setFormError] = useState<string | null>(null);
   const {
     register,
@@ -59,9 +62,9 @@ export function CreatorApplicationForm() {
       setFormError(
         error instanceof ApiError
           ? error.problem.code === "CREATOR_SLUG_TAKEN"
-            ? "该公开地址已被使用"
-            : error.problem.detail ?? "申请失败，请稍后再试"
-          : "申请失败，请稍后再试"
+            ? t("slugTaken")
+            : english ? t("applicationFailed") : error.problem.detail ?? t("applicationFailed")
+          : t("applicationFailed")
       );
     }
   }
@@ -70,27 +73,27 @@ export function CreatorApplicationForm() {
     return <p className="text-sm text-ink-500">正在恢复登录状态…</p>;
   }
   if (!session) {
-    return <p role="alert" className="text-sm text-error">请先登录，再申请 Creator。</p>;
+    return <p role="alert" className="text-sm text-error">{t("loginBeforeCreator")}</p>;
   }
 
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit(submit)} noValidate>
-      <Input label="创作者名称" error={errors.displayName?.message} {...register("displayName")} />
-      <Input label="公开 slug" hint="例如 mia-studio" error={errors.slug?.message} {...register("slug")} />
+      <Input label={t("creatorName")} error={errors.displayName?.message} {...register("displayName")} />
+      <Input label={t("publicSlug")} hint={t("slugHint")} error={errors.slug?.message} {...register("slug")} />
       <label className="flex flex-col gap-1.5 text-sm text-ink-700">
-        类别
+        {t("category")}
         <select className="h-11 rounded-token border border-ink-300 bg-white px-3" {...register("category")}>
           {categories.map((category) => <option key={category}>{category}</option>)}
         </select>
       </label>
       <label className="flex flex-col gap-1.5 text-sm text-ink-700">
-        简介
+        {t("bio")}
         <textarea className="min-h-32 rounded-token border border-ink-300 bg-white p-3" {...register("bio")} />
         {errors.bio ? <span className="text-error">{errors.bio.message}</span> : null}
       </label>
-      <Input label="地点（可选）" error={errors.location?.message} {...register("location")} />
+      <Input label={t("locationOptional")} error={errors.location?.message} {...register("location")} />
       {formError ? <p role="alert" className="text-sm text-error">{formError}</p> : null}
-      <Button type="submit" size="lg" loading={isSubmitting}>提交申请</Button>
+      <Button type="submit" size="lg" loading={isSubmitting}>{t("submitApplication")}</Button>
     </form>
   );
 }

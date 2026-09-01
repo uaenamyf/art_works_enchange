@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError, apiFetch } from "@/lib/api/fetcher";
 import { LoginForm } from "./LoginForm";
 import { RegisterForm } from "./RegisterForm";
+import { LocaleProvider } from "@/features/locale/LocaleProvider";
 
 const replace = vi.fn();
 const setSession = vi.fn();
@@ -16,6 +17,10 @@ vi.mock("@/lib/api/fetcher", async () => {
 
 const mockedApiFetch = vi.mocked(apiFetch);
 
+function renderWithLocale(form: React.ReactNode) {
+  return render(<LocaleProvider>{form}</LocaleProvider>);
+}
+
 /** 从用户行为验证认证表单，不断言 React Hook Form 内部状态。 */
 describe("auth forms", () => {
   beforeEach(() => {
@@ -26,7 +31,7 @@ describe("auth forms", () => {
 
   it("submits login credentials to the auth API and redirects", async () => {
     mockedApiFetch.mockResolvedValue({});
-    render(<LoginForm />);
+    renderWithLocale(<LoginForm />);
 
     fireEvent.change(screen.getByLabelText("邮箱"), { target: { value: "alice@example.com" } });
     fireEvent.change(screen.getByLabelText("密码"), {
@@ -52,7 +57,7 @@ describe("auth forms", () => {
         null
       )
     );
-    render(<LoginForm />);
+    renderWithLocale(<LoginForm />);
 
     fireEvent.change(screen.getByLabelText("邮箱"), { target: { value: "alice@example.com" } });
     fireEvent.change(screen.getByLabelText("密码"), { target: { value: "wrong-password" } });
@@ -62,7 +67,7 @@ describe("auth forms", () => {
   });
 
   it("prevents registration when password is shorter than the OpenAPI contract", async () => {
-    render(<RegisterForm />);
+    renderWithLocale(<RegisterForm />);
 
     fireEvent.change(screen.getByLabelText("邮箱"), { target: { value: "alice@example.com" } });
     fireEvent.change(screen.getByLabelText("密码"), { target: { value: "short" } });

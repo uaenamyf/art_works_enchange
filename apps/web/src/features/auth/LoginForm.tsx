@@ -12,6 +12,7 @@ import { ApiError, apiFetch } from "@/lib/api/fetcher";
 import { ROUTES } from "@/lib/config";
 import type { AuthSession } from "./types";
 import { useAuth } from "./AuthProvider";
+import { useLocale } from "@/features/locale/LocaleProvider";
 
 const schema = z.object({
   email: z.string().email("请输入有效邮箱"),
@@ -29,6 +30,8 @@ type LoginValues = z.infer<typeof schema>;
 export function LoginForm() {
   const router = useRouter();
   const { setSession } = useAuth();
+  const { locale } = useLocale();
+  const english = locale === "en-US";
   const [formError, setFormError] = useState<string | null>(null);
   const {
     register,
@@ -55,14 +58,14 @@ export function LoginForm() {
         }
         setFormError(
           error.problem.code === "INVALID_CREDENTIALS"
-            ? "邮箱或密码错误"
+            ? english ? "Invalid email or password" : "邮箱或密码错误"
             : error.problem.code === "RATE_LIMITED"
-              ? "尝试次数过多，请稍后再试"
-              : error.problem.detail ?? "登录失败，请稍后再试"
+              ? english ? "Too many attempts. Please try again later." : "尝试次数过多，请稍后再试"
+              : english ? "Unable to log in. Please try again." : error.problem.detail ?? "登录失败，请稍后再试"
         );
         return;
       }
-      setFormError("登录失败，请稍后再试");
+      setFormError(english ? "Unable to log in. Please try again." : "登录失败，请稍后再试");
     }
   }
 
@@ -73,18 +76,18 @@ export function LoginForm() {
       noValidate
     >
       <header>
-        <h1 className="text-2xl text-ink-900">登录</h1>
-        <p className="mt-1 text-sm text-ink-500">使用邮箱与密码继续。</p>
+        <h1 className="text-2xl text-ink-900">{english ? "Log in" : "登录"}</h1>
+        <p className="mt-1 text-sm text-ink-500">{english ? "Continue with your email and password." : "使用邮箱与密码继续。"}</p>
       </header>
       <Input
-        label="邮箱"
+        label={english ? "Email" : "邮箱"}
         type="email"
         autoComplete="email"
         error={errors.email?.message}
         {...register("email")}
       />
       <Input
-        label="密码"
+        label={english ? "Password" : "密码"}
         type="password"
         autoComplete="current-password"
         error={errors.password?.message}
@@ -96,12 +99,12 @@ export function LoginForm() {
         </p>
       ) : null}
       <Button size="lg" type="submit" loading={isSubmitting}>
-        登录
+        {english ? "Log in" : "登录"}
       </Button>
       <p className="text-center text-sm text-ink-500">
-        还没有账号？
+        {english ? "Don't have an account?" : "还没有账号？"}
         <Link href={ROUTES.authRegister} className="ml-1 text-ink-900 underline-offset-2 hover:underline">
-          创建账号
+          {english ? "Create an account" : "创建账号"}
         </Link>
       </p>
     </form>

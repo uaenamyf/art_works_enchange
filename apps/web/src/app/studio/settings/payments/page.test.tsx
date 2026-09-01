@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { LocaleProvider } from "@/features/locale/LocaleProvider";
 import StudioPaymentSettingsPage from "./page";
 
 const authenticatedFetch = vi.fn();
@@ -23,7 +24,7 @@ describe("StudioPaymentSettingsPage", () => {
       .mockResolvedValueOnce({ configured: false, merchantId: null })
       .mockResolvedValueOnce({ configured: true, merchantId: "merchant-123" });
 
-    render(<StudioPaymentSettingsPage />);
+    render(<LocaleProvider><StudioPaymentSettingsPage /></LocaleProvider>);
 
     await waitFor(() => expect(screen.getByRole("textbox")).toBeInTheDocument());
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "merchant-123" } });
@@ -37,7 +38,7 @@ describe("StudioPaymentSettingsPage", () => {
   });
 
   it("keeps saving disabled until a merchant ID is entered", async () => {
-    render(<StudioPaymentSettingsPage />);
+    render(<LocaleProvider><StudioPaymentSettingsPage /></LocaleProvider>);
 
     await waitFor(() => expect(screen.getByRole("textbox")).toBeInTheDocument());
     expect(screen.getByRole("button", { name: "保存 PayPal 收款方式" })).toBeDisabled();

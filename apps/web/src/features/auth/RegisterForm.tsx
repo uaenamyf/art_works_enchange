@@ -12,6 +12,7 @@ import { ApiError, apiFetch } from "@/lib/api/fetcher";
 import { ROUTES } from "@/lib/config";
 import type { AuthSession } from "./types";
 import { useAuth } from "./AuthProvider";
+import { useLocale } from "@/features/locale/LocaleProvider";
 
 const schema = z.object({
   email: z.string().email("请输入有效邮箱").max(254, "邮箱过长"),
@@ -29,6 +30,8 @@ type RegisterValues = z.infer<typeof schema>;
 export function RegisterForm() {
   const router = useRouter();
   const { setSession } = useAuth();
+  const { locale } = useLocale();
+  const english = locale === "en-US";
   const [formError, setFormError] = useState<string | null>(null);
   const {
     register,
@@ -55,14 +58,14 @@ export function RegisterForm() {
         }
         setFormError(
           error.problem.code === "EMAIL_TAKEN"
-            ? "该邮箱已注册"
+            ? english ? "This email is already registered" : "该邮箱已注册"
             : error.problem.code === "RATE_LIMITED"
-              ? "注册次数过多，请稍后再试"
-              : error.problem.detail ?? "注册失败，请稍后再试"
+              ? english ? "Too many sign-up attempts. Please try again later." : "注册次数过多，请稍后再试"
+              : english ? "Unable to create your account. Please try again." : error.problem.detail ?? "注册失败，请稍后再试"
         );
         return;
       }
-      setFormError("注册失败，请稍后再试");
+      setFormError(english ? "Unable to create your account. Please try again." : "注册失败，请稍后再试");
     }
   }
 
@@ -73,25 +76,25 @@ export function RegisterForm() {
       noValidate
     >
       <header>
-        <h1 className="text-2xl text-ink-900">创建账号</h1>
-        <p className="mt-1 text-sm text-ink-500">先创建普通账号，登录后再申请 Creator 档案。</p>
+        <h1 className="text-2xl text-ink-900">{english ? "Create an account" : "创建账号"}</h1>
+        <p className="mt-1 text-sm text-ink-500">{english ? "Create a standard account, then apply for a Creator profile." : "先创建普通账号，登录后再申请 Creator 档案。"}</p>
       </header>
       <Input
-        label="邮箱"
+        label={english ? "Email" : "邮箱"}
         type="email"
         autoComplete="email"
         error={errors.email?.message}
         {...register("email")}
       />
       <Input
-        label="密码"
+        label={english ? "Password" : "密码"}
         type="password"
         autoComplete="new-password"
         error={errors.password?.message}
         {...register("password")}
       />
       <Input
-        label="显示名称"
+        label={english ? "Display name" : "显示名称"}
         type="text"
         autoComplete="name"
         error={errors.displayName?.message}
@@ -103,12 +106,12 @@ export function RegisterForm() {
         </p>
       ) : null}
       <Button size="lg" type="submit" loading={isSubmitting}>
-        创建账号
+        {english ? "Create account" : "创建账号"}
       </Button>
       <p className="text-center text-sm text-ink-500">
-        已有账号？
+        {english ? "Already have an account?" : "已有账号？"}
         <Link href={ROUTES.authLogin} className="ml-1 text-ink-900 underline-offset-2 hover:underline">
-          返回登录
+          {english ? "Log in" : "返回登录"}
         </Link>
       </p>
     </form>

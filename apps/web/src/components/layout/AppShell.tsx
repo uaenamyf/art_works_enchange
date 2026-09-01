@@ -3,6 +3,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { AuthProvider } from "@/features/auth/AuthProvider";
 import { QueryProvider } from "@/providers/QueryProvider";
+import { LocaleProvider } from "@/features/locale/LocaleProvider";
 
 export interface AppShellProps {
   children: ReactNode;
@@ -12,13 +13,15 @@ export interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   return (
     <QueryProvider>
-      <AuthProvider>
-        <div className="flex min-h-screen flex-col">
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </div>
-      </AuthProvider>
+      <LocaleProvider>
+        <AuthProvider>
+          <div className="flex min-h-screen flex-col">
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
+        </AuthProvider>
+      </LocaleProvider>
     </QueryProvider>
   );
 }

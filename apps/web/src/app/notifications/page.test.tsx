@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import NotificationsPage from "./page";
+import { LocaleProvider } from "@/features/locale/LocaleProvider";
 
 const authenticatedFetch = vi.fn();
 let currentSession: unknown = null;
@@ -36,7 +37,9 @@ describe("NotificationsPage", () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={queryClient}>
-        <NotificationsPage />
+        <LocaleProvider>
+          <NotificationsPage />
+        </LocaleProvider>
       </QueryClientProvider>
     );
 

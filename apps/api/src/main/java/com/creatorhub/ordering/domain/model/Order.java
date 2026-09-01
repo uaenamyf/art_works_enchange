@@ -229,8 +229,8 @@ public final class Order extends AggregateRoot<OrderId> {
 
   public void markShipped(Instant at, String trackingNumber, String carrier) {
     transition(OrderStatus.SHIPPED, at, OrderStatus.PROCESSING);
-    this.trackingNumber = normalizeOptional(trackingNumber, "trackingNumber", 100);
-    this.carrier = normalizeOptional(carrier, "carrier", 80);
+    this.trackingNumber = requiredOptional(trackingNumber, "trackingNumber", 100);
+    this.carrier = requiredOptional(carrier, "carrier", 80);
   }
 
   public void complete(Instant at) {
@@ -331,6 +331,12 @@ public final class Order extends AggregateRoot<OrderId> {
     if (normalized.length() > maxLength) {
       throw new IllegalArgumentException(name + " length is invalid");
     }
+    return normalized;
+  }
+
+  private static String requiredOptional(String value, String name, int maxLength) {
+    String normalized = normalizeOptional(value, name, maxLength);
+    if (normalized == null) throw new IllegalArgumentException(name + " is required when shipping");
     return normalized;
   }
 }

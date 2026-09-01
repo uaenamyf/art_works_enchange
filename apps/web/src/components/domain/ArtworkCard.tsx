@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Heart } from "lucide-react";
@@ -5,6 +7,7 @@ import { formatPrice, formatRelative } from "@/lib/format/format";
 import { ROUTES } from "@/lib/config";
 import { cn } from "@/components/domain/types";
 import type { ArtworkCardData } from "@/components/domain/types";
+import { useLocale } from "@/features/locale/LocaleProvider";
 
 export interface ArtworkCardProps {
   artwork: ArtworkCardData;
@@ -17,6 +20,8 @@ export interface ArtworkCardProps {
  * 心形只表达已收藏状态，不在卡片内部发起收藏 mutation。
  */
 export function ArtworkCard({ artwork, className, priority }: ArtworkCardProps) {
+  const { locale } = useLocale();
+  const english = locale === "en-US";
   return (
     <article
       className={cn(
@@ -29,7 +34,7 @@ export function ArtworkCard({ artwork, className, priority }: ArtworkCardProps) 
         href={ROUTES.artworkDetail(artwork.id)}
         className="relative block overflow-hidden rounded-token bg-ink-100"
         style={{ aspectRatio: artwork.aspect }}
-        aria-label={`查看作品：${artwork.title}`}
+        aria-label={`${english ? "View artwork" : "查看作品"}: ${artwork.title}`}
       >
         <Image
           src={artwork.imageUrl}
@@ -41,7 +46,7 @@ export function ArtworkCard({ artwork, className, priority }: ArtworkCardProps) 
         />
         {artwork.isFavorite ? (
           <span
-            aria-label="已收藏"
+            aria-label={english ? "Favorited" : "已收藏"}
             className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-brand-500 shadow-card"
           >
             <Heart aria-hidden className="size-4 fill-current" />
@@ -58,10 +63,10 @@ export function ArtworkCard({ artwork, className, priority }: ArtworkCardProps) 
         </Link>
         <div className="mt-1 flex items-center justify-between text-sm">
           <span className="text-ink-900">
-            {artwork.isForSale ? formatPrice(artwork.priceCents, artwork.currency) : "非卖品"}
+            {artwork.isForSale ? formatPrice(artwork.priceCents, artwork.currency) : english ? "Not for sale" : "非卖品"}
           </span>
           <time className="text-ink-500" dateTime={artwork.publishedAt}>
-            {formatRelative(artwork.publishedAt)}
+            {formatRelative(artwork.publishedAt, english ? "en-US" : "zh-CN")}
           </time>
         </div>
       </div>

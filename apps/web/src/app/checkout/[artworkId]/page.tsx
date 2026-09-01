@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useLocale } from "@/features/locale/LocaleProvider";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -31,6 +32,7 @@ type ProductType = "PHYSICAL" | "DIGITAL";
 export default function CheckoutPage({ params }: { params: Promise<{ artworkId: string }> }) {
   const router = useRouter();
   const { session, loading: authLoading, authenticatedFetch } = useAuth();
+  const { t } = useLocale();
   const [artworkId, setArtworkId] = useState<string | null>(null);
   const [artwork, setArtwork] = useState<ArtworkSnapshot | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -80,7 +82,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ artworkId: 
       });
       startTransition(() => router.push(`/orders/${order.id}`));
     } catch (error) {
-      setSubmitError(error instanceof ApiError ? error.problem.detail ?? "订单创建失败，请稍后重试" : "订单创建失败，请稍后重试");
+        setSubmitError(error instanceof ApiError ? error.problem.detail ?? t("orderCreateFailed") : t("orderCreateFailed"));
     }
   }
 
@@ -95,37 +97,37 @@ export default function CheckoutPage({ params }: { params: Promise<{ artworkId: 
     <main className="mx-auto w-full max-w-gallery px-6 py-12">
       <header className="mb-8 border-b border-ink-300 pb-6">
         <Link href={`/artworks/${artwork.id}`} className="text-sm text-ink-500 hover:text-ink-900">返回作品</Link>
-        <p className="mt-5 text-xs uppercase tracking-[0.2em] text-brand-500">CreatorHub / 结算</p>
-        <h1 className="mt-3 text-4xl text-ink-900">确认订单</h1>
+          <p className="mt-5 text-xs uppercase tracking-[0.2em] text-brand-500">CreatorHub / {t("checkout")}</p>
+          <h1 className="mt-3 text-4xl text-ink-900">{t("confirmOrder")}</h1>
         <p className="mt-3 text-ink-700">{artwork.title} · {artwork.priceAmount} {artwork.priceCurrency}</p>
       </header>
       <form onSubmit={handleSubmit(submit)} noValidate className="grid gap-8 lg:grid-cols-[1fr_320px]">
         <input type="hidden" {...register("productType")} />
         {productType === "DIGITAL" ? (
           <section className="rounded-token border border-ink-300 bg-white p-6">
-            <p className="text-xs uppercase tracking-[0.18em] text-brand-500">数字交付</p>
-            <h2 className="mt-2 text-xl text-ink-900">支付确认后即可访问</h2>
-            <p className="mt-3 text-sm leading-6 text-ink-500">无需填写收货地址。订单支付确认后，授权文件会出现在订单详情中。</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-brand-500">{t("digitalDelivery")}</p>
+              <h2 className="mt-2 text-xl text-ink-900">{t("accessAfterPayment")}</h2>
+              <p className="mt-3 text-sm leading-6 text-ink-500">{t("noShippingAddress")}</p>
             {artwork.digitalAsset ? <p className="mt-5 text-sm text-ink-700">{artwork.digitalAsset.fileName} · {artwork.digitalAsset.contentType} · 版本 {artwork.digitalAsset.version}</p> : null}
             <input type="hidden" value="1" {...register("quantity")} />
           </section>
         ) : (
           <section className="grid gap-4 rounded-token border border-ink-300 bg-white p-6 sm:grid-cols-2">
-            <h2 className="sm:col-span-2 text-xl text-ink-900">收货信息</h2>
-            <Input label="购买数量" type="number" min={1} max={Math.min(99, artwork.stock)} error={errors.quantity?.message} {...register("quantity")} />
-            <Input label="收货人" autoComplete="name" error={errors.recipientName?.message} {...register("recipientName")} />
-            <Input label="地址" autoComplete="street-address" error={errors.line1?.message} {...register("line1")} />
-            <Input label="城市" autoComplete="address-level2" error={errors.city?.message} {...register("city")} />
-            <Input label="邮编" autoComplete="postal-code" error={errors.postalCode?.message} {...register("postalCode")} />
-            <Input label="国家代码" maxLength={2} error={errors.countryCode?.message} {...register("countryCode")} />
-            <Input label="手机号" type="tel" autoComplete="tel" error={errors.phone?.message} {...register("phone")} />
+              <h2 className="sm:col-span-2 text-xl text-ink-900">{t("shippingAddress")}</h2>
+              <Input label={t("buyerQuantity")} type="number" min={1} max={Math.min(99, artwork.stock)} error={errors.quantity?.message} {...register("quantity")} />
+              <Input label={t("recipient")} autoComplete="name" error={errors.recipientName?.message} {...register("recipientName")} />
+              <Input label={t("address")} autoComplete="street-address" error={errors.line1?.message} {...register("line1")} />
+              <Input label={t("city")} autoComplete="address-level2" error={errors.city?.message} {...register("city")} />
+              <Input label={t("postalCode")} autoComplete="postal-code" error={errors.postalCode?.message} {...register("postalCode")} />
+              <Input label={t("countryCode")} maxLength={2} error={errors.countryCode?.message} {...register("countryCode")} />
+              <Input label={t("phone")} type="tel" autoComplete="tel" error={errors.phone?.message} {...register("phone")} />
           </section>
         )}
         <aside className="h-fit rounded-token border border-ink-300 bg-white p-6">
-          <h2 className="text-xl text-ink-900">订单摘要</h2>
-          <p className="mt-4 text-sm text-ink-500">{productType === "DIGITAL" ? "支付确认后创建购买授权。" : "库存将在订单创建事务中确认，订单状态为待支付。"}</p>
+            <h2 className="text-xl text-ink-900">{t("orderCreated")}</h2>
+            <p className="mt-4 text-sm text-ink-500">{productType === "DIGITAL" ? t("digitalOrderHint") : t("physicalOrderHint")}</p>
           {submitError ? <p role="alert" className="mt-4 text-sm text-error">{submitError}</p> : null}
-          <Button type="submit" size="lg" loading={isSubmitting} className="mt-6 w-full">{productType === "DIGITAL" ? "创建数字订单" : "创建待支付订单"}</Button>
+            <Button type="submit" size="lg" loading={isSubmitting} className="mt-6 w-full">{productType === "DIGITAL" ? t("createDigitalOrder") : t("createPendingOrder")}</Button>
         </aside>
       </form>
     </main>

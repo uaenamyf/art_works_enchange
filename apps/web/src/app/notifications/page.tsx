@@ -6,12 +6,15 @@ import { useState } from "react";
 import { ApiError } from "@/lib/api/fetcher";
 import { useAuth } from "@/features/auth/AuthProvider";
 import type { components } from "@/lib/api/schema.gen";
+import { useLocale } from "@/features/locale/LocaleProvider";
 
 type NotificationPageResponse = components["schemas"]["NotificationPage"];
 
 /** 站内通知页；只读取当前用户通知，并通过服务端接口标记已读。 */
 export default function NotificationsPage() {
   const { session, loading, authenticatedFetch } = useAuth();
+  const { locale, t } = useLocale();
+  const english = locale === "en-US";
   const queryClient = useQueryClient();
   const [unreadOnly, setUnreadOnly] = useState(false);
   const queryKey = ["notifications", { unreadOnly }] as const;
@@ -67,29 +70,29 @@ export default function NotificationsPage() {
     }
   });
 
-  if (loading) return <Message text="正在加载账户..." />;
-  if (!session) return <Message text="请先登录后查看通知。" />;
-  if (notifications.isError && items.length === 0) return <Message text={getErrorMessage(notifications.error, "通知加载失败")} alert />;
+  if (loading) return <Message text={t("loadingAccount")} />;
+  if (!session) return <Message text={english ? "Log in to view your notifications." : "请先登录后查看通知。"} />;
+  if (notifications.isError && items.length === 0) return <Message text={getErrorMessage(notifications.error, english ? "Unable to load notifications" : "通知加载失败")} alert />;
 
   return (
     <main className="mx-auto w-full max-w-[960px] px-6 py-12">
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-ink-300 pb-6">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-brand-500">CreatorHub / 通知</p>
-          <h1 className="mt-3 text-4xl text-ink-900">我的通知</h1>
-          <p className="mt-2 text-sm text-ink-500">{unreadCount} 条未读通知</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-brand-500">CreatorHub / {t("notifications")}</p>
+          <h1 className="mt-3 text-4xl text-ink-900">{t("myNotifications")}</h1>
+          <p className="mt-2 text-sm text-ink-500">{unreadCount} {t("unreadNotifications")}</p>
         </div>
         <label className="flex min-h-11 items-center gap-2 text-sm text-ink-700">
           <input type="checkbox" checked={unreadOnly} onChange={(event) => setUnreadOnly(event.target.checked)} />
-          只看未读
+          {t("unreadOnly")}
         </label>
       </header>
-      {notifications.isPending ? <p role="status" className="py-12 text-sm text-ink-500">正在加载通知...</p> : null}
-      {!notifications.isPending && items.length === 0 ? <p className="border-y border-ink-300 py-12 text-sm text-ink-500">暂无通知。</p> : null}
+      {notifications.isPending ? <p role="status" className="py-12 text-sm text-ink-500">{t("loadingNotifications")}</p> : null}
+      {!notifications.isPending && items.length === 0 ? <p className="border-y border-ink-300 py-12 text-sm text-ink-500">{t("noNotifications")}</p> : null}
       {items.length > 0 ? <ul className="divide-y divide-ink-300 border-y border-ink-300">{items.map((item) => <li key={item.id} className={item.readAt ? "py-5" : "border-l-2 border-brand-500 py-5 pl-4"}><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-lg text-ink-900">{item.title}</p><p className="mt-1 text-sm leading-6 text-ink-700">{item.body}</p><p className="mt-2 text-xs text-ink-500">{new Date(item.createdAt).toLocaleString("zh-CN")}</p></div><div className="flex shrink-0 items-center gap-3">{item.link ? <Link href={item.link} className="text-sm text-brand-600 hover:text-brand-800">查看</Link> : null}{!item.readAt ? <button type="button" className="min-h-11 text-sm text-ink-700 underline underline-offset-4 hover:text-ink-900" onClick={() => markRead.mutate(item.id)}>标记已读</button> : null}</div></div></li>)}</ul> : null}
-      {notifications.isError && items.length > 0 ? <p role="alert" className="mt-4 text-sm text-error">{getErrorMessage(notifications.error, "更多通知加载失败")}</p> : null}
-      {notifications.hasNextPage ? <button type="button" className="mt-6 min-h-11 border-b border-ink-900 text-sm text-ink-900" disabled={notifications.isFetchingNextPage} onClick={() => void notifications.fetchNextPage()}>{notifications.isFetchingNextPage ? "正在加载..." : "加载更多"}</button> : null}
-      {markRead.isError ? <p role="alert" className="mt-4 text-sm text-error">{getErrorMessage(markRead.error, "标记已读失败")}</p> : null}
+      {notifications.isError && items.length > 0 ? <p role="alert" className="mt-4 text-sm text-error">{getErrorMessage(notifications.error, t("moreNotificationsFailed"))}</p> : null}
+      {notifications.hasNextPage ? <button type="button" className="mt-6 min-h-11 border-b border-ink-900 text-sm text-ink-900" disabled={notifications.isFetchingNextPage} onClick={() => void notifications.fetchNextPage()}>{notifications.isFetchingNextPage ? t("loadingMore") : t("loadMoreNotifications")}</button> : null}
+      {markRead.isError ? <p role="alert" className="mt-4 text-sm text-error">{getErrorMessage(markRead.error, t("markReadFailed"))}</p> : null}
     </main>
   );
 }
