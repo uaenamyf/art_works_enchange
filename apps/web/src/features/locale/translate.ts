@@ -7,7 +7,7 @@ export const messages = {
   "en-US": enCommon
 } as const;
 
-export type MessageKey = keyof typeof zhCommon | "navbar.home" | "navbar.about" | "greeting";
+export type MessageKey = keyof typeof zhCommon | "navbar.home" | "navbar.about" | "greeting" | `categories.${keyof typeof zhCommon.categories}` | `productTypes.${keyof typeof zhCommon.productTypes}`;
 
 /** 从语言词典读取单层或点号路径文本，并安全处理插值参数。 */
 export function translate(locale: Locale, key: MessageKey, variables?: Record<string, string | number>): string {

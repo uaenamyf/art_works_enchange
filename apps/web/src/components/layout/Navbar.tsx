@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { ChevronDown, Globe2, UserRound } from "lucide-react";
 import { APP_NAME, ROUTES } from "@/lib/config";
 import { useAuth } from "@/features/auth/AuthProvider";
-import { getArtworkCategoryLabel, productSections } from "@/features/artworks/artworkCatalog";
+import { getArtworkCategoryLabel, getProductTypeLabel, productSections } from "@/features/artworks/artworkCatalog";
 import { useLocale } from "@/features/locale/LocaleProvider";
 
 /**
@@ -13,6 +14,18 @@ import { useLocale } from "@/features/locale/LocaleProvider";
 export function Navbar() {
   const { session, loading, logout } = useAuth();
   const { locale, setLocale, t } = useLocale();
+  const [activeMenu, setActiveMenu] = useState<"discover" | "creators" | null>(null);
+
+  // 顶层菜单共用一个活动状态，确保鼠标悬停与键盘焦点不会同时打开两个菜单。
+  const menuHandlers = (menu: "discover" | "creators") => ({
+    onMouseEnter: () => setActiveMenu(menu),
+    onFocus: () => setActiveMenu(menu),
+    onBlur: (event: React.FocusEvent<HTMLLIElement>) => {
+      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+        setActiveMenu(null);
+      }
+    },
+  });
 
   return (
     <header className="sticky top-0 z-30 border-b border-ink-300 bg-white/90 backdrop-blur">
@@ -27,17 +40,18 @@ export function Navbar() {
           {APP_NAME}
         </Link>
         <ul className="flex min-w-0 max-w-[calc(100%-7rem)] items-center justify-end gap-1 overflow-x-auto text-sm text-ink-700 md:gap-2 lg:overflow-visible">
-          <li className="group relative flex h-16 items-center">
+          <li className="group relative flex h-16 items-center" {...menuHandlers("discover")}>
             <div className="relative flex h-full items-center">
               <Link
                 href={ROUTES.discover}
+                onClick={() => setActiveMenu(null)}
                 className="flex h-11 items-center gap-1 rounded-full px-4 hover:bg-ink-100 hover:text-ink-900 focus-visible:bg-ink-100"
                 aria-haspopup="true"
               >
                 {t("discover")}
-                <ChevronDown aria-hidden className="size-3.5 transition-transform group-hover:rotate-180 group-focus-within:rotate-180" />
+                <ChevronDown aria-hidden className={`size-3.5 transition-transform ${activeMenu === "discover" ? "rotate-180" : ""}`} />
               </Link>
-              <div className="invisible fixed left-5 right-5 top-16 w-auto translate-y-2 border-t border-ink-300 bg-white px-6 py-7 opacity-0 shadow-pop transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 lg:absolute lg:left-1/2 lg:right-auto lg:top-full lg:w-[min(720px,calc(100vw-40px))] lg:-translate-x-1/2">
+              <div className={`fixed left-5 right-5 top-16 w-auto border-t border-ink-300 bg-white px-6 py-7 shadow-pop transition-all duration-200 lg:absolute lg:left-1/2 lg:right-auto lg:top-full lg:w-[min(720px,calc(100vw-40px))] lg:-translate-x-1/2 ${activeMenu === "discover" ? "visible translate-y-0 opacity-100" : "invisible translate-y-2 opacity-0"}`}>
                 <div className="grid gap-x-10 gap-y-6 sm:grid-cols-3">
                   <div className="sm:col-span-1">
                     <p className="text-xs uppercase tracking-[0.18em] text-ink-500">{t("exploreArtworks")}</p>
@@ -50,13 +64,13 @@ export function Navbar() {
                     <div className="mt-3 grid gap-5 sm:grid-cols-2">
                       {productSections.map((section) => (
                         <div key={section.value}>
-                          <Link href={`/categories/${section.categories[0][1]}`} className="text-base text-ink-900 hover:text-brand-500">
-                            {locale === "en-US" ? section.value === "DIGITAL" ? "Digital products" : "Physical products" : section.label}
+                          <Link href={`/categories/${section.categories[0]}`} className="text-base text-ink-900 hover:text-brand-500">
+                            {getProductTypeLabel(section.value, locale)}
                           </Link>
                           <div className="mt-2 grid gap-y-1">
-                            {section.categories.map(([, value]) => (
+                            {section.categories.map((value) => (
                               <Link key={value} href={`/categories/${value}`} className="py-1 text-sm text-ink-700 hover:text-brand-500">
-                                {getArtworkCategoryLabel(value, locale === "en-US")}
+                                {getArtworkCategoryLabel(value, locale)}
                               </Link>
                             ))}
                           </div>
@@ -68,39 +82,39 @@ export function Navbar() {
               </div>
             </div>
           </li>
-          <li className="hidden lg:block">
-            <Link href="/creators" className="flex h-11 items-center rounded-full px-4 hover:bg-ink-100 hover:text-ink-900">
-              {t("creators")}
-            </Link>
-          </li>
-          <>
-            <li className="group relative flex h-16 items-center">
-                <div className="relative flex h-full items-center">
-                  <button
-                    type="button"
-                    className="flex h-11 items-center gap-1 rounded-full px-4 hover:bg-ink-100 hover:text-ink-900 focus-visible:bg-ink-100"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                  >
-                    {t("creatorStudio")}
-                    <ChevronDown aria-hidden className="size-3.5 transition-transform group-hover:rotate-180 group-focus-within:rotate-180" />
-                  </button>
-                  <div className="invisible fixed left-5 right-5 top-16 w-auto translate-y-2 border-t border-ink-300 bg-white px-6 py-6 opacity-0 shadow-pop transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 lg:absolute lg:left-1/2 lg:right-auto lg:top-full lg:w-72 lg:-translate-x-1/2">
-                    <p className="text-xs uppercase tracking-[0.18em] text-ink-500">{t("creatorStudio")}</p>
-                    <div className="mt-3 grid gap-1">
-                      {!session || session.user.role === "USER" ? <Link href={session ? ROUTES.creatorApply : ROUTES.authRegister} className="flex min-h-11 items-center rounded-token bg-ink-900 px-3 text-sm text-white hover:bg-ink-700">{t("becomeCreator")}</Link> : null}
-                      {session ? <>
-                        <Link prefetch={false} href="/studio/dashboard" className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">{t("overview")}</Link>
-                        <Link prefetch={false} href="/studio/artworks" className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">{t("artworkManagement")}</Link>
-                        <Link prefetch={false} href="/studio/artworks/new" className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">{t("listArtwork")}</Link>
-                        <Link prefetch={false} href="/studio/orders" className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">{t("fulfillment")}</Link>
-                        <Link prefetch={false} href="/studio/settings/payments" className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">{t("paymentMethods")}</Link>
-                      </> : <p className="mt-3 border-t border-ink-300 pt-4 text-sm text-ink-500">{t("loginToStudio")}</p>}
-                    </div>
+          <li className="group relative flex h-16 items-center" {...menuHandlers("creators")}>
+            <div className="relative flex h-full items-center">
+              <Link
+                href="/creators"
+                onClick={() => setActiveMenu(null)}
+                className="flex h-11 items-center gap-1 rounded-full px-4 hover:bg-ink-100 hover:text-ink-900 focus-visible:bg-ink-100"
+                aria-haspopup="true"
+              >
+                {t("creators")}
+                <ChevronDown aria-hidden className={`size-3.5 transition-transform ${activeMenu === "creators" ? "rotate-180" : ""}`} />
+              </Link>
+              <div className={`fixed left-5 right-5 top-16 w-auto border-t border-ink-300 bg-white px-6 py-7 shadow-pop transition-all duration-200 lg:absolute lg:left-1/2 lg:right-auto lg:top-full lg:w-80 lg:-translate-x-1/2 ${activeMenu === "creators" ? "visible translate-y-0 opacity-100" : "invisible translate-y-2 opacity-0"}`}>
+                <p className="text-xs uppercase tracking-[0.18em] text-ink-500">{t("creators")}</p>
+                <Link href="/creators" className="mt-3 block text-xl text-ink-900 hover:text-brand-500">
+                  {t("creators")}
+                </Link>
+                <div className="mt-5 border-t border-ink-300 pt-5">
+                  <p className="text-xs uppercase tracking-[0.18em] text-ink-500">{t("creatorStudio")}</p>
+                  <div className="mt-3 grid gap-1">
+                    {!session || session.user.role === "USER" ? <Link href={session ? ROUTES.creatorApply : ROUTES.authRegister} className="flex min-h-11 items-center rounded-token bg-ink-900 px-3 text-sm text-white hover:bg-ink-700">{t("becomeCreator")}</Link> : null}
+                    {session ? <>
+                      <Link prefetch={false} href="/studio/dashboard" className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">{t("overview")}</Link>
+                      <Link prefetch={false} href="/studio/artworks" className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">{t("artworkManagement")}</Link>
+                      <Link prefetch={false} href="/studio/artworks/new" className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">{t("listArtwork")}</Link>
+                      <Link prefetch={false} href="/studio/orders" className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">{t("fulfillment")}</Link>
+                      <Link prefetch={false} href="/studio/settings/payments" className="flex min-h-11 items-center rounded-token px-3 text-sm text-ink-700 hover:bg-ink-100 hover:text-ink-900">{t("paymentMethods")}</Link>
+                    </> : <p className="mt-3 border-t border-ink-300 pt-4 text-sm text-ink-500">{t("loginToStudio")}</p>}
                   </div>
                 </div>
-              </li>
-              {session ? <li className="group relative flex h-16 items-center">
+              </div>
+            </div>
+          </li>
+          {session ? <li className="group relative flex h-16 items-center">
                 <div className="relative flex h-full items-center">
                 <button
                   type="button"
@@ -152,7 +166,6 @@ export function Navbar() {
                     </button>
                 </div>
               </li>
-          </>
           {!loading && !session ? (
             <>
               <li>

@@ -20,12 +20,8 @@ function readLocale(): Locale {
 }
 
 /** 全局语言状态；只保存白名单 locale 到非敏感 Cookie，不影响认证 Cookie。 */
-export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("zh-CN");
-
-  useEffect(() => {
-    setLocaleState(readLocale());
-  }, []);
+export function LocaleProvider({ children, initialLocale = "zh-CN" }: { children: ReactNode; initialLocale?: Locale }) {
+  const [locale, setLocaleState] = useState<Locale>(initialLocale);
 
   useEffect(() => {
     document.documentElement.lang = locale;

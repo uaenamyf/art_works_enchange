@@ -1,40 +1,25 @@
 import { ArtworkCard } from "@/components/domain/ArtworkCard";
 import type { ArtworkCardData } from "@/components/domain/types";
 import { apiFetch } from "@/lib/api/fetcher";
+import type { Locale } from "@/features/locale/LocaleProvider";
+import { translate } from "@/features/locale/translate";
 
-export const artworkCategories = [
-  ["艺术品", "ART"],
-  ["摄影", "PHOTOGRAPHY"],
-  ["陶艺", "CERAMICS"],
-  ["木制品", "WOODWORK"],
-  ["皮具", "LEATHER"],
-  ["珠宝", "JEWELRY"],
-  ["时装", "FASHION"],
-  ["数字作品", "DIGITAL"],
-  ["收藏品", "COLLECTIBLES"]
-] as const;
+export const artworkCategories = ["ART", "PHOTOGRAPHY", "CERAMICS", "WOODWORK", "LEATHER", "JEWELRY", "FASHION", "DIGITAL", "COLLECTIBLES"] as const;
 
 export type ArtworkCategory = (typeof artworkCategories)[number][1];
 export type ProductType = "PHYSICAL" | "DIGITAL";
 
 export const productSections = [
-  { label: "实体产品", value: "PHYSICAL" as const, categories: artworkCategories.filter(([, value]) => value !== "DIGITAL") },
-  { label: "数字产品", value: "DIGITAL" as const, categories: artworkCategories.filter(([, value]) => value === "DIGITAL") }
+  { value: "PHYSICAL" as const, categories: artworkCategories.filter((value) => value !== "DIGITAL") },
+  { value: "DIGITAL" as const, categories: artworkCategories.filter((value) => value === "DIGITAL") }
 ] as const;
 
-export function getArtworkCategoryLabel(value: string, english: boolean) {
-  const labels: Record<string, string> = {
-    ART: "Artwork",
-    PHOTOGRAPHY: "Photography",
-    CERAMICS: "Ceramics",
-    WOODWORK: "Woodwork",
-    LEATHER: "Leather",
-    JEWELRY: "Jewelry",
-    FASHION: "Fashion",
-    DIGITAL: "Digital works",
-    COLLECTIBLES: "Collectibles"
-  };
-  return english ? labels[value] ?? value : artworkCategories.find(([, category]) => category === value)?.[0] ?? value;
+export function getArtworkCategoryLabel(value: string, locale: Locale) {
+  return translate(locale, `categories.${value}` as Parameters<typeof translate>[1]);
+}
+
+export function getProductTypeLabel(value: ProductType, locale: Locale) {
+  return translate(locale, `productTypes.${value}` as Parameters<typeof translate>[1]);
 }
 
 interface ArtworkListResponse {
@@ -62,7 +47,7 @@ interface PublicMedia { id: string; url: string }
 interface CreatorDetail { id: string; displayName: string }
 
 export function getArtworkCategory(value: string | undefined) {
-  return artworkCategories.find(([, category]) => category === value);
+  return artworkCategories.find((category) => category === value);
 }
 
 export async function loadArtworkCards(options: {

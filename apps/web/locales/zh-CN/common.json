@@ -32,6 +32,21 @@
   "language": "语言",
   "chinese": "中文",
   "english": "English",
+  "categories": {
+    "ART": "艺术品",
+    "PHOTOGRAPHY": "摄影",
+    "CERAMICS": "陶艺",
+    "WOODWORK": "木制品",
+    "LEATHER": "皮具",
+    "JEWELRY": "珠宝",
+    "FASHION": "时装",
+    "DIGITAL": "数字作品",
+    "COLLECTIBLES": "收藏品"
+  },
+  "productTypes": {
+    "PHYSICAL": "实体产品",
+    "DIGITAL": "数字产品"
+  },
   "myOrders": "我的订单",
   "order": "订单",
   "createdAt": "创建时间",

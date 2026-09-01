@@ -32,6 +32,21 @@
   "language": "Language",
   "chinese": "中文",
   "english": "English",
+  "categories": {
+    "ART": "Artwork",
+    "PHOTOGRAPHY": "Photography",
+    "CERAMICS": "Ceramics",
+    "WOODWORK": "Woodwork",
+    "LEATHER": "Leather",
+    "JEWELRY": "Jewelry",
+    "FASHION": "Fashion",
+    "DIGITAL": "Digital works",
+    "COLLECTIBLES": "Collectibles"
+  },
+  "productTypes": {
+    "PHYSICAL": "Physical products",
+    "DIGITAL": "Digital products"
+  },
   "myOrders": "My orders",
   "order": "Order",
   "createdAt": "Created",
