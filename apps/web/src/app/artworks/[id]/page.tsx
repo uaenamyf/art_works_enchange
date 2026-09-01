@@ -6,6 +6,7 @@ import { FavoriteButton } from "@/features/favorites/FavoriteButton";
 import { MediaGallery, type MediaGalleryItem } from "@/components/domain/MediaGallery";
 import { ROUTES } from "@/lib/config";
 import { apiFetch, ApiError } from "@/lib/api/fetcher";
+import { translate } from "@/features/locale/translate";
 import { cookies } from "next/headers";
 
 interface PageProps {
@@ -80,7 +81,7 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
             </p>
             <div className="mt-4 flex flex-col gap-2">
               {/* Week 2 占位操作：尚未创建订单、收藏或分享副作用。 */}
-              <Link href={`/checkout/${artwork.id}`} className="inline-flex h-12 items-center justify-center rounded-token bg-ink-900 px-5 text-base font-medium text-white hover:bg-ink-700">{english ? "Buy now" : "立即购买"}</Link>
+              <p className="rounded-token border border-ink-300 bg-ink-100 px-4 py-3 text-sm text-ink-700">{english ? "Purchases temporarily unavailable" : "购买功能暂未开放"}</p>
               <div className="grid grid-cols-2 gap-2">
                 <FavoriteButton artworkId={artwork.id} initialFavorited={artwork.favoritedByMe} />
                 <Button variant="secondary" leftIcon={<Share2 className="size-4" />}>
@@ -88,9 +89,7 @@ export default async function ArtworkDetailPage({ params }: PageProps) {
                 </Button>
               </div>
             </div>
-            <p className="mt-3 text-xs text-ink-500">
-              {english ? "Payments are processed securely; order status follows verified provider notifications." : "支付由 Stripe 安全处理；订单状态以 Webhook 通知为准。"}
-            </p>
+            <p className="mt-3 text-xs text-ink-500">{translate(locale, "purchasesDisabled")}</p>
           </div>
 
           {artwork.creatorId ? (

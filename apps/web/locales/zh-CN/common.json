@@ -62,6 +62,7 @@
   "quantity": "数量",
   "total": "总计",
   "checkout": "结算",
+  "purchasesDisabled": "支付模块接入前，购买功能暂未开放。",
   "confirmOrder": "确认订单",
   "backToArtwork": "返回作品",
   "digitalDelivery": "数字交付",

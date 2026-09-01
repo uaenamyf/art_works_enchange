@@ -14,11 +14,6 @@ interface LocaleContextValue {
 
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
-function readLocale(): Locale {
-  if (typeof document === "undefined") return "zh-CN";
-  return document.cookie.split(";").map((item) => item.trim()).find((item) => item.startsWith("ch_locale="))?.split("=")[1] === "en-US" ? "en-US" : "zh-CN";
-}
-
 /** 全局语言状态；只保存白名单 locale 到非敏感 Cookie，不影响认证 Cookie。 */
 export function LocaleProvider({ children, initialLocale = "zh-CN" }: { children: ReactNode; initialLocale?: Locale }) {
   const [locale, setLocaleState] = useState<Locale>(initialLocale);

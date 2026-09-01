@@ -17,7 +17,7 @@ interface CreatorMapper extends BaseMapper<CreatorPersistenceRow> {
       """
 			<script>
 			SELECT id, user_id, slug, display_name, category, bio, location,
-						 verified, avatar_url, cover_url, version, created_at, updated_at
+						 verified, avatar_url, cover_url, paypal_merchant_id, version, created_at, updated_at
 			FROM creator_profiles
 			WHERE 1 = 1
 				<if test='category != null and category != ""'>AND category = #{category}</if>
@@ -38,7 +38,7 @@ interface CreatorMapper extends BaseMapper<CreatorPersistenceRow> {
   @Select(
       """
 			SELECT id, user_id, slug, display_name, category, bio, location,
-				   verified, avatar_url, cover_url, version, created_at, updated_at
+				   verified, avatar_url, cover_url, paypal_merchant_id, version, created_at, updated_at
 			FROM creator_profiles
 			WHERE id = #{id}
 			""")

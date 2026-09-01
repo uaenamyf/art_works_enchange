@@ -51,7 +51,10 @@ docker compose -p creatorhub-prod -f infra/compose.yaml -f infra/compose.prod.ya
 ```
 
 生产 `.env` 至少需要显式设置 `DB_NAME`、`DB_USER`、`DB_PASSWORD`、`JWT_SECRET`、
-`CORS_ALLOWED_ORIGINS`、`S3_ACCESS_KEY`、`S3_SECRET_KEY` 和 `NEXT_PUBLIC_API_BASE_URL`。
+`REDIS_PASSWORD`、`CORS_ALLOWED_ORIGINS`、`S3_ACCESS_KEY`、`S3_SECRET_KEY` 和
+`NEXT_PUBLIC_API_BASE_URL`。当前前端域名为 `https://creatormall.shop`，因此
+`CORS_ALLOWED_ORIGINS=https://creatormall.shop`；API 地址应填写浏览器可访问的
+公开 API 域名，例如 `https://api.creatormall.shop`，不能填写 Docker 内部的 `api`。
 
 镜像职责：
 

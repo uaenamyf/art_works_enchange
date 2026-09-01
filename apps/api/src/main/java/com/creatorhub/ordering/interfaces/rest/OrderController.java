@@ -4,6 +4,7 @@ import com.creatorhub.ordering.application.port.in.OrderUseCases;
 import com.creatorhub.ordering.application.port.in.OrderUseCases.CreateCommand;
 import com.creatorhub.ordering.domain.model.OrderStatus;
 import com.creatorhub.ordering.domain.model.ShippingAddress;
+import com.creatorhub.sharedkernel.error.BusinessError;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrderController {
 
   private final OrderUseCases orders;
+  private static final boolean PURCHASES_ENABLED = false;
 
   public OrderController(OrderUseCases orders) {
     this.orders = orders;
@@ -40,8 +42,16 @@ public class OrderController {
       @AuthenticationPrincipal UUID buyerId,
       @RequestHeader("Idempotency-Key") String idempotencyKey,
       @Valid @RequestBody CreateOrderRequest request) {
+    if (!PURCHASES_ENABLED) {
+      throw purchasesDisabled();
+    }
     OrderUseCases.OrderView order = orders.create(buyerId, request.command(), idempotencyKey);
     return ResponseEntity.created(URI.create("/api/v1/orders/" + order.id())).body(order);
+  }
+
+  private static BusinessError purchasesDisabled() {
+    return new BusinessError(
+        "PURCHASES_DISABLED", "Purchases are temporarily unavailable until payment is enabled");
   }
 
   /** 取消当前买家的待支付订单；重复取消返回当前已取消状态且不会重复释放库存。 */

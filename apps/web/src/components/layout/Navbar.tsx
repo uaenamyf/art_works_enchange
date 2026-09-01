@@ -14,11 +14,12 @@ import { useLocale } from "@/features/locale/LocaleProvider";
 export function Navbar() {
   const { session, loading, logout } = useAuth();
   const { locale, setLocale, t } = useLocale();
-  const [activeMenu, setActiveMenu] = useState<"discover" | "creators" | null>(null);
+  const [activeMenu, setActiveMenu] = useState<"discover" | "creators" | "account" | "language" | null>(null);
 
   // 顶层菜单共用一个活动状态，确保鼠标悬停与键盘焦点不会同时打开两个菜单。
-  const menuHandlers = (menu: "discover" | "creators") => ({
+  const menuHandlers = (menu: "discover" | "creators" | "account" | "language") => ({
     onMouseEnter: () => setActiveMenu(menu),
+    onMouseLeave: () => setActiveMenu(null),
     onFocus: () => setActiveMenu(menu),
     onBlur: (event: React.FocusEvent<HTMLLIElement>) => {
       if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
@@ -47,11 +48,12 @@ export function Navbar() {
                 onClick={() => setActiveMenu(null)}
                 className="flex h-11 items-center gap-1 rounded-full px-4 hover:bg-ink-100 hover:text-ink-900 focus-visible:bg-ink-100"
                 aria-haspopup="true"
+                aria-expanded={activeMenu === "discover"}
               >
                 {t("discover")}
                 <ChevronDown aria-hidden className={`size-3.5 transition-transform ${activeMenu === "discover" ? "rotate-180" : ""}`} />
               </Link>
-              <div className={`fixed left-5 right-5 top-16 w-auto border-t border-ink-300 bg-white px-6 py-7 shadow-pop transition-all duration-200 lg:absolute lg:left-1/2 lg:right-auto lg:top-full lg:w-[min(720px,calc(100vw-40px))] lg:-translate-x-1/2 ${activeMenu === "discover" ? "visible translate-y-0 opacity-100" : "invisible translate-y-2 opacity-0"}`}>
+              <div className={`fixed left-5 right-5 top-16 w-auto border-t border-ink-300 bg-white px-6 py-7 shadow-pop transition-all duration-200 md:absolute md:left-1/2 md:right-auto md:top-full md:w-[min(720px,calc(100vw-40px))] md:-translate-x-1/2 ${activeMenu === "discover" ? "visible translate-y-0 opacity-100" : "invisible translate-y-2 opacity-0"}`}>
                 <div className="grid gap-x-10 gap-y-6 sm:grid-cols-3">
                   <div className="sm:col-span-1">
                     <p className="text-xs uppercase tracking-[0.18em] text-ink-500">{t("exploreArtworks")}</p>
@@ -89,11 +91,12 @@ export function Navbar() {
                 onClick={() => setActiveMenu(null)}
                 className="flex h-11 items-center gap-1 rounded-full px-4 hover:bg-ink-100 hover:text-ink-900 focus-visible:bg-ink-100"
                 aria-haspopup="true"
+                aria-expanded={activeMenu === "creators"}
               >
                 {t("creators")}
                 <ChevronDown aria-hidden className={`size-3.5 transition-transform ${activeMenu === "creators" ? "rotate-180" : ""}`} />
               </Link>
-              <div className={`fixed left-5 right-5 top-16 w-auto border-t border-ink-300 bg-white px-6 py-7 shadow-pop transition-all duration-200 lg:absolute lg:left-1/2 lg:right-auto lg:top-full lg:w-80 lg:-translate-x-1/2 ${activeMenu === "creators" ? "visible translate-y-0 opacity-100" : "invisible translate-y-2 opacity-0"}`}>
+              <div className={`fixed left-5 right-5 top-16 w-auto border-t border-ink-300 bg-white px-6 py-7 shadow-pop transition-all duration-200 md:absolute md:left-1/2 md:right-auto md:top-full md:w-80 md:-translate-x-1/2 ${activeMenu === "creators" ? "visible translate-y-0 opacity-100" : "invisible translate-y-2 opacity-0"}`}>
                 <p className="text-xs uppercase tracking-[0.18em] text-ink-500">{t("creators")}</p>
                 <Link href="/creators" className="mt-3 block text-xl text-ink-900 hover:text-brand-500">
                   {t("creators")}
@@ -114,19 +117,20 @@ export function Navbar() {
               </div>
             </div>
           </li>
-          {session ? <li className="group relative flex h-16 items-center">
+          {session ? <li className="group relative flex h-16 items-center" {...menuHandlers("account")}>
                 <div className="relative flex h-full items-center">
                 <button
                   type="button"
                   className="flex h-11 items-center gap-2 rounded-full px-4 hover:bg-ink-100 hover:text-ink-900 focus-visible:bg-ink-100"
                   aria-haspopup="true"
-                  aria-expanded="false"
+                  aria-expanded={activeMenu === "account"}
+                  onClick={() => setActiveMenu(activeMenu === "account" ? null : "account")}
                 >
                   <UserRound aria-hidden className="size-4" />
                   <span className="max-w-32 truncate">{session.user.displayName}</span>
-                  <ChevronDown aria-hidden className="size-3.5 transition-transform group-hover:rotate-180 group-focus-within:rotate-180" />
+                  <ChevronDown aria-hidden className={`size-3.5 transition-transform ${activeMenu === "account" ? "rotate-180" : ""}`} />
                 </button>
-                <div className="invisible fixed left-5 right-5 top-16 w-auto translate-y-2 border-t border-ink-300 bg-white px-6 py-6 opacity-0 shadow-pop transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 lg:absolute lg:left-auto lg:right-0 lg:top-full lg:w-72 lg:translate-x-0">
+                <div className={`fixed left-5 right-5 top-16 w-auto border-t border-ink-300 bg-white px-6 py-6 shadow-pop transition-all duration-200 md:absolute md:left-auto md:right-0 md:top-full md:w-72 md:translate-x-0 ${activeMenu === "account" ? "visible translate-y-0 opacity-100" : "invisible translate-y-2 opacity-0"}`}>
                   <div className="border-b border-ink-300 pb-4">
                     <p className="text-xs uppercase tracking-[0.18em] text-ink-500">{t("account")}</p>
                     <p className="mt-2 truncate text-base text-ink-900">{session.user.displayName}</p>
@@ -145,18 +149,20 @@ export function Navbar() {
                 </div>
               </div>
               </li> : null}
-              <li className="group relative flex h-16 items-center">
+              <li className="group relative flex h-16 items-center" {...menuHandlers("language")}>
                 <button
                   type="button"
                   aria-label={t("language")}
                   aria-haspopup="true"
+                  aria-expanded={activeMenu === "language"}
+                  onClick={() => setActiveMenu(activeMenu === "language" ? null : "language")}
                   className="flex h-11 items-center gap-2 rounded-full px-3 text-xs text-ink-700 hover:bg-ink-100 hover:text-ink-900 focus-visible:bg-ink-100"
                 >
                   <Globe2 aria-hidden className="size-4" />
                   <span>{locale === "zh-CN" ? "中文" : "EN"}</span>
-                  <ChevronDown aria-hidden className="size-3.5" />
+                  <ChevronDown aria-hidden className={`size-3.5 transition-transform ${activeMenu === "language" ? "rotate-180" : ""}`} />
                 </button>
-                <div role="menu" className="invisible fixed left-5 right-5 top-16 z-40 w-auto translate-y-2 border-t border-ink-300 bg-white px-6 py-6 opacity-0 shadow-pop transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 lg:absolute lg:left-auto lg:right-0 lg:top-full lg:w-72 lg:translate-x-0">
+                <div role="menu" className={`fixed left-5 right-5 top-16 z-40 w-auto border-t border-ink-300 bg-white px-6 py-6 shadow-pop transition-all duration-200 md:absolute md:left-auto md:right-0 md:top-full md:w-72 md:translate-x-0 ${activeMenu === "language" ? "visible translate-y-0 opacity-100" : "invisible translate-y-2 opacity-0"}`}>
                     <p className="px-3 py-2 text-xs uppercase tracking-[0.18em] text-ink-500">{t("language")}</p>
                     <button type="button" role="menuitem" onClick={() => setLocale("zh-CN")} className={`flex min-h-11 w-full items-center rounded-token px-3 text-left text-sm hover:bg-ink-100 ${locale === "zh-CN" ? "bg-ink-100 text-ink-900" : "text-ink-700"}`}>
                       {t("chinese")}

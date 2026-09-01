@@ -62,6 +62,7 @@
   "quantity": "Quantity",
   "total": "Total",
   "checkout": "Checkout",
+  "purchasesDisabled": "Purchases are temporarily unavailable while payment is being enabled.",
   "confirmOrder": "Confirm order",
   "backToArtwork": "Back to artwork",
   "digitalDelivery": "Digital delivery",

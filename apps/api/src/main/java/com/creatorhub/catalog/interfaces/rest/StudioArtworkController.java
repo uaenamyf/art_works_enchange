@@ -30,7 +30,7 @@ public class StudioArtworkController {
 
   /** 读取编辑视图；对象级归属校验由应用服务通过认证用户 ID 完成。 */
   @GetMapping("/{artworkId}")
-  @PreAuthorize("hasRole('CREATOR')")
+  @PreAuthorize("hasAnyRole('CREATOR', 'ADMIN')")
   ResponseEntity<ArtworkView> getOwned(
       @AuthenticationPrincipal UUID userId, @PathVariable UUID artworkId) {
     return ResponseEntity.ok(artworks.getOwned(userId, artworkId));
@@ -38,7 +38,7 @@ public class StudioArtworkController {
 
   /** 返回当前 Creator 的作品列表；草稿和审核状态只在此受保护入口可见。 */
   @GetMapping
-  @PreAuthorize("hasRole('CREATOR')")
+  @PreAuthorize("hasAnyRole('CREATOR', 'ADMIN')")
   ResponseEntity<ArtworkUseCases.StudioArtworkPage> listOwned(
       @AuthenticationPrincipal UUID userId,
       @RequestParam(required = false) ArtworkStatus status,
@@ -49,7 +49,7 @@ public class StudioArtworkController {
 
   /** Creator 只能读取自己作品的审核记录，拒绝理由用于指导作品修改。 */
   @GetMapping("/{artworkId}/reviews")
-  @PreAuthorize("hasRole('CREATOR')")
+  @PreAuthorize("hasAnyRole('CREATOR', 'ADMIN')")
   ResponseEntity<List<ArtworkReviewUseCases.ReviewView>> listReviews(
       @AuthenticationPrincipal UUID userId, @PathVariable UUID artworkId) {
     return ResponseEntity.ok(reviews.listForOwner(userId, artworkId));

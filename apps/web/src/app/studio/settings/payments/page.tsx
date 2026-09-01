@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ApiError } from "@/lib/api/fetcher";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { hasCreatorWorkspaceAccess } from "@/features/auth/types";
 import { useLocale } from "@/features/locale/LocaleProvider";
 import type { components } from "@/lib/api/schema.gen";
 
@@ -22,7 +23,7 @@ export default function StudioPaymentSettingsPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!session || session.user.role !== "CREATOR") return;
+    if (!hasCreatorWorkspaceAccess(session)) return;
     void authenticatedFetch<PayPalAccount>("/api/v1/me/creator/paypal-account")
       .then((result) => {
         setAccount(result);
@@ -53,7 +54,7 @@ export default function StudioPaymentSettingsPage() {
   }
 
   if (loading) return <Message text={t("loadingAccount")} />;
-  if (!session || session.user.role !== "CREATOR") return <Message text={t("creatorOnlyPayments")} alert />;
+  if (!hasCreatorWorkspaceAccess(session)) return <Message text={t("creatorOnlyPayments")} alert />;
   if (loadError) return <Message text={loadError} alert />;
   if (!account) return <Message text={t("paypalSettingsLoading")} />;
 

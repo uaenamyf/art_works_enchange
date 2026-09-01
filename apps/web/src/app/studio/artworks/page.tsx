@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { ApiError } from "@/lib/api/fetcher";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { hasCreatorWorkspaceAccess } from "@/features/auth/types";
 import type { components } from "@/lib/api/schema.gen";
 import { useLocale } from "@/features/locale/LocaleProvider";
 
@@ -26,7 +27,7 @@ export default function StudioArtworksPage() {
   const query = searchParams.get("status") ?? "";
   const cursor = searchParams.get("cursor");
   const status = statuses.find((item) => item.value === query)?.value;
-  const isCreator = session?.user.role === "CREATOR";
+  const isCreator = hasCreatorWorkspaceAccess(session);
   const artworks = useQuery<ArtworkPage, Error>({
     queryKey: ["studio-artworks", { status }],
     enabled: isCreator && !loading,

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { hasCreatorWorkspaceAccess } from "@/features/auth/types";
 import { useLocale } from "@/features/locale/LocaleProvider";
 
 /** Creator Studio 的信息密度布局；桌面显示侧栏，小屏保持顶部横向导航。 */
@@ -11,7 +12,7 @@ export default function StudioLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { session, loading } = useAuth();
   const { t } = useLocale();
-  const isCreator = session?.user.role === "CREATOR";
+  const isCreator = hasCreatorWorkspaceAccess(session);
   const linkClass = (path: string) =>
     `flex min-h-11 shrink-0 items-center rounded-token px-3 text-sm ${pathname === path ? "bg-ink-900 text-white" : "text-ink-700 hover:bg-ink-100 hover:text-ink-900"}`;
 

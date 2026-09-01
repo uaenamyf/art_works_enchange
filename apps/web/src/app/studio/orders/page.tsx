@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ApiError } from "@/lib/api/fetcher";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { hasCreatorWorkspaceAccess } from "@/features/auth/types";
 import { normalizeOrderPage } from "@/features/orders/orderResponse";
 import type { components } from "@/lib/api/schema.gen";
 import { useLocale } from "@/features/locale/LocaleProvider";
@@ -26,6 +27,7 @@ const statuses: Array<{ label: string; value?: OrderStatus }> = [
 export default function StudioOrdersPage() {
   const { session, loading, authenticatedFetch } = useAuth();
   const { locale, t } = useLocale();
+  const hasWorkspaceAccess = hasCreatorWorkspaceAccess(session);
   const searchParams = typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search);
   const query = searchParams.get("status") ?? "";
   const cursor = searchParams.get("cursor");
@@ -34,7 +36,7 @@ export default function StudioOrdersPage() {
   const [shippingDraft, setShippingDraft] = useState<Record<string, { carrier: string; trackingNumber: string }>>({});
   const orders = useQuery<OrderPage, Error>({
     queryKey: ["studio-orders", { status, cursor }],
-    enabled: Boolean(session) && !loading,
+    enabled: hasWorkspaceAccess && !loading,
     queryFn: async () => {
       const params = new URLSearchParams({ limit: "20" });
       if (status) params.set("status", status);
@@ -49,6 +51,7 @@ export default function StudioOrdersPage() {
 
   if (loading) return <Message text={t("loadingAccount")} />;
   if (!session) return <Message text={locale === "en-US" ? "Log in and become a creator to use Studio." : "请先登录并完成创作者申请。"} alert />;
+  if (!hasWorkspaceAccess) return <Message text={t("creatorOnboardingRequired")} alert />;
   if (orders.isError) return <Message text={locale === "en-US" ? t("ordersLoadFailed") : orders.error instanceof ApiError ? orders.error.problem.detail ?? t("ordersLoadFailed") : t("ordersLoadFailed")} alert />;
   if (orders.isPending) return <Message text={t("loadingOrders")} />;
 

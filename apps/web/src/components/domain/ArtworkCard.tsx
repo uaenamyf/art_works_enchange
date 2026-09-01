@@ -33,7 +33,7 @@ export function ArtworkCard({ artwork, className, priority }: ArtworkCardProps) 
       <Link
         href={ROUTES.artworkDetail(artwork.id)}
         className="relative block overflow-hidden rounded-token bg-ink-100"
-        style={{ aspectRatio: artwork.aspect }}
+        style={{ aspectRatio: artwork.aspect, display: "block", width: "100%" }}
         aria-label={`${english ? "View artwork" : "查看作品"}: ${artwork.title}`}
       >
         <Image

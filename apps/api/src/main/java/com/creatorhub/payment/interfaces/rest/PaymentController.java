@@ -3,6 +3,7 @@ package com.creatorhub.payment.interfaces.rest;
 import com.creatorhub.payment.application.port.in.PaymentUseCases;
 import com.creatorhub.payment.domain.model.PaymentProvider;
 import com.creatorhub.payment.domain.model.PaymentSession;
+import com.creatorhub.sharedkernel.error.BusinessError;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PaymentController {
 
   private final PaymentUseCases payments;
+  private static final boolean PURCHASES_ENABLED = false;
 
   public PaymentController(PaymentUseCases payments) {
     this.payments = payments;
@@ -35,6 +37,9 @@ public class PaymentController {
       @PathVariable UUID orderId,
       @RequestHeader("Idempotency-Key") String idempotencyKey,
       @Valid @RequestBody CreateSessionRequest request) {
+    if (!PURCHASES_ENABLED) {
+      throw purchasesDisabled();
+    }
     return ResponseEntity.ok(
         payments.createSession(buyerId, orderId, request.provider(), idempotencyKey));
   }
@@ -45,7 +50,15 @@ public class PaymentController {
       @AuthenticationPrincipal UUID buyerId,
       @PathVariable UUID orderId,
       @Valid @RequestBody CaptureRequest request) {
+    if (!PURCHASES_ENABLED) {
+      throw purchasesDisabled();
+    }
     return ResponseEntity.ok(payments.captureSession(buyerId, orderId, request.providerOrderId()));
+  }
+
+  private static BusinessError purchasesDisabled() {
+    return new BusinessError(
+        "PURCHASES_DISABLED", "Purchases are temporarily unavailable until payment is enabled");
   }
 
   record CreateSessionRequest(@NotNull PaymentProvider provider) {}

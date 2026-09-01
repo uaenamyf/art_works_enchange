@@ -22,7 +22,7 @@ public class StudioDashboardController {
 
   /** 读取当前 Creator 的作品、订单、关注者和数字下载只读指标。 */
   @GetMapping
-  @PreAuthorize("hasRole('CREATOR')")
+  @PreAuthorize("hasAnyRole('CREATOR', 'ADMIN')")
   ResponseEntity<DashboardResponse> get(@AuthenticationPrincipal UUID userId) {
     return ResponseEntity.ok(DashboardResponse.from(dashboard.get(userId)));
   }

@@ -30,7 +30,7 @@ public class StudioOrderController {
   }
 
   @GetMapping
-  @PreAuthorize("hasRole('CREATOR')")
+  @PreAuthorize("hasAnyRole('CREATOR', 'ADMIN')")
   ResponseEntity<OrderPage> list(
       @AuthenticationPrincipal UUID userId,
       @RequestParam(required = false) OrderStatus status,
@@ -40,7 +40,7 @@ public class StudioOrderController {
   }
 
   @PatchMapping("/{orderId}/status")
-  @PreAuthorize("hasRole('CREATOR')")
+  @PreAuthorize("hasAnyRole('CREATOR', 'ADMIN')")
   ResponseEntity<OrderView> updateStatus(
       @AuthenticationPrincipal UUID userId,
       @PathVariable UUID orderId,

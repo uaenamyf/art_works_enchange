@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { ApiError } from "@/lib/api/fetcher";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { hasCreatorWorkspaceAccess } from "@/features/auth/types";
 import type { components } from "@/lib/api/schema.gen";
 import { useLocale } from "@/features/locale/LocaleProvider";
 
@@ -13,14 +14,16 @@ type StudioDashboard = components["schemas"]["StudioDashboard"];
 export default function StudioDashboardPage() {
   const { session, loading, authenticatedFetch } = useAuth();
   const { locale, t } = useLocale();
+  const hasWorkspaceAccess = hasCreatorWorkspaceAccess(session);
   const dashboard = useQuery<StudioDashboard, Error>({
     queryKey: ["studio-dashboard"],
-    enabled: Boolean(session) && !loading,
+    enabled: hasWorkspaceAccess && !loading,
     queryFn: () => authenticatedFetch<StudioDashboard>("/api/v1/studio/dashboard")
   });
 
   if (loading) return <Message text={t("loadingAccount")} />;
   if (!session) return <Message text={locale === "en-US" ? "Log in and become a creator to use Studio." : "请先登录并完成创作者申请。"} alert />;
+  if (!hasWorkspaceAccess) return <Message text={t("creatorOnboardingRequired")} alert />;
   if (dashboard.isError) return <Message text={locale === "en-US" ? "Unable to load overview" : dashboard.error instanceof ApiError ? dashboard.error.problem.detail ?? t("overviewLoadFailed") : t("overviewLoadFailed")} alert />;
   if (dashboard.isPending) return <Message text={t("loadingOverview")} />;
 

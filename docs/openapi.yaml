@@ -847,7 +847,7 @@ paths:
     post:
       tags: [Orders]
       operationId: createOrder
-      summary: 创建订单并预占库存（Week 7）
+      summary: 创建订单并预占库存（支付模块接入前暂不可用）
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -872,6 +872,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '409':
           $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
     get:
       tags: [Orders]
       operationId: listMyOrders
@@ -1098,6 +1100,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /orders/{orderId}/payment/capture:
     parameters:
       - $ref: '#/components/parameters/RequestId'
@@ -1129,6 +1133,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /payments/webhooks/stripe:
     parameters:
       - $ref: '#/components/parameters/RequestId'

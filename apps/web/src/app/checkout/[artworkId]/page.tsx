@@ -27,6 +27,7 @@ interface ArtworkSnapshot {
 interface OrderResponse { id: string; status: string }
 
 type ProductType = "PHYSICAL" | "DIGITAL";
+const purchasesEnabled = false;
 
 /** 结算页只提交数量和收货地址，价格由后端作品快照决定。 */
 export default function CheckoutPage({ params }: { params: Promise<{ artworkId: string }> }) {
@@ -90,6 +91,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ artworkId: 
   if (!session) return <PageMessage message="请先登录后再结算。" action={<Link href={ROUTES.authLogin} className="mt-5 inline-flex h-11 items-center rounded-token bg-ink-900 px-5 text-sm text-white">去登录</Link>} />;
   if (loadError) return <PageMessage message={loadError} alert />;
   if (!artwork) return <PageMessage message="正在加载作品..." />;
+  if (!purchasesEnabled) return <PageMessage message={t("purchasesDisabled")} alert />;
   const productType: ProductType = artwork.productType ?? "PHYSICAL";
   if (artwork.status !== "PUBLISHED" || (productType === "PHYSICAL" && artwork.stock < 1)) return <PageMessage message="这件作品目前无法购买。" alert />;
 

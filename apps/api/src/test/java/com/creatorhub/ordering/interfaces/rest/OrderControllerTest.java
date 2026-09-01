@@ -17,9 +17,6 @@ import com.creatorhub.identity.infrastructure.security.CookieOriginValidationFil
 import com.creatorhub.identity.infrastructure.security.JwtAuthenticationFilter;
 import com.creatorhub.ordering.application.port.in.OrderUseCases;
 import com.creatorhub.ordering.domain.model.OrderStatus;
-import com.creatorhub.ordering.domain.model.ShippingAddress;
-import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,39 +47,10 @@ class OrderControllerTest {
   @MockitoBean OrderUseCases orders;
 
   @Test
-  void authenticatedUserCanCreateOrder() throws Exception {
+  void authenticatedUserCannotCreateOrderWhilePurchasesAreDisabled() throws Exception {
     UUID buyerId = UUID.randomUUID();
     UUID orderId = UUID.randomUUID();
     UUID artworkId = UUID.randomUUID();
-    when(orders.create(
-            org.mockito.ArgumentMatchers.eq(buyerId),
-            org.mockito.ArgumentMatchers.any(),
-            org.mockito.ArgumentMatchers.eq("order-key")))
-        .thenReturn(
-            new OrderUseCases.OrderView(
-                orderId,
-                "CH202608270001",
-                buyerId,
-                artworkId,
-                "Vase",
-                BigDecimal.TEN,
-                "CNY",
-                2,
-                BigDecimal.valueOf(20),
-                OrderStatus.PENDING_PAYMENT,
-                new ShippingAddress(
-                    "Alice",
-                    "1 Main Street",
-                    null,
-                    "Shanghai",
-                    null,
-                    "200000",
-                    "CN",
-                    "13800138000"),
-                Instant.parse("2026-08-27T00:00:00Z"),
-                Instant.parse("2026-08-27T00:00:00Z"),
-                Instant.parse("2026-08-27T00:30:00Z")));
-
     mvc.perform(
             post("/api/v1/orders")
                 .header("Idempotency-Key", "order-key")
@@ -93,10 +61,10 @@ class OrderControllerTest {
                     {"artworkId":"%s","quantity":2,"shippingAddress":{"recipientName":"Alice","line1":"1 Main Street","city":"Shanghai","postalCode":"200000","countryCode":"CN","phone":"13800138000"}}
                     """
                         .formatted(artworkId)))
-        .andExpect(status().isCreated())
-        .andExpect(header().string("Location", "/api/v1/orders/" + orderId));
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.code").value("PURCHASES_DISABLED"));
 
-    verify(orders)
+    verify(orders, org.mockito.Mockito.never())
         .create(
             org.mockito.ArgumentMatchers.eq(buyerId),
             org.mockito.ArgumentMatchers.any(),

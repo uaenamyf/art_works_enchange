@@ -36,7 +36,7 @@ describe("StudioArtworkForm", () => {
       target: { value: "A sufficiently long artwork description" }
     });
     fireEvent.change(screen.getByLabelText("价格"), { target: { value: "89" } });
-    fireEvent.click(screen.getByRole("button", { name: "保存并提交审核" }));
+    fireEvent.click(screen.getByRole("button", { name: /提交作品|Submit artwork/ }));
 
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("至少选择一张"));
     expect(authenticatedFetch).not.toHaveBeenCalled();
@@ -72,7 +72,7 @@ describe("StudioArtworkForm", () => {
     fireEvent.change(screen.getByLabelText("数字资产文件"), {
       target: { files: [new File(["asset"], "bundle.zip", { type: "application/zip" })] }
     });
-    fireEvent.click(screen.getByRole("button", { name: "保存并提交审核" }));
+    fireEvent.click(screen.getByRole("button", { name: /提交作品|Submit artwork/ }));
 
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/studio/artworks/artwork-id"));
     expect(authenticatedFetch).toHaveBeenCalledWith(

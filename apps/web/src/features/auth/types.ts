@@ -14,3 +14,8 @@ export interface AuthSession {
     role: "USER" | "CREATOR" | "ADMIN";
   };
 }
+
+/** 判断当前账号是否可以进入 Creator Studio；ADMIN 用于平台运营和本地联调。 */
+export function hasCreatorWorkspaceAccess(session: AuthSession | null): boolean {
+  return session?.user.role === "CREATOR" || session?.user.role === "ADMIN";
+}

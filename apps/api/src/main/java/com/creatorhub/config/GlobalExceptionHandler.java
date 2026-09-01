@@ -31,6 +31,7 @@ public class GlobalExceptionHandler {
           case "EMAIL_TAKEN", "CREATOR_ALREADY_EXISTS", "CREATOR_SLUG_TAKEN" -> HttpStatus.CONFLICT;
           case "INVALID_CREDENTIALS", "REFRESH_TOKEN_INVALID" -> HttpStatus.UNAUTHORIZED;
           case "RATE_LIMITED" -> HttpStatus.TOO_MANY_REQUESTS;
+          case "PURCHASES_DISABLED" -> HttpStatus.SERVICE_UNAVAILABLE;
           case "CREATOR_NOT_FOUND" -> HttpStatus.NOT_FOUND;
           case "ARTWORK_NOT_FOUND" -> HttpStatus.NOT_FOUND;
           case "MEDIA_NOT_FOUND" -> HttpStatus.NOT_FOUND;

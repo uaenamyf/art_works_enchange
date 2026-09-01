@@ -9,7 +9,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -59,9 +58,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
               .getPayload();
       UUID userId = UUID.fromString(claims.getSubject());
       String role = claims.get("role", String.class);
-      var authentication =
-          new UsernamePasswordAuthenticationToken(
-              userId, null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
+      var authorities = new java.util.ArrayList<SimpleGrantedAuthority>();
+      authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+      // 管理员需要同时访问管理端和 Creator 工作台，但对外身份仍保持 ADMIN。
+      if ("ADMIN".equals(role)) {
+        authorities.add(new SimpleGrantedAuthority("ROLE_CREATOR"));
+      }
+      var authentication = new UsernamePasswordAuthenticationToken(userId, null, authorities);
       SecurityContextHolder.getContext().setAuthentication(authentication);
     } catch (RuntimeException ignored) {
       // 不向客户端暴露签名、issuer、过期或格式的具体失败原因，统一按未认证处理。
