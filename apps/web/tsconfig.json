@@ -19,6 +19,7 @@
       }
     ],
     "paths": {
+      "@/features/locale/StaticLocaleProvider": ["./src/features/locale/LocaleRuntime"],
       "@/*": ["./src/*"]
     }
   },

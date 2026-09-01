@@ -39,8 +39,8 @@ export default function StudioArtworksPage() {
   });
 
   if (loading) return <Message text={t("loadingAccount")} />;
-  if (!session) return <Message text="请先登录并完成创作者申请。" alert />;
-  if (!isCreator) return <Message text="完成 Creator 入驻后即可在这里上传和管理作品。" href="/studio/creator/apply" />;
+  if (!session) return <Message text={t("loginCreatorRequired")} alert />;
+  if (!isCreator) return <Message text={t("creatorOnboardingRequired")} href="/studio/creator/apply" />;
   if (artworks.isError) return <Message text={locale === "en-US" ? t("artworksLoadFailed") : artworks.error instanceof ApiError ? artworks.error.problem.detail ?? t("artworksLoadFailed") : t("artworksLoadFailed")} alert />;
   if (artworks.isPending) return <Message text={t("loadingArtworks")} />;
 
@@ -50,7 +50,7 @@ export default function StudioArtworksPage() {
         <div><p className="text-xs uppercase tracking-[0.18em] text-brand-600">Works</p><h1 className="mt-2 font-serif text-4xl text-ink-900">{t("artworkManagement")}</h1><p className="mt-3 text-sm text-ink-500">{t("artworkManagementHint")}</p></div>
         <Link href="/studio/artworks/new" className="inline-flex min-h-11 items-center rounded-token bg-ink-900 px-5 text-sm text-white">{t("addArtwork")}</Link>
       </header>
-      <ol aria-label="作品上架流程" className="grid gap-3 border-b border-ink-300 py-5 sm:grid-cols-4">
+      <ol aria-label={t("artworkFlow")} className="grid gap-3 border-b border-ink-300 py-5 sm:grid-cols-4">
         {[
           ["01", t("createDraft")],
           ["02", t("uploadAssets")],
@@ -63,11 +63,11 @@ export default function StudioArtworksPage() {
           </li>
         ))}
       </ol>
-      <nav aria-label="作品状态筛选" className="flex gap-2 overflow-x-auto border-b border-ink-300 py-4">
-        {statuses.map((item) => <Link key={item.label} href={item.value ? `/studio/artworks?status=${item.value}` : "/studio/artworks"} aria-current={item.value === status || (!item.value && !status) ? "page" : undefined} className="min-h-11 shrink-0 rounded-token border border-ink-300 px-4 py-2 text-sm text-ink-700 hover:border-ink-900 hover:text-ink-900">{item.label}</Link>)}
+      <nav aria-label={t("artworkStatusFilter")} className="flex gap-2 overflow-x-auto border-b border-ink-300 py-4">
+        {statuses.map((item) => <Link key={item.value ?? "all"} href={item.value ? `/studio/artworks?status=${item.value}` : "/studio/artworks"} aria-current={item.value === status || (!item.value && !status) ? "page" : undefined} className="min-h-11 shrink-0 rounded-token border border-ink-300 px-4 py-2 text-sm text-ink-700 hover:border-ink-900 hover:text-ink-900">{item.value ? t(item.value === "DRAFT" ? "draft" : item.value === "PENDING_REVIEW" ? "pendingReview" : item.value === "PUBLISHED" ? "published" : "archived") : t("all")}</Link>)}
       </nav>
       {artworks.data.items.length === 0 ? <p className="border-b border-ink-300 py-12 text-sm text-ink-500">{t("noArtworksInFilter")}</p> : <ul className="divide-y divide-ink-300 border-b border-ink-300">{artworks.data.items.map((artwork) => <li key={artwork.id} className="py-5"><Link href={`/studio/artworks/${artwork.id}`} className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center"><span><span className="block text-lg text-ink-900">{artwork.title}</span><span className="mt-1 block text-sm text-ink-500">{artwork.category} · {artwork.priceAmount} {artwork.priceCurrency}</span></span><span className="text-sm text-ink-700">{artwork.status} · {artwork.stock}</span></Link></li>)}</ul>}
-      {artworks.data.hasMore && artworks.data.nextCursor ? <Link href={`/studio/artworks?status=${status ?? ""}&cursor=${encodeURIComponent(artworks.data.nextCursor)}`} className="mt-6 inline-flex min-h-11 items-center border-b border-ink-900 text-sm text-ink-900">加载更多</Link> : null}
+      {artworks.data.hasMore && artworks.data.nextCursor ? <Link href={`/studio/artworks?status=${status ?? ""}&cursor=${encodeURIComponent(artworks.data.nextCursor)}`} className="mt-6 inline-flex min-h-11 items-center border-b border-ink-900 text-sm text-ink-900">{t("loadMore")}</Link> : null}
     </main>
   );
 }
