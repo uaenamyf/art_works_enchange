@@ -39,6 +39,7 @@ S3_REGION=us-east-1
 S3_BUCKET=creatorhub-media
 S3_ACCESS_KEY=admin
 S3_SECRET_KEY=服务器MinIO密码
+S3_PUBLIC_ENDPOINT=https://storage.creatormall.shop
 ```
 
 生产中间件账号约定为：PostgreSQL 和 MinIO 使用账号 `admin`；Redis 当前使用密码认证，没有用户名。密码只填写在服务器本地 `.env`，不要提交到 Git。若你决定使用同一个密码，可在服务器 `.env` 中将 `DB_PASSWORD`、`REDIS_PASSWORD` 和 `S3_SECRET_KEY` 都设置为同一值。`WEB_PUBLIC_URL` 是 Web 首页地址，`NEXT_PUBLIC_API_BASE_URL` 是浏览器调用 API 的地址，两者不是同一个地址。
@@ -75,15 +76,17 @@ sudo systemctl enable --now nginx
 echo creatorhub-acme-ok | sudo tee /var/www/letsencrypt/.well-known/acme-challenge/healthcheck.txt
 curl http://creatormall.shop/.well-known/acme-challenge/healthcheck.txt
 curl http://api.creatormall.shop/.well-known/acme-challenge/healthcheck.txt
+curl http://storage.creatormall.shop/.well-known/acme-challenge/healthcheck.txt
 sudo rm /var/www/letsencrypt/.well-known/acme-challenge/healthcheck.txt
 ```
 
-两个请求都必须返回 `creatorhub-acme-ok`。确认 DNS 已将 `creatormall.shop` 和 `api.creatormall.shop` 指向服务器，并且防火墙允许 `80/443` 后，申请 HTTPS 证书：
+三个请求都必须返回 `creatorhub-acme-ok`。确认 DNS 已将 `creatormall.shop`、`api.creatormall.shop` 和 `storage.creatormall.shop` 指向服务器，并且防火墙允许 `80/443` 后，申请 HTTPS 证书：
 
 ```sh
 sudo certbot --nginx \\
     -d creatormall.shop \\
-    -d api.creatormall.shop
+    -d api.creatormall.shop \\
+    -d storage.creatormall.shop
 ```
 
 Certbot 会自动将两个 HTTP 站点升级为 HTTPS，并配置证书续期。检查：
@@ -96,7 +99,7 @@ curl -I https://creatormall.shop
 curl https://api.creatormall.shop/actuator/health
 ```
 
-API 域名必须与 `.env` 中的 `NEXT_PUBLIC_API_BASE_URL` 一致；Web 首页地址是 `https://creatormall.shop`。
+API 域名必须与 `.env` 中的 `NEXT_PUBLIC_API_BASE_URL` 一致；Web 首页地址是 `https://creatormall.shop`。`S3_PUBLIC_ENDPOINT` 是浏览器上传作品时使用的地址，生产环境必须是 `https://storage.creatormall.shop`，不能填写 Docker 内部的 `http://minio:9000`。DNS 需要为 `storage.creatormall.shop` 单独添加指向服务器的 A 记录。
 
 ## 日常更新
 

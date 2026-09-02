@@ -17,11 +17,12 @@ public class StorageConfig {
   @Bean(destroyMethod = "close")
   S3Presigner s3Presigner(
       @Value("${creatorhub.storage.endpoint}") String endpoint,
+      @Value("${creatorhub.storage.public-endpoint}") String publicEndpoint,
       @Value("${creatorhub.storage.region}") String region,
       @Value("${creatorhub.storage.access-key}") String accessKey,
       @Value("${creatorhub.storage.secret-key}") String secretKey) {
     return S3Presigner.builder()
-        .endpointOverride(URI.create(endpoint))
+        .endpointOverride(URI.create(publicEndpoint))
         .region(Region.of(region))
         .credentialsProvider(
             StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey)))
