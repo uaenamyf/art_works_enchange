@@ -7,6 +7,7 @@ COMPOSE_ARGS="-f $COMPOSE_FILE -f $COMPOSE_OVERRIDE_FILE"
 PROJECT_NAME=${COMPOSE_PROJECT_NAME:-creatorhub-prod}
 API_IMAGE=${CREATORHUB_API_IMAGE:-creatorhub-api:local}
 WEB_IMAGE=${CREATORHUB_WEB_IMAGE:-creatorhub-web:local}
+WEB_PUBLIC_URL=${WEB_PUBLIC_URL:-https://creatormall.shop}
 
 # 部署前阻止明显的配置错误，避免应用启动后才暴露密钥或编排问题。
 if [ ! -f "$COMPOSE_FILE" ]; then
@@ -62,5 +63,5 @@ echo "Waiting for API and Web health checks"
 docker compose -p "$PROJECT_NAME" $COMPOSE_ARGS up --wait api web
 
 echo "Deployment completed"
-echo "Web: ${NEXT_PUBLIC_API_BASE_URL%/}"
+echo "Web: ${WEB_PUBLIC_URL%/}"
 echo "API health: ${NEXT_PUBLIC_API_BASE_URL%/}/actuator/health"

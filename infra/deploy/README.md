@@ -29,6 +29,7 @@ DB_PASSWORD=服务器数据库密码
 JWT_SECRET=至少32字节随机字符串
 REDIS_PASSWORD=服务器Redis密码
 CORS_ALLOWED_ORIGINS=https://creatormall.shop
+WEB_PUBLIC_URL=https://creatormall.shop
 NEXT_PUBLIC_API_BASE_URL=https://api.creatormall.shop
 COOKIE_SECURE=true
 # MinIO runs inside the production Docker network.
@@ -38,7 +39,7 @@ S3_ACCESS_KEY=admin
 S3_SECRET_KEY=服务器MinIO密码
 ```
 
-生产中间件账号约定为：PostgreSQL 和 MinIO 使用账号 `admin`；Redis 当前使用密码认证，没有用户名。密码只填写在服务器本地 `.env`，不要提交到 Git。若你决定使用同一个密码，可在服务器 `.env` 中将 `DB_PASSWORD`、`REDIS_PASSWORD` 和 `S3_SECRET_KEY` 都设置为同一值。
+生产中间件账号约定为：PostgreSQL 和 MinIO 使用账号 `admin`；Redis 当前使用密码认证，没有用户名。密码只填写在服务器本地 `.env`，不要提交到 Git。若你决定使用同一个密码，可在服务器 `.env` 中将 `DB_PASSWORD`、`REDIS_PASSWORD` 和 `S3_SECRET_KEY` 都设置为同一值。`WEB_PUBLIC_URL` 是 Web 首页地址，`NEXT_PUBLIC_API_BASE_URL` 是浏览器调用 API 的地址，两者不是同一个地址。
 
 部署脚本会自动：
 
