@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
     // remove the wildcard before launch.
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "storage.creatormall.shop" },
       { protocol: "http", hostname: "localhost" }
     ]
   },
