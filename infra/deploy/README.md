@@ -60,6 +60,8 @@ Docker 中的 API 容器使用内部端口 `8080`，宿主机端口固定为 `18
 ```sh
 sudo apt update
 sudo apt install -y nginx certbot python3-certbot-nginx
+sudo mkdir -p /var/www/letsencrypt/.well-known/acme-challenge
+sudo chown -R www-data:www-data /var/www/letsencrypt
 sudo cp infra/deploy/nginx.creatorhub.conf /etc/nginx/sites-available/creatorhub
 sudo ln -s /etc/nginx/sites-available/creatorhub /etc/nginx/sites-enabled/creatorhub
 sudo rm -f /etc/nginx/sites-enabled/default
@@ -67,7 +69,16 @@ sudo nginx -t
 sudo systemctl enable --now nginx
 ```
 
-确认 DNS 已将 `creatormall.shop` 和 `api.creatormall.shop` 指向服务器，并且防火墙允许 `80/443` 后，申请 HTTPS 证书：
+先验证 ACME 文件可以从公网访问：
+
+```sh
+echo creatorhub-acme-ok | sudo tee /var/www/letsencrypt/.well-known/acme-challenge/healthcheck.txt
+curl http://creatormall.shop/.well-known/acme-challenge/healthcheck.txt
+curl http://api.creatormall.shop/.well-known/acme-challenge/healthcheck.txt
+sudo rm /var/www/letsencrypt/.well-known/acme-challenge/healthcheck.txt
+```
+
+两个请求都必须返回 `creatorhub-acme-ok`。确认 DNS 已将 `creatormall.shop` 和 `api.creatormall.shop` 指向服务器，并且防火墙允许 `80/443` 后，申请 HTTPS 证书：
 
 ```sh
 sudo certbot --nginx \\
