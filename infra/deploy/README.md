@@ -51,21 +51,39 @@ S3_SECRET_KEY=服务器MinIO密码
 
 生产 Compose 使用独立项目和数据卷，不会复用开发数据卷。PostgreSQL、Redis 和 MinIO 不映射宿主机端口，API 通过 Docker 内网访问 MinIO。
 
-## HTTPS 反向代理
+## Nginx 反向代理与 HTTPS
 
-Compose 对外提供 API `8080` 和 Web `3000`，建议在宿主机使用 Caddy：
+Docker 中的 API `8080` 和 Web `3000` 只绑定服务器本机，公网由宿主机 Nginx 接收 `80/443` 请求。安装 Nginx：
 
-```caddyfile
-creatormall.shop {
-    reverse_proxy 127.0.0.1:3000
-}
-
-api.creatormall.shop {
-    reverse_proxy 127.0.0.1:8080
-}
+```sh
+sudo apt update
+sudo apt install -y nginx certbot python3-certbot-nginx
+sudo cp infra/deploy/nginx.creatorhub.conf /etc/nginx/sites-available/creatorhub
+sudo ln -s /etc/nginx/sites-available/creatorhub /etc/nginx/sites-enabled/creatorhub
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl enable --now nginx
 ```
 
-确认 DNS 和防火墙允许 `80/443` 后，Caddy 会自动申请 HTTPS 证书。API 域名必须与 `.env` 中的 `NEXT_PUBLIC_API_BASE_URL` 一致。
+确认 DNS 已将 `creatormall.shop` 和 `api.creatormall.shop` 指向服务器，并且防火墙允许 `80/443` 后，申请 HTTPS 证书：
+
+```sh
+sudo certbot --nginx \\
+    -d creatormall.shop \\
+    -d api.creatormall.shop
+```
+
+Certbot 会自动将两个 HTTP 站点升级为 HTTPS，并配置证书续期。检查：
+
+```sh
+sudo nginx -t
+sudo systemctl reload nginx
+sudo certbot renew --dry-run
+curl -I https://creatormall.shop
+curl https://api.creatormall.shop/actuator/health
+```
+
+API 域名必须与 `.env` 中的 `NEXT_PUBLIC_API_BASE_URL` 一致；Web 首页地址是 `https://creatormall.shop`。
 
 ## 日常更新
 
