@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1.7
 # ---- build stage ----
 # Maven 镜像自带 JDK 21 且内置 Maven 3.9；一次基础镜像完成全部后端构建。
 FROM maven:3.9-eclipse-temurin-21 AS build

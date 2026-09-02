@@ -7,8 +7,7 @@ ARG NPM_REGISTRY=https://registry.npmmirror.com
 ENV npm_config_registry=${NPM_REGISTRY}
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/web/package.json apps/web/package.json
-RUN --mount=type=cache,id=creatorhub-pnpm-store,target=/pnpm/store \
-  corepack enable \
+RUN corepack enable \
   && pnpm install --frozen-lockfile \
     --registry=${NPM_REGISTRY} \
     --config.node-linker=hoisted
@@ -21,8 +20,7 @@ ENV NEXT_OUTPUT=standalone
 ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
 ENV API_INTERNAL_BASE_URL=http://api:8080
-RUN --mount=type=cache,id=creatorhub-pnpm-store,target=/pnpm/store \
-  corepack enable \
+RUN corepack enable \
   && pnpm --filter @creatorhub/web build
 
 # ---- runtime stage ----
