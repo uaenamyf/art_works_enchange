@@ -37,7 +37,7 @@ COPY --from=build --chown=creatorhub:creatorhub /workspace/apps/web/.next/static
 USER creatorhub
 EXPOSE 3000
 HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=10 \
-  CMD wget -qO- http://localhost:3000/ >/dev/null 2>&1 || exit 1
+  CMD wget -qO- http://127.0.0.1:3000/ >/dev/null 2>&1 || exit 1
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 CMD ["node", "apps/web/server.js"]
