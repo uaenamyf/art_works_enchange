@@ -56,14 +56,14 @@ services:
       PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID:-}
       PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET:-}
       PAYPAL_WEBHOOK_ID: ${PAYPAL_WEBHOOK_ID:-}
-    ports:
-      - "127.0.0.1:${API_PORT:-8080}:8080"
+    ports: !override
+      - "127.0.0.1:${API_PORT:-18080}:8080"
 
   web:
     build:
       args:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:?NEXT_PUBLIC_API_BASE_URL is required}
-    ports:
+    ports: !override
       - "127.0.0.1:${WEB_PORT:-3000}:3000"
 
 volumes:

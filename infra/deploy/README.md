@@ -26,6 +26,8 @@ vi .env
 DB_NAME=creatorhub
 DB_USER=admin
 DB_PASSWORD=服务器数据库密码
+API_PORT=18080
+WEB_PORT=3000
 JWT_SECRET=至少32字节随机字符串
 REDIS_PASSWORD=服务器Redis密码
 CORS_ALLOWED_ORIGINS=https://creatormall.shop
@@ -53,7 +55,7 @@ S3_SECRET_KEY=服务器MinIO密码
 
 ## Nginx 反向代理与 HTTPS
 
-Docker 中的 API `8080` 和 Web `3000` 只绑定服务器本机，公网由宿主机 Nginx 接收 `80/443` 请求。安装 Nginx：
+Docker 中的 API 容器使用内部端口 `8080`，宿主机端口固定为 `18080`；Web 宿主机端口为 `3000`。两个端口只绑定服务器本机，公网由宿主机 Nginx 接收 `80/443` 请求。安装 Nginx：
 
 ```sh
 sudo apt update
