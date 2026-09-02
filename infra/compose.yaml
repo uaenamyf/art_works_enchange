@@ -17,6 +17,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - creatorhub_internal
 
   redis:
     image: redis:8-alpine
@@ -30,6 +32,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - creatorhub_internal
 
   minio:
     image: minio/minio:latest
@@ -48,6 +52,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    networks:
+      - creatorhub_internal
 
   api:
     image: ${CREATORHUB_API_IMAGE:-creatorhub-api:local}
@@ -81,6 +87,8 @@ services:
       timeout: 5s
       start_period: 30s
       retries: 12
+    networks:
+      - creatorhub_internal
 
   web:
     image: ${CREATORHUB_WEB_IMAGE:-creatorhub-web:local}
@@ -103,8 +111,14 @@ services:
       timeout: 5s
       start_period: 30s
       retries: 12
+    networks:
+      - creatorhub_internal
 
 volumes:
   postgres_data:
   redis_data:
   minio_data:
+
+networks:
+  creatorhub_internal:
+    driver: bridge
