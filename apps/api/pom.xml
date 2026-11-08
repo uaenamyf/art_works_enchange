@@ -36,7 +36,7 @@
         <spotless.version>2.43.0</spotless.version>
         <bouncycastle.version>1.78.1</bouncycastle.version>
         <mybatis-plus.version>3.5.17</mybatis-plus.version>
-        <aws-sdk.version>2.26.0</aws-sdk.version>
+        <aws-sdk.version>2.57.9</aws-sdk.version>
     </properties>
 
     <dependencies>
